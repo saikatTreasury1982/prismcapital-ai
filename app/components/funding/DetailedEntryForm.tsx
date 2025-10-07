@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
-import { createCashMovement } from '../../services/cashMovementService';
+import { createCashMovement } from '../../services/cashMovementServiceClient';
 import { CURRENT_USER_ID } from '../../lib/auth';
 
 interface DetailedEntryFormProps {
