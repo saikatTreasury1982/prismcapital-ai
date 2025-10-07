@@ -4,7 +4,7 @@ import { ArrowRight } from 'lucide-react';
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+    <div className="min-h-screen">
       {/* Navigation */}
       <nav className="container mx-auto px-4 sm:px-6 py-6">
         <div className="flex items-center justify-between">
