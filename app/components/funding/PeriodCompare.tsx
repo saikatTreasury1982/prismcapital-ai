@@ -12,8 +12,14 @@ interface PeriodCompareProps {
 }
 
 export function PeriodCompare({ periods, allMovements, homeCurrency }: PeriodCompareProps) {
-  const [selectedPeriod1, setSelectedPeriod1] = useState(periods[0]?.period || '');
-  const [selectedPeriod2, setSelectedPeriod2] = useState(periods[periods.length - 1]?.period || '');
+  const [selectedPeriod1, setSelectedPeriod1] = useState(
+    periods[0] ? `${periods[0].period_from}|${periods[0].period_to}` : ''
+  );
+  const [selectedPeriod2, setSelectedPeriod2] = useState(
+    periods[periods.length - 1] 
+      ? `${periods[periods.length - 1].period_from}|${periods[periods.length - 1].period_to}` 
+      : ''
+  );
 
   if (periods.length === 0) {
     return (
@@ -29,11 +35,18 @@ export function PeriodCompare({ periods, allMovements, homeCurrency }: PeriodCom
     );
   }
 
-  const stats1 = periods.find(p => p.period === selectedPeriod1) || periods[0];
-  const stats2 = periods.find(p => p.period === selectedPeriod2) || periods[periods.length - 1];
+  const stats1 = periods.find(p => `${p.period_from}|${p.period_to}` === selectedPeriod1) || periods[0];
+  const stats2 = periods.find(p => `${p.period_from}|${p.period_to}` === selectedPeriod2) || periods[periods.length - 1];
 
-  const movements1 = allMovements.filter(m => m.period_from === selectedPeriod1);
-  const movements2 = allMovements.filter(m => m.period_from === selectedPeriod2);
+  const [periodFrom1, periodTo1] = selectedPeriod1.split('|');
+  const [periodFrom2, periodTo2] = selectedPeriod2.split('|');
+
+  const movements1 = allMovements.filter(m => 
+    m.period_from === periodFrom1 && (m.period_to === periodTo1 || (periodTo1 === 'null' && !m.period_to))
+  );
+  const movements2 = allMovements.filter(m => 
+    m.period_from === periodFrom2 && (m.period_to === periodTo2 || (periodTo2 === 'null' && !m.period_to))
+  );
 
   return (
     <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20">
@@ -50,11 +63,11 @@ export function PeriodCompare({ periods, allMovements, homeCurrency }: PeriodCom
             onChange={(e) => setSelectedPeriod1(e.target.value)}
             className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
           >
-            {periods.map(p => (
-              <option key={p.period} value={p.period}>
-                {new Date(p.period).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-              </option>
-            ))}
+          {periods.map((p, idx) => (
+            <option key={idx} value={`${p.period_from}|${p.period_to}`}>
+              {p.period_display}
+            </option>
+          ))}
           </select>
           
           <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/10 rounded-2xl p-6 border border-blue-400/30 space-y-4">
@@ -106,11 +119,11 @@ export function PeriodCompare({ periods, allMovements, homeCurrency }: PeriodCom
             onChange={(e) => setSelectedPeriod2(e.target.value)}
             className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-400"
           >
-            {periods.map(p => (
-              <option key={p.period} value={p.period}>
-                {new Date(p.period).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-              </option>
-            ))}
+          {periods.map((p, idx) => (
+            <option key={idx} value={`${p.period_from}|${p.period_to}`}>
+              {p.period_display}
+            </option>
+          ))}
           </select>
           
           <div className="bg-gradient-to-br from-purple-500/20 to-purple-600/10 rounded-2xl p-6 border border-purple-400/30 space-y-4">

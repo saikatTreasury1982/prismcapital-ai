@@ -115,17 +115,41 @@ export async function getPeriodStats(userId: string): Promise<PeriodStats[]> {
 
   if (error) throw error;
 
-  // Group by period and calculate stats
+  // Group by period_from AND period_to combination
   const periodMap = new Map<string, PeriodStats>();
   let cumulativeHome = 0;
   let cumulativeTrading = 0;
 
   movements.forEach((movement: any) => {
-    const periodKey = movement.period_from || 'No Period';
+    const periodFrom = movement.period_from || 'No Period';
+    const periodTo = movement.period_to || null;
+    const periodKey = `${periodFrom}|${periodTo}`; // Use pipe as separator
     
     if (!periodMap.has(periodKey)) {
+      // Format period display
+      let periodDisplay = 'No Period';
+      if (periodFrom !== 'No Period') {
+        const fromDate = new Date(periodFrom).toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: 'numeric', 
+          year: 'numeric' 
+        });
+        if (periodTo) {
+          const toDate = new Date(periodTo).toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric' 
+          });
+          periodDisplay = `${fromDate} - ${toDate}`;
+        } else {
+          periodDisplay = `${fromDate} - Ongoing`;
+        }
+      }
+
       periodMap.set(periodKey, {
-        period: periodKey,
+        period_from: periodFrom,
+        period_to: periodTo,
+        period_display: periodDisplay,
         inflow_home: 0,
         outflow_home: 0,
         net_flow_home: 0,

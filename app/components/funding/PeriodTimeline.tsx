@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { BarChart3 } from 'lucide-react';
 import { PeriodStats } from '../../lib/types/funding';
 
@@ -10,6 +11,9 @@ interface PeriodTimelineProps {
 }
 
 export function PeriodTimeline({ periods, homeCurrency, tradingCurrency }: PeriodTimelineProps) {
+  // State to track selected period (default to last period)
+  const [selectedPeriodIndex, setSelectedPeriodIndex] = useState<number>(periods.length - 1);
+
   if (periods.length === 0) {
     return (
       <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20">
@@ -23,6 +27,8 @@ export function PeriodTimeline({ periods, homeCurrency, tradingCurrency }: Perio
       </div>
     );
   }
+
+  const selectedPeriod = periods[selectedPeriodIndex] || periods[periods.length - 1];
 
   // Calculate chart dimensions and scales
   const maxCapital = Math.max(...periods.map(p => Math.abs(p.cumulative_home)));
@@ -82,7 +88,57 @@ export function PeriodTimeline({ periods, homeCurrency, tradingCurrency }: Perio
       </h2>
       
       {/* Chart Container */}
-      <div className="bg-gradient-to-br from-slate-900/50 to-blue-900/30 rounded-2xl p-6 border border-white/10 mb-8 overflow-x-auto">
+      <div className="bg-gradient-to-br from-slate-900/50 to-blue-900/30 rounded-2xl p-6 border border-white/10 mb-8 overflow-x-auto relative">
+        {/* Fixed Info Box - Top Left */}
+        <div className="absolute top-6 left-6 z-10 backdrop-blur-xl bg-slate-900/95 rounded-xl p-4 border-2 border-blue-400/50 shadow-2xl min-w-[200px]">
+          {/* Date */}
+          <div className="text-blue-300 text-sm font-semibold mb-3 border-b border-white/20 pb-2">
+            {new Date(selectedPeriod.period).toLocaleDateString('en-US', { 
+              month: 'short', 
+              day: 'numeric', 
+              year: 'numeric' 
+            })}
+          </div>
+          
+          {/* Inflow */}
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-emerald-300 text-xs font-medium">Inflow:</span>
+            <span className="text-emerald-300 text-sm font-bold">
+              {homeCurrency} {selectedPeriod.inflow_home.toFixed(2)}
+            </span>
+          </div>
+          
+          {/* Outflow */}
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-rose-300 text-xs font-medium">Outflow:</span>
+            <span className="text-rose-300 text-sm font-bold">
+              {homeCurrency} {selectedPeriod.outflow_home.toFixed(2)}
+            </span>
+          </div>
+          
+          {/* Divider */}
+          <div className="border-t border-white/20 my-2"></div>
+          
+          {/* Net Flow */}
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-white text-xs font-medium">Net:</span>
+            <span className={`text-sm font-bold ${
+              selectedPeriod.net_flow_home >= 0 ? 'text-emerald-300' : 'text-rose-300'
+            }`}>
+              {selectedPeriod.net_flow_home >= 0 ? '+' : ''}
+              {homeCurrency} {selectedPeriod.net_flow_home.toFixed(2)}
+            </span>
+          </div>
+          
+          {/* Cumulative */}
+          <div className="flex justify-between items-center">
+            <span className="text-blue-300 text-xs font-medium">Cumulative:</span>
+            <span className="text-blue-300 text-sm font-bold">
+              {homeCurrency} {selectedPeriod.cumulative_home.toFixed(2)}
+            </span>
+          </div>
+        </div>
+
         <svg 
           viewBox={`0 0 ${chartWidth} ${chartHeight}`} 
           className="w-full h-auto min-h-[300px]"
@@ -156,70 +212,39 @@ export function PeriodTimeline({ periods, homeCurrency, tradingCurrency }: Perio
             strokeLinejoin="round"
           />
 
-          {/* Data points with interactive tooltips */}
+          {/* Data points - clickable */}
           {periods.map((period, idx) => {
             const x = (idx / (periods.length - 1)) * chartWidth;
             const y = chartHeight - ((period.cumulative_home - minValue) / valueRange) * chartHeight;
             const isPositive = period.cumulative_home >= 0;
-            const netFlow = period.net_flow_home;
+            const isSelected = idx === selectedPeriodIndex;
             
             return (
-              <g key={idx} className="group">
-                {/* Tooltip background */}
-                <rect
-                  x={x - 90}
-                  y={y - 110}
-                  width="180"
-                  height="115"
-                  fill="rgba(15, 23, 42, 0.98)"
-                  stroke="rgba(147, 197, 253, 0.5)"
-                  strokeWidth="2"
-                  rx="12"
-                  className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"
-                  filter="drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3))"
-                />
+              <g key={idx} onClick={() => setSelectedPeriodIndex(idx)} className="cursor-pointer">
+                {/* Orange ring for selected dot */}
+                {isSelected && (
+                  <>
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r="12"
+                      fill="none"
+                      stroke="rgb(249, 115, 22)"
+                      strokeWidth="3"
+                      className="animate-pulse"
+                    />
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r="10"
+                      fill="none"
+                      stroke="rgba(249, 115, 22, 0.5)"
+                      strokeWidth="2"
+                    />
+                  </>
+                )}
                 
-                {/* Tooltip content */}
-                <g className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-                  {/* Date */}
-                  <text x={x} y={y - 85} fill="rgb(147, 197, 253)" fontSize="13" textAnchor="middle" fontWeight="600">
-                    {new Date(period.period).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </text>
-                  
-                  {/* Inflow */}
-                  <text x={x - 75} y={y - 65} fill="rgb(134, 239, 172)" fontSize="11" textAnchor="start" fontWeight="500">
-                    Inflow:
-                  </text>
-                  <text x={x + 75} y={y - 65} fill="rgb(134, 239, 172)" fontSize="11" textAnchor="end" fontWeight="600">
-                    {homeCurrency} {period.inflow_home.toFixed(2)}
-                  </text>
-                  
-                  {/* Outflow */}
-                  <text x={x - 75} y={y - 48} fill="rgb(251, 113, 133)" fontSize="11" textAnchor="start" fontWeight="500">
-                    Outflow:
-                  </text>
-                  <text x={x + 75} y={y - 48} fill="rgb(251, 113, 133)" fontSize="11" textAnchor="end" fontWeight="600">
-                    {homeCurrency} {period.outflow_home.toFixed(2)}
-                  </text>
-                  
-                  {/* Divider line */}
-                  <line x1={x - 75} y1={y - 40} x2={x + 75} y2={y - 40} stroke="rgba(255, 255, 255, 0.2)" strokeWidth="1" />
-                  
-                  {/* Net Flow */}
-                  <text x={x - 75} y={y - 25} fill="white" fontSize="11" textAnchor="start" fontWeight="500">
-                    Net:
-                  </text>
-                  <text x={x + 75} y={y - 25} fill={netFlow >= 0 ? "rgb(134, 239, 172)" : "rgb(251, 113, 133)"} fontSize="12" textAnchor="end" fontWeight="700">
-                    {netFlow >= 0 ? '+' : ''}{homeCurrency} {netFlow.toFixed(2)}
-                  </text>
-                  
-                  {/* Cumulative */}
-                  <text x={x} y={y - 8} fill="rgb(96, 165, 250)" fontSize="10" textAnchor="middle" fontWeight="500">
-                    Cumulative: {homeCurrency} {period.cumulative_home.toFixed(2)}
-                  </text>
-                </g>
-
-                {/* Point circle - must be last to be on top */}
+                {/* Point circle */}
                 <circle
                   cx={x}
                   cy={y}
@@ -227,16 +252,15 @@ export function PeriodTimeline({ periods, homeCurrency, tradingCurrency }: Perio
                   fill={isPositive ? "rgb(16, 185, 129)" : "rgb(244, 63, 94)"}
                   stroke="white"
                   strokeWidth="2"
-                  className="cursor-pointer transition-all group-hover:r-9"
+                  className="transition-all hover:r-8"
                 />
                 
-                {/* Hover area - invisible larger circle for easier hovering */}
+                {/* Larger invisible click area */}
                 <circle
                   cx={x}
                   cy={y}
                   r="20"
                   fill="transparent"
-                  className="cursor-pointer"
                 />
                 
                 {/* Period label */}
@@ -246,7 +270,7 @@ export function PeriodTimeline({ periods, homeCurrency, tradingCurrency }: Perio
                   fill="rgba(147, 197, 253, 0.9)"
                   fontSize="11"
                   textAnchor="middle"
-                  className="select-none"
+                  className="select-none pointer-events-none"
                 >
                   {new Date(period.period).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                 </text>

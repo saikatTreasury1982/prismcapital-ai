@@ -59,7 +59,9 @@ export interface CreateCashMovementInput {
 }
 
 export interface PeriodStats {
-  period: string;
+  period_from: string;
+  period_to: string | null;
+  period_display: string; // "Jan 15, 2024 - Feb 14, 2024"
   inflow_home: number;
   outflow_home: number;
   net_flow_home: number;
