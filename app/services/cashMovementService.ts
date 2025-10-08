@@ -189,3 +189,76 @@ export async function getPeriodStats(userId: string): Promise<PeriodStats[]> {
 
   return periodsArray;
 }
+
+export async function getUniquePeriods(userId: string): Promise<Array<{period_from: string, period_to: string | null, period_display: string}>> {
+  const supabase = await createClient();
+  
+  const { data: movements, error } = await supabase
+    .from('cash_movements')
+    .select('period_from, period_to')
+    .eq('user_id', userId)
+    .not('period_from', 'is', null)
+    .order('period_from', { ascending: true });
+
+  if (error) throw error;
+
+  // Get unique period combinations
+  const uniquePeriods = new Map<string, {period_from: string, period_to: string | null, period_display: string}>();
+  
+  movements.forEach((movement: any) => {
+    const key = `${movement.period_from}|${movement.period_to}`;
+    
+    if (!uniquePeriods.has(key)) {
+      const fromDate = new Date(movement.period_from).toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric' 
+      });
+      
+      let periodDisplay = fromDate;
+      if (movement.period_to) {
+        const toDate = new Date(movement.period_to).toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: 'numeric', 
+          year: 'numeric' 
+        });
+        periodDisplay = `${fromDate} - ${toDate}`;
+      } else {
+        periodDisplay = `${fromDate} - Ongoing`;
+      }
+      
+      uniquePeriods.set(key, {
+        period_from: movement.period_from,
+        period_to: movement.period_to,
+        period_display: periodDisplay
+      });
+    }
+  });
+
+  return Array.from(uniquePeriods.values());
+}
+
+export async function getMovementsForPeriod(userId: string, periodFrom: string, periodTo: string | null): Promise<CashMovementWithDirection[]> {
+  const supabase = await createClient();
+  
+  let query = supabase
+    .from('cash_movements')
+    .select(`
+      *,
+      direction:cash_movement_directions(*)
+    `)
+    .eq('user_id', userId)
+    .eq('period_from', periodFrom);
+  
+  if (periodTo) {
+    query = query.eq('period_to', periodTo);
+  } else {
+    query = query.is('period_to', null);
+  }
+  
+  const { data, error } = await query.order('transaction_date', { ascending: false });
+
+  if (error) throw error;
+  
+  return data as CashMovementWithDirection[];
+}

@@ -1,25 +1,96 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getUniquePeriods, getMovementsForPeriod } from '../../services/cashMovementServiceClient';
+import { CURRENT_USER_ID } from '../../lib/auth';
 import { ArrowLeftRight, TrendingUp, TrendingDown } from 'lucide-react';
 import { PeriodStats } from '../../lib/types/funding';
 import { CashMovementWithDirection } from '../../lib/types/funding';
 
 interface PeriodCompareProps {
-  periods: PeriodStats[];
-  allMovements: CashMovementWithDirection[];
   homeCurrency: string;
 }
 
-export function PeriodCompare({ periods, allMovements, homeCurrency }: PeriodCompareProps) {
-  const [selectedPeriod1, setSelectedPeriod1] = useState(
-    periods[0] ? `${periods[0].period_from}|${periods[0].period_to}` : ''
-  );
-  const [selectedPeriod2, setSelectedPeriod2] = useState(
-    periods[periods.length - 1] 
-      ? `${periods[periods.length - 1].period_from}|${periods[periods.length - 1].period_to}` 
-      : ''
-  );
+export function PeriodCompare({ homeCurrency }: PeriodCompareProps) {
+  const [periods, setPeriods] = useState<Array<{period_from: string, period_to: string | null, period_display: string}>>([]);
+  const [movements1, setMovements1] = useState<CashMovementWithDirection[]>([]);
+  const [movements2, setMovements2] = useState<CashMovementWithDirection[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedPeriod1, setSelectedPeriod1] = useState('');
+  const [selectedPeriod2, setSelectedPeriod2] = useState('');
+
+    // Fetch unique periods on mount
+    useEffect(() => {
+      const fetchPeriods = async () => {
+        setLoading(true);
+        try {
+          const uniquePeriods = await getUniquePeriods(CURRENT_USER_ID);
+          setPeriods(uniquePeriods);
+          
+          if (uniquePeriods.length > 0) {
+            const firstPeriod = `${uniquePeriods[0].period_from}|${uniquePeriods[0].period_to}`;
+            const lastPeriod = `${uniquePeriods[uniquePeriods.length - 1].period_from}|${uniquePeriods[uniquePeriods.length - 1].period_to}`;
+            
+            setSelectedPeriod1(firstPeriod);
+            setSelectedPeriod2(lastPeriod);
+          }
+        } catch (error) {
+          console.error('Error fetching periods:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchPeriods();
+    }, []);
+
+    // Fetch movements when period 1 changes
+    useEffect(() => {
+      if (!selectedPeriod1) return;
+      
+      const [periodFrom, periodTo] = selectedPeriod1.split('|');
+      const fetchMovements = async () => {
+        try {
+          const data = await getMovementsForPeriod(CURRENT_USER_ID, periodFrom, periodTo === 'null' ? null : periodTo);
+          setMovements1(data);
+        } catch (error) {
+          console.error('Error fetching movements for period 1:', error);
+        }
+      };
+
+      fetchMovements();
+    }, [selectedPeriod1]);
+
+    // Fetch movements when period 2 changes
+    useEffect(() => {
+      if (!selectedPeriod2) return;
+      
+      const [periodFrom, periodTo] = selectedPeriod2.split('|');
+      const fetchMovements = async () => {
+        try {
+          const data = await getMovementsForPeriod(CURRENT_USER_ID, periodFrom, periodTo === 'null' ? null : periodTo);
+          setMovements2(data);
+        } catch (error) {
+          console.error('Error fetching movements for period 2:', error);
+        }
+      };
+
+      fetchMovements();
+    }, [selectedPeriod2]);
+
+  if (loading) {
+    return (
+      <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20">
+        <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
+          <ArrowLeftRight className="w-6 h-6" />
+          Period Comparison
+        </h2>
+        <div className="text-center py-12 text-blue-200">
+          Loading periods...
+        </div>
+      </div>
+    );
+  }
 
   if (periods.length === 0) {
     return (
@@ -35,18 +106,23 @@ export function PeriodCompare({ periods, allMovements, homeCurrency }: PeriodCom
     );
   }
 
-  const stats1 = periods.find(p => `${p.period_from}|${p.period_to}` === selectedPeriod1) || periods[0];
-  const stats2 = periods.find(p => `${p.period_from}|${p.period_to}` === selectedPeriod2) || periods[periods.length - 1];
+  // Calculate stats from movements
+  const calculateStats = (movements: CashMovementWithDirection[]) => {
+    return movements.reduce((acc, m) => {
+      const multiplier = m.direction.multiplier;
+      if (multiplier > 0) {
+        acc.inflow_home += m.home_currency_value;
+      } else {
+        acc.outflow_home += m.home_currency_value;
+      }
+      acc.net_flow_home += m.home_currency_value * multiplier;
+      acc.transaction_count++;
+      return acc;
+    }, { inflow_home: 0, outflow_home: 0, net_flow_home: 0, transaction_count: 0 });
+  };
 
-  const [periodFrom1, periodTo1] = selectedPeriod1.split('|');
-  const [periodFrom2, periodTo2] = selectedPeriod2.split('|');
-
-  const movements1 = allMovements.filter(m => 
-    m.period_from === periodFrom1 && (m.period_to === periodTo1 || (periodTo1 === 'null' && !m.period_to))
-  );
-  const movements2 = allMovements.filter(m => 
-    m.period_from === periodFrom2 && (m.period_to === periodTo2 || (periodTo2 === 'null' && !m.period_to))
-  );
+  const stats1 = calculateStats(movements1);
+  const stats2 = calculateStats(movements2);
 
   return (
     <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20">
@@ -62,10 +138,9 @@ export function PeriodCompare({ periods, allMovements, homeCurrency }: PeriodCom
             value={selectedPeriod1}
             onChange={(e) => setSelectedPeriod1(e.target.value)}
             className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
-            style={{ appearance: 'auto' }}
           >
           {periods.map((p, idx) => (
-            <option key={idx} value={`${p.period_from}|${p.period_to}`}>
+            <option key={idx} value={`${p.period_from}|${p.period_to}`} className="bg-slate-800 text-white">
               {p.period_display}
             </option>
           ))}
@@ -121,7 +196,7 @@ export function PeriodCompare({ periods, allMovements, homeCurrency }: PeriodCom
             className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-400"
           >
           {periods.map((p, idx) => (
-            <option key={idx} value={`${p.period_from}|${p.period_to}`}>
+            <option key={idx} value={`${p.period_from}|${p.period_to}`} className="bg-slate-800 text-white">
               {p.period_display}
             </option>
           ))}
