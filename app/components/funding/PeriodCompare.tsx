@@ -62,6 +62,7 @@ export function PeriodCompare({ periods, allMovements, homeCurrency }: PeriodCom
             value={selectedPeriod1}
             onChange={(e) => setSelectedPeriod1(e.target.value)}
             className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+            style={{ appearance: 'auto' }}
           >
           {periods.map((p, idx) => (
             <option key={idx} value={`${p.period_from}|${p.period_to}`}>
