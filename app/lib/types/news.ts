@@ -4,12 +4,6 @@ export interface NewsType {
   type_name: string;
 }
 
-export interface NewsStatus {
-  status_id: number;
-  status_code: string;
-  status_name: string;
-}
-
 export interface News {
   news_id: string;
   user_id: string;
@@ -17,7 +11,6 @@ export interface News {
   exchange_id: number;
   company_name: string | null;
   news_type_id: number;
-  status_id: number;
   news_description: string;
   news_date: string;
   alert_date: string | null;
@@ -31,7 +24,6 @@ export interface News {
 
 export interface NewsWithDetails extends News {
   news_type: NewsType;
-  news_status: NewsStatus;
 }
 
 export interface CreateNewsInput {
@@ -39,7 +31,6 @@ export interface CreateNewsInput {
   exchange_id: number;
   company_name?: string;
   news_type_id: number;
-  status_id: number;
   news_description: string;
   news_date: string;
   alert_date?: string;

@@ -1,17 +1,28 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, BarChart3, TrendingUp, List } from 'lucide-react';
-import { NewsType, NewsStatus } from '../../lib/types/news';
+import { NewsType } from '../../lib/types/news';
 import { NewsEntryForm } from './NewsEntryForm';
 
 interface NewsClientWrapperProps {
   newsTypes: NewsType[];
-  newsStatuses: NewsStatus[];
 }
 
-export function NewsClientWrapper({ newsTypes, newsStatuses }: NewsClientWrapperProps) {
+export function NewsClientWrapper({ newsTypes }: NewsClientWrapperProps) {
   const [activeTab, setActiveTab] = useState<'entry' | 'ticker' | 'earnings' | 'general' | 'category'>('entry');
+  const [ticker, setTicker] = useState('');
+  const [hasPosition, setHasPosition] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!ticker) return;
+    const fetchPosition = async () => {
+      const res = await fetch(`/api/has-position?ticker=${ticker}`);
+      const json = await res.json();
+      setHasPosition(json.hasPosition);
+    };
+    fetchPosition();
+  }, [ticker]);
 
   const handleSuccess = () => {
     // Refresh page to show new data
@@ -91,7 +102,6 @@ export function NewsClientWrapper({ newsTypes, newsStatuses }: NewsClientWrapper
         {activeTab === 'entry' && (
           <NewsEntryForm 
             newsTypes={newsTypes}
-            newsStatuses={newsStatuses}
             onSuccess={handleSuccess}
           />
         )}

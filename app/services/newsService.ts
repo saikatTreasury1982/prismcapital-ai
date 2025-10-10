@@ -4,7 +4,6 @@ import {
   NewsWithDetails, 
   CreateNewsInput,
   NewsType,
-  NewsStatus,
   NewsSummaryByTicker,
   NewsSummaryByType
 } from '../lib/types/news';
@@ -22,17 +21,15 @@ export async function getNewsTypes(): Promise<NewsType[]> {
   return data;
 }
 
-export async function getNewsStatuses(): Promise<NewsStatus[]> {
+export async function hasOpenPosition(ticker: string): Promise<boolean> {
   const supabase = await createClient();
-  
   const { data, error } = await supabase
-    .from('news_status')
-    .select('*')
-    .order('status_id', { ascending: true });
-
+    .from('positions')
+    .select('id')
+    .ilike('ticker', ticker)
+    .limit(1);
   if (error) throw error;
-  
-  return data;
+  return data.length > 0;
 }
 
 export async function getAllNews(userId: string): Promise<NewsWithDetails[]> {

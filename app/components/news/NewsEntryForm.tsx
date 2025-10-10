@@ -1,24 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
-import { NewsType, NewsStatus } from '../../lib/types/news';
+import { NewsType } from '../../lib/types/news';
 import { createNews } from '../../services/newsServiceClient';
 import { CURRENT_USER_ID } from '../../lib/auth';
 
 interface NewsEntryFormProps {
   newsTypes: NewsType[];
-  newsStatuses: NewsStatus[];
   onSuccess: () => void;
 }
 
-export function NewsEntryForm({ newsTypes, newsStatuses, onSuccess }: NewsEntryFormProps) {
+export function NewsEntryForm({ newsTypes, onSuccess }: NewsEntryFormProps) {
+
+  const [hasPosition, setHasPosition] = useState<boolean | null>(null);
+    
   const [formData, setFormData] = useState({
     ticker: '',
     exchange_id: 1, // Default to first exchange
     company_name: '',
     news_type_id: newsTypes[0]?.news_type_id || 1,
-    status_id: newsStatuses.find(s => s.status_code === 'UNREAD')?.status_id || 1,
     news_description: '',
     news_date: new Date().toISOString().split('T')[0],
     alert_date: '',
@@ -61,7 +62,6 @@ export function NewsEntryForm({ newsTypes, newsStatuses, onSuccess }: NewsEntryF
         exchange_id: formData.exchange_id,
         company_name: formData.company_name || undefined,
         news_type_id: formData.news_type_id,
-        status_id: formData.status_id,
         news_description: formData.news_description,
         news_date: formData.news_date,
         alert_date: showAlert && formData.alert_date ? formData.alert_date : undefined,
@@ -77,7 +77,6 @@ export function NewsEntryForm({ newsTypes, newsStatuses, onSuccess }: NewsEntryF
         exchange_id: 1,
         company_name: '',
         news_type_id: newsTypes[0]?.news_type_id || 1,
-        status_id: newsStatuses.find(s => s.status_code === 'UNREAD')?.status_id || 1,
         news_description: '',
         news_date: new Date().toISOString().split('T')[0],
         alert_date: '',
@@ -96,6 +95,26 @@ export function NewsEntryForm({ newsTypes, newsStatuses, onSuccess }: NewsEntryF
     }
   };
 
+  useEffect(() => {
+    const fetchPosition = async () => {
+      if (!formData.ticker) {
+        setHasPosition(null);
+        return;
+      }
+      try {
+        const res = await fetch(`/api/hasOpenPosition?ticker=${encodeURIComponent(formData.ticker)}`);
+        const data = await res.json();
+        setHasPosition(data.hasPosition);
+      } catch (err) {
+        console.error(err);
+        setHasPosition(false);
+      }
+    };
+
+    fetchPosition();
+  }, [formData.ticker]);
+
+
   return (
     <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-6 sm:p-8 border border-white/20">
       <h2 className="text-xl sm:text-2xl font-bold text-white mb-6 flex items-center gap-3">
@@ -113,19 +132,31 @@ export function NewsEntryForm({ newsTypes, newsStatuses, onSuccess }: NewsEntryF
         {/* Ticker */}
         <div>
           <label className="text-blue-200 text-sm mb-2 block font-medium">Ticker *</label>
-          <input
-            type="text"
-            value={formData.ticker}
-            onChange={(e) => setFormData({...formData, ticker: e.target.value.toUpperCase()})}
-            placeholder="AAPL"
-            className="w-full funding-input rounded-xl px-4 py-3 uppercase"
-            required
-          />
+          <div className="flex items-center gap-3">
+            <input
+              type="text"
+              value={formData.ticker}
+              onChange={(e) =>
+                setFormData({ ...formData, ticker: e.target.value.toUpperCase() })
+              }
+              placeholder="AAPL"
+              className="flex-1 funding-input rounded-xl px-4 py-3 uppercase max-w-[70%]"
+              required
+            />
+            <span
+              className={`px-3 py-2 rounded-full text-sm font-semibold whitespace-nowrap ${
+                hasPosition ? 'bg-green-600 text-white' : 'bg-yellow-600 text-white'
+              }`}
+            >
+              {hasPosition ? 'Open Position' : 'No Position'}
+            </span>
+          </div>
         </div>
 
-        {/* Company Name */}
+
+        {/* Ticker Name */}
         <div>
-          <label className="text-blue-200 text-sm mb-2 block font-medium">Company Name</label>
+          <label className="text-blue-200 text-sm mb-2 block font-medium">Ticker Name</label>
           <input
             type="text"
             value={formData.company_name}
@@ -137,7 +168,7 @@ export function NewsEntryForm({ newsTypes, newsStatuses, onSuccess }: NewsEntryF
 
         {/* News Type */}
         <div>
-          <label className="text-blue-200 text-sm mb-2 block font-medium">News Type *</label>
+          <label className="text-blue-200 text-sm mb-2 block font-medium">Type of News *</label>
           <select
             value={formData.news_type_id}
             onChange={(e) => setFormData({...formData, news_type_id: parseInt(e.target.value)})}
@@ -151,25 +182,9 @@ export function NewsEntryForm({ newsTypes, newsStatuses, onSuccess }: NewsEntryF
           </select>
         </div>
 
-        {/* Status */}
-        <div>
-          <label className="text-blue-200 text-sm mb-2 block font-medium">Status</label>
-          <select
-            value={formData.status_id}
-            onChange={(e) => setFormData({...formData, status_id: parseInt(e.target.value)})}
-            className="w-full funding-input rounded-xl px-4 py-3"
-          >
-            {newsStatuses.map(status => (
-              <option key={status.status_id} value={status.status_id} className="bg-slate-800 text-white">
-                {status.status_name}
-              </option>
-            ))}
-          </select>
-        </div>
-
         {/* News Date */}
         <div>
-          <label className="text-blue-200 text-sm mb-2 block font-medium">News Date *</label>
+          <label className="text-blue-200 text-sm mb-2 block font-medium">News published on *</label>
           <input
             type="date"
             value={formData.news_date}
@@ -192,7 +207,7 @@ export function NewsEntryForm({ newsTypes, newsStatuses, onSuccess }: NewsEntryF
         </div>
 
         {/* News URL */}
-        <div className="md:col-span-2">
+        <div>
           <label className="text-blue-200 text-sm mb-2 block font-medium">URL</label>
           <input
             type="url"
@@ -205,7 +220,7 @@ export function NewsEntryForm({ newsTypes, newsStatuses, onSuccess }: NewsEntryF
 
         {/* Description */}
         <div className="md:col-span-2">
-          <label className="text-blue-200 text-sm mb-2 block font-medium">Description *</label>
+          <label className="text-blue-200 text-sm mb-2 block font-medium">Description of the News *</label>
           <textarea
             value={formData.news_description}
             onChange={(e) => setFormData({...formData, news_description: e.target.value})}

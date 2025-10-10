@@ -1,18 +1,12 @@
-import { getNewsTypes, getNewsStatuses } from '../../services/newsService';
+import { getNewsTypes, hasOpenPosition } from '../../services/newsService';
 import { NewsClientWrapper } from '../../components/news/NewsClientWrapper';
 
 export default async function NewsPage() {
   try {
-    const [newsTypes, newsStatuses] = await Promise.all([
-      getNewsTypes(),
-      getNewsStatuses()
-    ]);
+    const newsTypes = await getNewsTypes();
 
     return (
-      <NewsClientWrapper 
-        newsTypes={newsTypes}
-        newsStatuses={newsStatuses}
-      />
+      <NewsClientWrapper newsTypes={newsTypes}/>
     );
   } catch (error: any) {
     return (
