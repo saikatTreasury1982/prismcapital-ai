@@ -27,3 +27,11 @@ export async function createNews(userId: string, input: CreateNewsInput): Promis
   
   return data;
 }
+
+// services/newsServiceClient.ts
+export async function hasOpenPositionClient(ticker: string): Promise<boolean> {
+  const res = await fetch(`/api/hasOpenPosition?ticker=${encodeURIComponent(ticker)}`);
+  if (!res.ok) throw new Error('Failed to check open position');
+  const json = await res.json();
+  return Boolean(json.hasPosition);
+}

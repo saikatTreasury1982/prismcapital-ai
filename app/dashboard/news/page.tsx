@@ -5,9 +5,7 @@ export default async function NewsPage() {
   try {
     const newsTypes = await getNewsTypes();
 
-    return (
-      <NewsClientWrapper newsTypes={newsTypes}/>
-    );
+    return <NewsClientWrapper newsTypes={newsTypes}/>;
   } catch (error: any) {
     return (
       <div className="min-h-screen p-6 flex items-center justify-center">

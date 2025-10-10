@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { NewsType } from '../../lib/types/news';
-import { createNews } from '../../services/newsServiceClient';
+import { createNews, hasOpenPositionClient } from '../../services/newsServiceClient';
 import { CURRENT_USER_ID } from '../../lib/auth';
 
 interface NewsEntryFormProps {
@@ -21,7 +21,7 @@ export function NewsEntryForm({ newsTypes, onSuccess }: NewsEntryFormProps) {
     company_name: '',
     news_type_id: newsTypes[0]?.news_type_id || 1,
     news_description: '',
-    news_date: new Date().toISOString().split('T')[0],
+    news_date: '',
     alert_date: '',
     alert_notes: '',
     news_source: '',
@@ -96,6 +96,13 @@ export function NewsEntryForm({ newsTypes, onSuccess }: NewsEntryFormProps) {
   };
 
   useEffect(() => {
+    setFormData((prev) => ({
+      ...prev,
+      news_date: new Date().toISOString().split('T')[0],
+    }));
+  }, []);
+
+  useEffect(() => {
     const fetchPosition = async () => {
       if (!formData.ticker) {
         setHasPosition(null);
@@ -113,7 +120,6 @@ export function NewsEntryForm({ newsTypes, onSuccess }: NewsEntryFormProps) {
 
     fetchPosition();
   }, [formData.ticker]);
-
 
   return (
     <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-6 sm:p-8 border border-white/20">
