@@ -1,4 +1,4 @@
-import { getNewsTypes, hasOpenPosition } from '../../services/newsService';
+import { getNewsTypes } from '../../services/newsService';
 import { NewsClientWrapper } from '../../components/news/NewsClientWrapper';
 
 export default async function NewsPage() {
