@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useDebounce } from '../../lib/hooks/useDebounce';
 import { Plus } from 'lucide-react';
 import { NewsType } from '../../lib/types/news';
 import { createNews, hasOpenPositionClient } from '../../services/newsServiceClient';
@@ -14,6 +15,8 @@ interface NewsEntryFormProps {
 export function NewsEntryForm({ newsTypes, onSuccess }: NewsEntryFormProps) {
 
   const [hasPosition, setHasPosition] = useState<boolean | null>(null);
+  const [tickerError, setTickerError] = useState<string | null>(null);
+  const [isLoadingTicker, setIsLoadingTicker] = useState(false);
     
   const [formData, setFormData] = useState({
     ticker: '',
@@ -32,6 +35,7 @@ export function NewsEntryForm({ newsTypes, onSuccess }: NewsEntryFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showAlert, setShowAlert] = useState(false);
+  const debouncedTicker = useDebounce(formData.ticker, 500);
 
   // Get icon for news type
   const getNewsTypeIcon = (typeCode: string) => {
@@ -102,24 +106,49 @@ export function NewsEntryForm({ newsTypes, onSuccess }: NewsEntryFormProps) {
     }));
   }, []);
 
+  // Fetch ticker name and position when user stops typing
   useEffect(() => {
-    const fetchPosition = async () => {
-      if (!formData.ticker) {
+    const fetchTickerData = async () => {
+      if (!debouncedTicker) {
         setHasPosition(null);
+        setTickerError(null);
+        setFormData(prev => ({ ...prev, company_name: '' }));
         return;
       }
+
+      setIsLoadingTicker(true);
+      setTickerError(null);
+
       try {
-        const res = await fetch(`/api/hasOpenPosition?ticker=${encodeURIComponent(formData.ticker)}`);
-        const data = await res.json();
-        setHasPosition(data.hasPosition);
+        // Fetch ticker name from AlphaVantage
+        const tickerRes = await fetch(`/api/ticker-lookup?ticker=${encodeURIComponent(debouncedTicker)}`);
+        const tickerData = await tickerRes.json();
+
+        if (tickerData.error) {
+          setTickerError(tickerData.error);
+          setFormData(prev => ({ ...prev, company_name: '' }));
+          setHasPosition(null);
+        } else if (tickerData.name) {
+          setFormData(prev => ({ ...prev, company_name: tickerData.name }));
+          setTickerError(null);
+
+          // Fetch position status
+          const posRes = await fetch(`/api/hasOpenPosition?ticker=${encodeURIComponent(debouncedTicker)}&userId=${CURRENT_USER_ID}`);
+          const posData = await posRes.json();
+          setHasPosition(posData.hasPosition);
+        }
       } catch (err) {
-        console.error(err);
-        setHasPosition(false);
+        console.error('Error fetching ticker data:', err);
+        setTickerError('Failed to lookup ticker');
+        setFormData(prev => ({ ...prev, company_name: '' }));
+        setHasPosition(null);
+      } finally {
+        setIsLoadingTicker(false);
       }
     };
 
-    fetchPosition();
-  }, [formData.ticker]);
+    fetchTickerData();
+  }, [debouncedTicker]);
 
   return (
     <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-6 sm:p-8 border border-white/20">
@@ -146,17 +175,28 @@ export function NewsEntryForm({ newsTypes, onSuccess }: NewsEntryFormProps) {
                 setFormData({ ...formData, ticker: e.target.value.toUpperCase() })
               }
               placeholder="AAPL"
-              className="flex-1 funding-input rounded-xl px-4 py-3 uppercase max-w-[70%]"
+              className={`flex-1 funding-input rounded-xl px-4 py-3 uppercase max-w-[70%] ${
+                tickerError ? 'border-2 border-rose-400' : ''
+              }`}
               required
             />
-            <span
-              className={`px-3 py-2 rounded-full text-sm font-semibold whitespace-nowrap ${
-                hasPosition ? 'bg-green-600 text-white' : 'bg-yellow-600 text-white'
-              }`}
-            >
-              {hasPosition ? 'Open Position' : 'No Position'}
-            </span>
+            {isLoadingTicker ? (
+              <span className="px-3 py-2 rounded-full text-sm font-semibold whitespace-nowrap bg-blue-600 text-white">
+                Loading...
+              </span>
+            ) : hasPosition !== null ? (
+              <span
+                className={`px-3 py-2 rounded-full text-sm font-semibold whitespace-nowrap ${
+                  hasPosition ? 'bg-green-600 text-white' : 'bg-yellow-600 text-white'
+                }`}
+              >
+                {hasPosition ? 'Open Position' : 'No Position'}
+              </span>
+            ) : null}
           </div>
+          {tickerError && (
+            <p className="text-rose-400 text-sm mt-2">{tickerError}</p>
+          )}
         </div>
 
 
@@ -169,6 +209,7 @@ export function NewsEntryForm({ newsTypes, onSuccess }: NewsEntryFormProps) {
             onChange={(e) => setFormData({...formData, company_name: e.target.value})}
             placeholder="Apple Inc."
             className="w-full funding-input rounded-xl px-4 py-3"
+            disabled
           />
         </div>
 

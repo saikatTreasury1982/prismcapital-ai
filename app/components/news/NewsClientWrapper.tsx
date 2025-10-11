@@ -11,22 +11,10 @@ interface NewsClientWrapperProps {
 
 export function NewsClientWrapper({ newsTypes }: NewsClientWrapperProps) {
   const [activeTab, setActiveTab] = useState<'entry' | 'ticker' | 'earnings' | 'general' | 'category'>('entry');
-  const [ticker, setTicker] = useState('');
-  const [hasPosition, setHasPosition] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    if (!ticker) return;
-    const fetchPosition = async () => {
-      const res = await fetch(`/api/has-position?ticker=${ticker}`);
-      const json = await res.json();
-      setHasPosition(json.hasPosition);
-    };
-    fetchPosition();
-  }, [ticker]);
 
   const handleSuccess = () => {
-    // Refresh page to show new data
-    window.location.reload();
+    // Use Next.js router for proper refresh
+    window.location.href = window.location.pathname;
   };
 
   return (
