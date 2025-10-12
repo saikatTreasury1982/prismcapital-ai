@@ -14,7 +14,7 @@ export function DividendDetailModal({ dividend, onClose }: DividendDetailModalPr
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div className="relative w-full max-w-2xl backdrop-blur-xl bg-white/10 rounded-3xl border border-white/20">
-        <div className="sticky top-0 backdrop-blur-xl bg-white/10 border-b border-white/20 p-6 flex items-start justify-between">
+        <div className="sticky top-0 backdrop-blur-xl bg-white/10 border-b border-white/20 p-6 flex items-start justify-between rounded-t-3xl">
           <div className="flex-1">
             <h2 className="text-2xl font-bold text-white mb-1">{dividend.ticker}</h2>
             <p className="text-blue-200 text-sm">

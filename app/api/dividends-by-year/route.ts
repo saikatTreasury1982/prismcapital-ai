@@ -28,8 +28,9 @@ export async function GET(request: Request) {
         .from('dividends')
         .select('*', { count: 'exact' })
         .eq('user_id', userId)
-        .eq('year', yearNum)
-        .order('payment_date', { ascending: false })
+        .gte('ex_dividend_date', `${yearNum}-01-01`)
+        .lt('ex_dividend_date', `${yearNum + 1}-01-01`)
+        .order('ex_dividend_date', { ascending: false })
         .range(from, to);
 
       if (error) throw error;

@@ -134,6 +134,19 @@ export function DividendEntryForm({ positions, onSuccess }: DividendEntryFormPro
     setIsSubmitting(true);
 
     try {
+      // Check for duplicate dividend record
+      const checkRes = await fetch(`/api/dividends-by-ticker?userId=${CURRENT_USER_ID}&ticker=${encodeURIComponent(formData.ticker)}`);
+      const checkResult = await checkRes.json();
+      
+      if (checkResult.data && checkResult.data.length > 0) {
+        const duplicate = checkResult.data.find((d: any) => d.ex_dividend_date === formData.ex_dividend_date);
+        if (duplicate) {
+          setError(`A dividend record for ${formData.ticker} with ex-dividend date ${formData.ex_dividend_date} already exists.`);
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       await createDividend(CURRENT_USER_ID, {
         ticker: formData.ticker.toUpperCase(),
         ex_dividend_date: formData.ex_dividend_date,

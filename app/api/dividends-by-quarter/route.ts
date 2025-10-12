@@ -26,14 +26,19 @@ export async function GET(request: Request) {
       const yearNum = parseInt(year);
       const quarterNum = parseInt(quarter);
 
+      // Calculate start and end dates for the quarter
+      const startMonth = (quarterNum - 1) * 3 + 1;
+      const endMonth = quarterNum * 3 + 1;
+      const startDate = `${yearNum}-${String(startMonth).padStart(2, '0')}-01`;
+      const endDate = quarterNum === 4 ? `${yearNum + 1}-01-01` : `${yearNum}-${String(endMonth).padStart(2, '0')}-01`;
+
       const { data, error, count } = await supabase
         .from('dividends')
         .select('*', { count: 'exact' })
         .eq('user_id', userId)
-        .eq('year', yearNum)
-        .gte('payment_date', `${yearNum}-${(quarterNum - 1) * 3 + 1}-01`)
-        .lt('payment_date', `${yearNum}-${quarterNum * 3 + 1}-01`)
-        .order('payment_date', { ascending: false })
+        .gte('ex_dividend_date', startDate)
+        .lt('ex_dividend_date', endDate)
+        .order('ex_dividend_date', { ascending: false })
         .range(from, to);
 
       if (error) throw error;

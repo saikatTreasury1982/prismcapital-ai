@@ -80,7 +80,7 @@ export function ByQuarterView() {
     );
   }
 
-  if (summaries.length === 0) {
+  if (!summaries || summaries.length === 0) {
     return (
       <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20">
         <p className="text-blue-200 text-center">No dividends found. Start by adding some dividend entries!</p>
