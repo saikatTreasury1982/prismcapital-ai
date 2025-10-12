@@ -1,0 +1,198 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
+import { DividendSummaryByTicker, Dividend } from '../../lib/types/dividend';
+import { DividendDetailModal } from './DividendDetailModal';
+import { CURRENT_USER_ID } from '../../lib/auth';
+
+export function ByTickerView() {
+  const [summaries, setSummaries] = useState<DividendSummaryByTicker[]>([]);
+  const [expandedTicker, setExpandedTicker] = useState<string | null>(null);
+  const [tickerDividends, setTickerDividends] = useState<Record<string, Dividend[]>>({});
+  const [currentPage, setCurrentPage] = useState<Record<string, number>>({});
+  const [totalPages, setTotalPages] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(true);
+  const [selectedDividend, setSelectedDividend] = useState<Dividend | null>(null);
+  const [hasPosition, setHasPosition] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const fetchSummaries = async () => {
+      try {
+        const res = await fetch(`/api/dividends-by-ticker?userId=${CURRENT_USER_ID}`);
+        const result = await res.json();
+        setSummaries(result.data);
+
+        // Check position for each ticker
+        const positions: Record<string, boolean> = {};
+        for (const summary of result.data) {
+          const posRes = await fetch(`/api/hasOpenPosition?ticker=${encodeURIComponent(summary.ticker)}&userId=${CURRENT_USER_ID}`);
+          const posData = await posRes.json();
+          positions[summary.ticker] = posData.hasPosition;
+        }
+        setHasPosition(positions);
+      } catch (error) {
+        console.error('Error fetching ticker summaries:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSummaries();
+  }, []);
+
+  const handleTickerClick = async (ticker: string) => {
+    if (expandedTicker === ticker) {
+      setExpandedTicker(null);
+      return;
+    }
+
+    setExpandedTicker(ticker);
+
+    if (!tickerDividends[ticker]) {
+      try {
+        const page = currentPage[ticker] || 1;
+        const res = await fetch(`/api/dividends-by-ticker?userId=${CURRENT_USER_ID}&ticker=${encodeURIComponent(ticker)}&page=${page}&pageSize=5`);
+        const result = await res.json();
+        const { data, total } = result;
+        setTickerDividends(prev => ({ ...prev, [ticker]: data }));
+        setTotalPages(prev => ({ ...prev, [ticker]: Math.ceil(total / 5) }));
+        setCurrentPage(prev => ({ ...prev, [ticker]: 1 }));
+      } catch (error) {
+        console.error('Error fetching dividends for ticker:', error);
+      }
+    }
+  };
+
+  const handlePageChange = async (ticker: string, newPage: number) => {
+    try {
+      const res = await fetch(`/api/dividends-by-ticker?userId=${CURRENT_USER_ID}&ticker=${encodeURIComponent(ticker)}&page=${newPage}&pageSize=5`);
+      const result = await res.json();
+      const { data } = result;
+      setTickerDividends(prev => ({ ...prev, [ticker]: data }));
+      setCurrentPage(prev => ({ ...prev, [ticker]: newPage }));
+    } catch (error) {
+      console.error('Error fetching page:', error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20">
+        <p className="text-blue-200 text-center">Loading...</p>
+      </div>
+    );
+  }
+
+  if (summaries.length === 0) {
+    return (
+      <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20">
+        <p className="text-blue-200 text-center">No dividends found. Start by adding some dividend entries!</p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-max">
+        {summaries.map((summary) => (
+          <div
+            key={summary.ticker}
+            className="backdrop-blur-xl bg-white/10 rounded-2xl border border-white/20 overflow-hidden flex flex-col h-fit"
+          >
+            <button
+              onClick={() => handleTickerClick(summary.ticker)}
+              className="w-full p-4 hover:bg-white/5 transition-colors text-left"
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold text-white mb-1">{summary.ticker}</h3>
+                </div>
+                {expandedTicker === summary.ticker ? (
+                  <ChevronUp className="w-5 h-5 text-white flex-shrink-0 ml-2" />
+                ) : (
+                  <ChevronDown className="w-5 h-5 text-white flex-shrink-0 ml-2" />
+                )}
+              </div>
+
+              <span
+                className={`inline-block px-2 py-1 rounded-full text-xs font-semibold mb-3 ${
+                  hasPosition[summary.ticker]
+                    ? 'bg-green-600 text-white'
+                    : 'bg-yellow-600 text-white'
+                }`}
+              >
+                {hasPosition[summary.ticker] ? 'Open Position' : 'No Position'}
+              </span>
+
+              <div className="space-y-1 text-sm">
+                <div className="text-emerald-300 font-bold text-lg">
+                  ${summary.total_dividends_received.toFixed(2)}
+                </div>
+                <div className="text-blue-300">
+                  {summary.total_dividend_payments} payments
+                </div>
+                <div className="text-purple-300">
+                  Avg: ${summary.avg_dividend_per_share.toFixed(4)}/share
+                </div>
+                <div className="text-blue-200 text-xs">
+                  Latest: {new Date(summary.latest_dividend_date).toLocaleDateString()}
+                </div>
+              </div>
+            </button>
+
+            {expandedTicker === summary.ticker && tickerDividends[summary.ticker] && (
+              <div className="border-t border-white/20 p-4 bg-white/5">
+                <div className="space-y-3">
+                  {tickerDividends[summary.ticker].map((dividend) => (
+                    <button
+                      key={dividend.dividend_id}
+                      onClick={() => setSelectedDividend(dividend)}
+                      className="w-full p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-colors text-left"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-blue-300 text-sm">
+                          {new Date(dividend.payment_date).toLocaleDateString()}
+                        </span>
+                        <span className="text-emerald-300 font-bold">
+                          ${dividend.total_dividend_amount.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="text-white text-sm">
+                        ${dividend.dividend_per_share.toFixed(4)}/share × {dividend.shares_owned.toLocaleString()} shares
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                {totalPages[summary.ticker] > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-4">
+                    <button
+                      onClick={() => handlePageChange(summary.ticker, (currentPage[summary.ticker] || 1) - 1)}
+                      disabled={(currentPage[summary.ticker] || 1) === 1}
+                      className="px-4 py-2 bg-white/10 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/20 transition-colors"
+                    >
+                      Previous
+                    </button>
+                    <span className="text-white">
+                      Page {currentPage[summary.ticker] || 1} of {totalPages[summary.ticker]}
+                    </span>
+                    <button
+                      onClick={() => handlePageChange(summary.ticker, (currentPage[summary.ticker] || 1) + 1)}
+                      disabled={(currentPage[summary.ticker] || 1) >= totalPages[summary.ticker]}
+                      className="px-4 py-2 bg-white/10 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/20 transition-colors"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <DividendDetailModal dividend={selectedDividend} onClose={() => setSelectedDividend(null)} />
+    </>
+  );
+}
