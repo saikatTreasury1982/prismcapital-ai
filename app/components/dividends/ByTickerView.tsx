@@ -1,12 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { deleteDividend } from '../../services/dividendServiceClient';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { DividendSummaryByTicker, Dividend } from '../../lib/types/dividend';
 import { DividendDetailModal } from './DividendDetailModal';
 import { CURRENT_USER_ID } from '../../lib/auth';
 
-export function ByTickerView() {
+interface ByTickerViewProps {
+  onEdit?: (dividend: Dividend) => void;
+  onDelete?: () => void;
+}
+
+export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
   const [summaries, setSummaries] = useState<DividendSummaryByTicker[]>([]);
   const [expandedTicker, setExpandedTicker] = useState<string | null>(null);
   const [tickerDividends, setTickerDividends] = useState<Record<string, Dividend[]>>({});
@@ -152,7 +158,10 @@ export function ByTickerView() {
                     >
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-blue-300 text-sm">
-                          {new Date(dividend.payment_date).toLocaleDateString()}
+                          {dividend.payment_date 
+                            ? new Date(dividend.payment_date).toLocaleDateString()
+                            : 'Not set'
+                          }
                         </span>
                         <span className="text-emerald-300 font-bold">
                           ${dividend.total_dividend_amount.toFixed(2)}
@@ -192,7 +201,23 @@ export function ByTickerView() {
         ))}
       </div>
 
-      <DividendDetailModal dividend={selectedDividend} onClose={() => setSelectedDividend(null)} />
+      <DividendDetailModal 
+        dividend={selectedDividend} 
+        onClose={() => setSelectedDividend(null)}
+        onEdit={(dividend) => {
+          if (onEdit) {
+            onEdit(dividend);
+          }
+          setSelectedDividend(null);
+        }}
+        onDelete={async (dividendId) => {
+          await deleteDividend(dividendId);
+          setSelectedDividend(null);
+          if (onDelete) {
+            onDelete();
+          }
+        }}
+      />
     </>
   );
 }

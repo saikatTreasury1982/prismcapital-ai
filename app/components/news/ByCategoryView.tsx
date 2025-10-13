@@ -1,12 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { deleteNews } from '../../services/newsServiceClient';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { NewsSummaryByType, NewsListItem } from '../../lib/types/newsViews';
 import { NewsDetailModal } from './NewsDetailModal';
 import { CURRENT_USER_ID } from '../../lib/auth';
 
-export function ByCategoryView() {
+interface ByCategoryViewProps {
+  onEdit?: (news: NewsListItem) => void;
+  onDelete?: () => void;
+}
+
+export function ByCategoryView({ onEdit, onDelete }: ByCategoryViewProps) {
   const [summaries, setSummaries] = useState<NewsSummaryByType[]>([]);
   const [expandedType, setExpandedType] = useState<string | null>(null);
   const [typeNews, setTypeNews] = useState<Record<string, NewsListItem[]>>({});
@@ -218,7 +224,23 @@ export function ByCategoryView() {
         ))}
       </div>
 
-      <NewsDetailModal news={selectedNews} onClose={() => setSelectedNews(null)} />
+      <NewsDetailModal 
+        news={selectedNews} 
+        onClose={() => setSelectedNews(null)}
+        onEdit={(news) => {
+          if (onEdit) {
+            onEdit(news);
+          }
+          setSelectedNews(null);
+        }}
+        onDelete={async (newsId) => {
+          await deleteNews(newsId);
+          setSelectedNews(null);
+          if (onDelete) {
+            onDelete();
+          }
+        }}
+      />
     </>
   );
 }

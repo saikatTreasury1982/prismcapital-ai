@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Plus, List, Calendar, TrendingUp } from 'lucide-react';
-import { PositionForDividend } from '../../lib/types/dividend';
+import { PositionForDividend, Dividend } from '../../lib/types/dividend';
 import { DividendEntryForm } from './DividendEntryForm';
 import { ByTickerView } from './ByTickerView';
 import { ByQuarterView } from './ByQuarterView';
@@ -14,10 +14,26 @@ interface DividendsClientWrapperProps {
 
 export function DividendsClientWrapper({ positions }: DividendsClientWrapperProps) {
   const [activeTab, setActiveTab] = useState<'entry' | 'ticker' | 'quarter' | 'year'>('entry');
+  const [editingDividend, setEditingDividend] = useState<Dividend | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const handleSuccess = () => {
-    // Switch to By Ticker tab to see the saved dividend
+    setEditingDividend(null);
+    setRefreshKey(prev => prev + 1);
     setActiveTab('ticker');
+  };
+
+  const handleEdit = (dividend: Dividend) => {
+    setEditingDividend(dividend);
+    setActiveTab('entry');
+  };
+
+  const handleDelete = () => {
+    setRefreshKey(prev => prev + 1);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingDividend(null);
   };
 
   return (
@@ -27,7 +43,10 @@ export function DividendsClientWrapper({ positions }: DividendsClientWrapperProp
         <div className="backdrop-blur-xl bg-white/5 rounded-2xl p-2 border border-white/10 inline-flex gap-2 flex-wrap">
           <button
             type="button"
-            onClick={() => setActiveTab('entry')}
+            onClick={() => {
+              setActiveTab('entry');
+              setEditingDividend(null);
+            }}
             className={`px-6 py-3 rounded-xl flex items-center gap-2 transition-all ${
               activeTab === 'entry' 
                 ? 'funding-emerald-gradient text-white shadow-lg' 
@@ -82,14 +101,34 @@ export function DividendsClientWrapper({ positions }: DividendsClientWrapperProp
           <DividendEntryForm 
             positions={positions}
             onSuccess={handleSuccess}
+            editingDividend={editingDividend}
+            onCancelEdit={handleCancelEdit}
           />
         )}
 
-        {activeTab === 'ticker' && <ByTickerView />}
+        {activeTab === 'ticker' && (
+          <ByTickerView 
+            key={refreshKey}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+        )}
 
-        {activeTab === 'quarter' && <ByQuarterView />}
+        {activeTab === 'quarter' && (
+          <ByQuarterView 
+            key={refreshKey}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+        )}
 
-        {activeTab === 'year' && <ByYearView />}
+        {activeTab === 'year' && (
+          <ByYearView 
+            key={refreshKey}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+        )}
       </div>
     </div>
   );

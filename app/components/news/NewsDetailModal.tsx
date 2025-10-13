@@ -1,14 +1,20 @@
 'use client';
 
-import { X } from 'lucide-react';
+import { X, Edit2, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 import { NewsListItem } from '../../lib/types/newsViews';
 
 interface NewsDetailModalProps {
   news: NewsListItem | null;
   onClose: () => void;
+  onEdit?: (news: NewsListItem) => void;
+  onDelete?: (newsId: string) => void;
 }
 
-export function NewsDetailModal({ news, onClose }: NewsDetailModalProps) {
+export function NewsDetailModal({ news, onClose, onEdit, onDelete }: NewsDetailModalProps) {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   if (!news) return null;
 
   const getNewsTypeIcon = (typeCode: string) => {
@@ -25,7 +31,7 @@ export function NewsDetailModal({ news, onClose }: NewsDetailModalProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto backdrop-blur-xl bg-white/10 rounded-3xl border border-white/20">
         {/* Header */}
-        <div className="sticky top-0 backdrop-blur-xl bg-white/10 border-b border-white/20 p-6 flex items-start justify-between">
+        <div className="sticky top-0 backdrop-blur-xl bg-white/10 border-b border-white/20 p-6 flex items-start justify-between rounded-t-3xl">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
               <span className="text-2xl">{getNewsTypeIcon(news.news_type.type_code)}</span>
@@ -118,6 +124,70 @@ export function NewsDetailModal({ news, onClose }: NewsDetailModalProps) {
                     <span className="text-emerald-300">Notes:</span> {news.alert_notes}
                   </p>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons - Floating Bottom Right */}
+          <div className="fixed bottom-6 right-6 flex gap-3">
+            {onEdit && (
+              <button
+                onClick={() => {
+                  onEdit(news);
+                  onClose();
+                }}
+                className="p-4 bg-white/10 hover:bg-white/20 backdrop-blur-xl text-blue-300 rounded-full border border-white/20 hover:border-blue-400/50 transition-all shadow-lg"
+                title="Edit"
+              >
+                <Edit2 className="w-5 h-5" />
+              </button>
+            )}
+            {onDelete && (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="p-4 bg-white/10 hover:bg-white/20 backdrop-blur-xl text-rose-300 rounded-full border border-white/20 hover:border-rose-400/50 transition-all shadow-lg"
+                title="Delete"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+            )}
+          </div>
+
+          {/* Delete Confirmation Dialog */}
+          {showDeleteConfirm && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70">
+              <div className="bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-rose-500/30">
+                <h3 className="text-xl font-bold text-white mb-3">Delete News Entry?</h3>
+                <p className="text-blue-200 mb-6">
+                  Are you sure you want to delete this news entry for <strong>{news.ticker}</strong>? This action cannot be undone.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    disabled={isDeleting}
+                    className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-3 px-4 rounded-xl font-semibold transition-colors disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setIsDeleting(true);
+                      try {
+                        if (onDelete) {
+                          await onDelete(news.news_id);
+                        }
+                        onClose();
+                      } catch (err) {
+                        console.error('Delete failed:', err);
+                        setIsDeleting(false);
+                      }
+                    }}
+                    disabled={isDeleting}
+                    className="flex-1 bg-rose-600 hover:bg-rose-700 text-white py-3 px-4 rounded-xl font-semibold transition-colors disabled:opacity-50"
+                  >
+                    {isDeleting ? 'Deleting...' : 'Delete'}
+                  </button>
+                </div>
               </div>
             </div>
           )}

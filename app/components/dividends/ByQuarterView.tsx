@@ -1,12 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { deleteDividend } from '../../services/dividendServiceClient';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { DividendSummaryByQuarter, Dividend } from '../../lib/types/dividend';
 import { DividendDetailModal } from './DividendDetailModal';
 import { CURRENT_USER_ID } from '../../lib/auth';
 
-export function ByQuarterView() {
+interface ByQuarterViewProps {
+  onEdit?: (dividend: Dividend) => void;
+  onDelete?: () => void;
+}
+
+export function ByQuarterView({ onEdit, onDelete }: ByQuarterViewProps) {
   const [summaries, setSummaries] = useState<DividendSummaryByQuarter[]>([]);
   const [expandedQuarter, setExpandedQuarter] = useState<string | null>(null);
   const [quarterDividends, setQuarterDividends] = useState<Record<string, Dividend[]>>({});
@@ -146,7 +152,10 @@ export function ByQuarterView() {
                           </span>
                         </div>
                         <div className="text-blue-300 text-sm">
-                          {new Date(dividend.payment_date).toLocaleDateString()}
+                          {dividend.payment_date 
+                            ? new Date(dividend.payment_date).toLocaleDateString()
+                            : 'Not set'
+                          }
                         </div>
                       </button>
                     ))}
@@ -180,7 +189,23 @@ export function ByQuarterView() {
         })}
       </div>
 
-      <DividendDetailModal dividend={selectedDividend} onClose={() => setSelectedDividend(null)} />
+      <DividendDetailModal 
+        dividend={selectedDividend} 
+        onClose={() => setSelectedDividend(null)}
+        onEdit={(dividend) => {
+          if (onEdit) {
+            onEdit(dividend);
+          }
+          setSelectedDividend(null);
+        }}
+        onDelete={async (dividendId) => {
+          await deleteDividend(dividendId);
+          setSelectedDividend(null);
+          if (onDelete) {
+            onDelete();
+          }
+        }}
+      />
     </>
   );
 }

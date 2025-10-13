@@ -1,12 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { deleteNews } from '../../services/newsServiceClient';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { NewsSummaryByTicker, NewsListItem } from '../../lib/types/newsViews';
 import { NewsDetailModal } from './NewsDetailModal';
 import { CURRENT_USER_ID } from '../../lib/auth';
 
-export function ByTickerView() {
+interface ByTickerViewProps {
+  onEdit?: (news: NewsListItem) => void;
+  onDelete?: () => void;
+}
+
+export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
   const [summaries, setSummaries] = useState<NewsSummaryByTicker[]>([]);
   const [expandedTicker, setExpandedTicker] = useState<string | null>(null);
   const [tickerNews, setTickerNews] = useState<Record<string, NewsListItem[]>>({});
@@ -214,7 +220,23 @@ export function ByTickerView() {
         ))}
       </div>
 
-      <NewsDetailModal news={selectedNews} onClose={() => setSelectedNews(null)} />
+      <NewsDetailModal 
+        news={selectedNews} 
+        onClose={() => setSelectedNews(null)}
+        onEdit={(news) => {
+          if (onEdit) {
+            onEdit(news);
+          }
+          setSelectedNews(null);
+        }}
+        onDelete={async (newsId) => {
+          await deleteNews(newsId);
+          setSelectedNews(null);
+          if (onDelete) {
+            onDelete();
+          }
+        }}
+      />
     </>
   );
 }

@@ -4,15 +4,18 @@ import { useEffect, useState } from 'react';
 import { useDebounce } from '../../lib/hooks/useDebounce';
 import { Plus } from 'lucide-react';
 import { NewsType } from '../../lib/types/news';
-import { createNews, hasOpenPositionClient } from '../../services/newsServiceClient';
+import { NewsListItem } from '../../lib/types/newsViews';
+import { createNews, updateNews } from '../../services/newsServiceClient';
 import { CURRENT_USER_ID } from '../../lib/auth';
 
 interface NewsEntryFormProps {
   newsTypes: NewsType[];
   onSuccess: () => void;
+  editingNews?: NewsListItem | null;
+  onCancelEdit?: () => void;
 }
 
-export function NewsEntryForm({ newsTypes, onSuccess }: NewsEntryFormProps) {
+export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit }: NewsEntryFormProps) {
 
   const [hasPosition, setHasPosition] = useState<boolean | null>(null);
   const [tickerError, setTickerError] = useState<string | null>(null);
@@ -61,7 +64,9 @@ export function NewsEntryForm({ newsTypes, onSuccess }: NewsEntryFormProps) {
     try {
       const tagsArray = formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(t => t) : [];
       
-      await createNews(CURRENT_USER_ID, {
+      if (editingNews) {
+        // Update existing news
+        await updateNews(editingNews.news_id, {
         ticker: formData.ticker.toUpperCase(),
         exchange_id: formData.exchange_id,
         company_name: formData.company_name || undefined,
@@ -74,6 +79,22 @@ export function NewsEntryForm({ newsTypes, onSuccess }: NewsEntryFormProps) {
         news_url: formData.news_url || undefined,
         tags: tagsArray.length > 0 ? tagsArray : undefined
       });
+      } else {
+        // Create new news
+        await createNews(CURRENT_USER_ID, {
+          ticker: formData.ticker.toUpperCase(),
+          exchange_id: formData.exchange_id,
+          company_name: formData.company_name || undefined,
+          news_type_id: formData.news_type_id,
+          news_description: formData.news_description,
+          news_date: formData.news_date,
+          alert_date: showAlert && formData.alert_date ? formData.alert_date : undefined,
+          alert_notes: showAlert && formData.alert_notes ? formData.alert_notes : undefined,
+          news_source: formData.news_source || undefined,
+          news_url: formData.news_url || undefined,
+          tags: tagsArray.length > 0 ? tagsArray : undefined
+        });
+      }
 
       // Reset form
       setFormData({
@@ -105,6 +126,41 @@ export function NewsEntryForm({ newsTypes, onSuccess }: NewsEntryFormProps) {
       news_date: new Date().toISOString().split('T')[0],
     }));
   }, []);
+
+  // Pre-fill form when editing
+  // Pre-fill form when editing - fetch full news record
+  useEffect(() => {
+    if (editingNews) {
+      const fetchFullNewsRecord = async () => {
+        try {
+          const response = await fetch(`/api/news?newsId=${editingNews.news_id}`);
+          const result = await response.json();
+          
+          if (result.data) {
+            const fullNews = result.data;
+            setFormData({
+              ticker: fullNews.ticker,
+              exchange_id: fullNews.exchange_id,
+              company_name: fullNews.company_name || '',
+              news_type_id: fullNews.news_type_id,
+              news_description: fullNews.news_description,
+              news_date: fullNews.news_date,
+              alert_date: fullNews.alert_date || '',
+              alert_notes: fullNews.alert_notes || '',
+              news_source: fullNews.news_source || '',
+              news_url: fullNews.news_url || '',
+              tags: fullNews.tags ? fullNews.tags.join(', ') : '',
+            });
+            setShowAlert(!!fullNews.alert_date);
+          }
+        } catch (err) {
+          console.error('Failed to fetch full news record:', err);
+        }
+      };
+      
+      fetchFullNewsRecord();
+    }
+  }, [editingNews]);
 
   // Fetch ticker name and position when user stops typing
   useEffect(() => {
@@ -160,7 +216,7 @@ export function NewsEntryForm({ newsTypes, onSuccess }: NewsEntryFormProps) {
     <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-6 sm:p-8 border border-white/20">
       <h2 className="text-xl sm:text-2xl font-bold text-white mb-6 flex items-center gap-3">
         <Plus className="w-6 h-6" />
-        Quick News Entry
+        {editingNews ? 'Edit News Entry' : 'Quick News Entry'}
       </h2>
 
       {error && (
@@ -335,13 +391,24 @@ export function NewsEntryForm({ newsTypes, onSuccess }: NewsEntryFormProps) {
         )}
       </div>
 
-      <button
-        onClick={handleSubmit}
-        disabled={isSubmitting || !formData.ticker || !formData.news_description}
-        className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-4 rounded-xl font-bold text-lg hover:shadow-lg hover:shadow-blue-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {isSubmitting ? 'Saving...' : 'Save News Entry'}
-      </button>
+      <div className="flex gap-3">
+          <button
+            onClick={handleSubmit}
+            disabled={isSubmitting || !formData.ticker || !formData.news_description}
+            className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white py-4 rounded-xl font-bold text-lg hover:shadow-lg hover:shadow-blue-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSubmitting ? 'Saving...' : (editingNews ? 'Update News Entry' : 'Save News Entry')}
+          </button>
+          {editingNews && onCancelEdit && (
+            <button
+              onClick={onCancelEdit}
+              disabled={isSubmitting}
+              className="px-6 bg-slate-600 hover:bg-slate-700 text-white py-4 rounded-xl font-bold text-lg transition-all disabled:opacity-50"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
 
       <div className="mt-3 text-center text-xs text-blue-300">
         * Required fields

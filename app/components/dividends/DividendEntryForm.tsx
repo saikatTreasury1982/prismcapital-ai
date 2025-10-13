@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { Plus, Sparkles } from 'lucide-react';
-import { PositionForDividend } from '../../lib/types/dividend';
-import { createDividend } from '../../services/dividendServiceClient';
+import { PositionForDividend, Dividend } from '../../lib/types/dividend';
+import { createDividend, updateDividend } from '../../services/dividendServiceClient';
 import { CURRENT_USER_ID } from '../../lib/auth';
 
 interface DividendEntryFormProps {
   positions: PositionForDividend[];
   onSuccess: () => void;
+  editingDividend?: Dividend | null;
+  onCancelEdit?: () => void;
 }
 
 interface PositionCardProps {
@@ -53,7 +55,7 @@ function PositionCard({ position, onAutoFill, isAutoFilling }: PositionCardProps
   );
 }
 
-export function DividendEntryForm({ positions, onSuccess }: DividendEntryFormProps) {
+export function DividendEntryForm({ positions, onSuccess, editingDividend, onCancelEdit }: DividendEntryFormProps) {
   const [formData, setFormData] = useState({
     ticker: '',
     ex_dividend_date: '',
@@ -83,6 +85,37 @@ export function DividendEntryForm({ positions, onSuccess }: DividendEntryFormPro
       }));
     }
   }, [formData.dividend_per_share, formData.shares_owned]);
+
+  // Pre-fill form when editing - fetch full dividend record
+  useEffect(() => {
+    if (editingDividend) {
+      const fetchFullDividendRecord = async () => {
+        try {
+          const response = await fetch(`/api/dividends?dividendId=${editingDividend.dividend_id}`);
+          const result = await response.json();
+          
+          if (result.data) {
+            const fullDividend = result.data;
+            setFormData({
+              ticker: fullDividend.ticker,
+              ex_dividend_date: fullDividend.ex_dividend_date,
+              payment_date: fullDividend.payment_date || '',
+              dividend_per_share: fullDividend.dividend_per_share.toString(),
+              shares_owned: fullDividend.shares_owned.toString(),
+              total_dividend_amount: fullDividend.total_dividend_amount?.toString() || '',
+              dividend_yield: fullDividend.dividend_yield?.toString() || '',
+              notes: fullDividend.notes || '',
+              Currency: fullDividend.Currency || 'USD'
+            });
+          }
+        } catch (err) {
+          console.error('Failed to fetch full dividend record:', err);
+        }
+      };
+      
+      fetchFullDividendRecord();
+    }
+  }, [editingDividend]);
 
   const handleAutoFill = async (position: PositionForDividend) => {
     setIsAutoFilling(true);
@@ -170,29 +203,44 @@ export function DividendEntryForm({ positions, onSuccess }: DividendEntryFormPro
     setIsSubmitting(true);
 
     try {
-      // Check for duplicate dividend record
-      const checkRes = await fetch(`/api/dividends-by-ticker?userId=${CURRENT_USER_ID}&ticker=${encodeURIComponent(formData.ticker)}`);
-      const checkResult = await checkRes.json();
-      
-      if (checkResult.data && checkResult.data.length > 0) {
-        const duplicate = checkResult.data.find((d: any) => d.ex_dividend_date === formData.ex_dividend_date);
-        if (duplicate) {
-          setError(`A dividend record for ${formData.ticker} with ex-dividend date ${formData.ex_dividend_date} already exists.`);
-          setIsSubmitting(false);
-          return;
+      if (editingDividend) {
+        // UPDATE MODE: Update existing dividend
+        await updateDividend(editingDividend.dividend_id, {
+          ticker: formData.ticker.toUpperCase(),
+          ex_dividend_date: formData.ex_dividend_date,
+          payment_date: formData.payment_date || undefined,
+          dividend_per_share: parseFloat(formData.dividend_per_share),
+          shares_owned: parseFloat(formData.shares_owned),
+          dividend_yield: formData.dividend_yield ? parseFloat(formData.dividend_yield) : undefined,
+          Currency: formData.Currency || undefined,
+          notes: formData.notes || undefined
+        });
+      } else {
+        // CREATE MODE: Check for duplicates first
+        const checkRes = await fetch(`/api/dividends-by-ticker?userId=${CURRENT_USER_ID}&ticker=${encodeURIComponent(formData.ticker)}`);
+        const checkResult = await checkRes.json();
+        
+        if (checkResult.data && checkResult.data.length > 0) {
+          const duplicate = checkResult.data.find((d: any) => d.ex_dividend_date === formData.ex_dividend_date);
+          if (duplicate) {
+            setError(`A dividend record for ${formData.ticker} with ex-dividend date ${formData.ex_dividend_date} already exists.`);
+            setIsSubmitting(false);
+            return;
+          }
         }
-      }
 
-      await createDividend(CURRENT_USER_ID, {
-        ticker: formData.ticker.toUpperCase(),
-        ex_dividend_date: formData.ex_dividend_date,
-        payment_date: formData.payment_date || undefined,
-        dividend_per_share: parseFloat(formData.dividend_per_share),
-        shares_owned: parseFloat(formData.shares_owned),
-        dividend_yield: formData.dividend_yield ? parseFloat(formData.dividend_yield) : undefined,
-        Currency: formData.Currency || undefined,
-        notes: formData.notes || undefined
-      });
+        // Create new dividend
+        await createDividend(CURRENT_USER_ID, {
+          ticker: formData.ticker.toUpperCase(),
+          ex_dividend_date: formData.ex_dividend_date,
+          payment_date: formData.payment_date || undefined,
+          dividend_per_share: parseFloat(formData.dividend_per_share),
+          shares_owned: parseFloat(formData.shares_owned),
+          dividend_yield: formData.dividend_yield ? parseFloat(formData.dividend_yield) : undefined,
+          Currency: formData.Currency || undefined,
+          notes: formData.notes || undefined
+        });
+      }
 
       // Reset form
       setFormData({
@@ -241,7 +289,7 @@ export function DividendEntryForm({ positions, onSuccess }: DividendEntryFormPro
       <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-6 sm:p-8 border border-white/20">
         <h2 className="text-xl sm:text-2xl font-bold text-white mb-6 flex items-center gap-3">
           <Plus className="w-6 h-6" />
-          Quick Dividend Entry
+          {editingDividend ? 'Edit Dividend Entry' : 'Quick Dividend Entry'}
         </h2>
 
         {error && (
@@ -368,13 +416,24 @@ export function DividendEntryForm({ positions, onSuccess }: DividendEntryFormPro
           </div>
         </div>
 
-        <button
-          onClick={handleSubmit}
-          disabled={isSubmitting}
-          className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-4 rounded-xl font-bold text-lg hover:shadow-lg hover:shadow-blue-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isSubmitting ? 'Saving...' : 'Save Dividend Entry'}
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white py-4 rounded-xl font-bold text-lg hover:shadow-lg hover:shadow-blue-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSubmitting ? 'Saving...' : (editingDividend ? 'Update Dividend Entry' : 'Save Dividend Entry')}
+          </button>
+          {editingDividend && onCancelEdit && (
+            <button
+              onClick={onCancelEdit}
+              disabled={isSubmitting}
+              className="px-6 bg-slate-600 hover:bg-slate-700 text-white py-4 rounded-xl font-bold text-lg transition-all disabled:opacity-50"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
 
         <div className="mt-3 text-center text-xs text-blue-300">
           * Required fields
