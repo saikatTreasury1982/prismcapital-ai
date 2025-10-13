@@ -17,10 +17,10 @@ export async function GET(request: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
     
-    // Check if user has open position for this ticker
-const { data, error } = await supabase
+    // Check if user has open position for this ticker and get ticker_name
+    const { data, error } = await supabase
       .from('positions')
-      .select('position_id')
+      .select('position_id, ticker_name')
       .eq('user_id', userId)
       .eq('is_active', true)
       .ilike('ticker', ticker)
@@ -31,7 +31,13 @@ const { data, error } = await supabase
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ hasPosition: data.length > 0 });
+    const hasPosition = data.length > 0;
+    const tickerName = hasPosition ? data[0].ticker_name : null;
+
+    return NextResponse.json({ 
+      hasPosition, 
+      tickerName 
+    });
   } catch (e: any) {
     console.error('Unexpected error:', e);
     return NextResponse.json({ error: e.message }, { status: 500 });

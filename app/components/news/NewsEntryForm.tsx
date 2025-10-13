@@ -120,22 +120,28 @@ export function NewsEntryForm({ newsTypes, onSuccess }: NewsEntryFormProps) {
       setTickerError(null);
 
       try {
-        // Fetch ticker name from AlphaVantage
-        const tickerRes = await fetch(`/api/ticker-lookup?ticker=${encodeURIComponent(debouncedTicker)}`);
-        const tickerData = await tickerRes.json();
+        // Step 1: Check positions table first
+        const posRes = await fetch(`/api/hasOpenPosition?ticker=${encodeURIComponent(debouncedTicker)}&userId=${CURRENT_USER_ID}`);
+        const posData = await posRes.json();
+        
+        setHasPosition(posData.hasPosition);
 
-        if (tickerData.error) {
-          setTickerError(tickerData.error);
-          setFormData(prev => ({ ...prev, company_name: '' }));
-          setHasPosition(null);
-        } else if (tickerData.name) {
-          setFormData(prev => ({ ...prev, company_name: tickerData.name }));
+        // Step 2: Use ticker_name from positions if available
+        if (posData.hasPosition && posData.tickerName) {
+          setFormData(prev => ({ ...prev, company_name: posData.tickerName }));
           setTickerError(null);
+        } else {
+          // Step 3: Fallback to AlphaVantage only if ticker not in positions
+          const tickerRes = await fetch(`/api/ticker-lookup?ticker=${encodeURIComponent(debouncedTicker)}`);
+          const tickerData = await tickerRes.json();
 
-          // Fetch position status
-          const posRes = await fetch(`/api/hasOpenPosition?ticker=${encodeURIComponent(debouncedTicker)}&userId=${CURRENT_USER_ID}`);
-          const posData = await posRes.json();
-          setHasPosition(posData.hasPosition);
+          if (tickerData.error) {
+            setTickerError(tickerData.error);
+            setFormData(prev => ({ ...prev, company_name: '' }));
+          } else if (tickerData.name) {
+            setFormData(prev => ({ ...prev, company_name: tickerData.name }));
+            setTickerError(null);
+          }
         }
       } catch (err) {
         console.error('Error fetching ticker data:', err);
