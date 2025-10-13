@@ -3,12 +3,12 @@ export interface Dividend {
   user_id: string;
   ticker: string;
   ex_dividend_date: string;
-  payment_date: string;
+  payment_date: string | null;
   dividend_per_share: number;
   shares_owned: number;
-  total_dividend_amount: number;
+  total_dividend_amount: number; // Generated column
   dividend_yield: number | null;
-  year: number;
+  Currency: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -17,13 +17,12 @@ export interface Dividend {
 export interface CreateDividendInput {
   ticker: string;
   ex_dividend_date: string;
-  payment_date: string;
+  payment_date?: string;
   dividend_per_share: number;
   shares_owned: number;
-  total_dividend_amount: number;
   dividend_yield?: number;
-  year: number;
   notes?: string;
+  Currency?: string;
 }
 
 export interface DividendSummaryByTicker {

@@ -23,12 +23,12 @@ export async function POST(request: Request) {
         user_id: userId,
         ticker: dividendData.ticker,
         ex_dividend_date: dividendData.ex_dividend_date,
-        payment_date: dividendData.payment_date,
+        payment_date: dividendData.payment_date || null,
         dividend_per_share: dividendData.dividend_per_share,
         shares_owned: dividendData.shares_owned,
-        total_dividend_amount: dividendData.total_dividend_amount,
+        // total_dividend_amount is auto-generated, don't insert it
         dividend_yield: dividendData.dividend_yield || null,
-        year: dividendData.year,
+        Currency: dividendData.Currency || null,
         notes: dividendData.notes || null
       })
       .select()

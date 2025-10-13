@@ -60,10 +60,10 @@ export function DividendEntryForm({ positions, onSuccess }: DividendEntryFormPro
     payment_date: '',
     dividend_per_share: '',
     shares_owned: '',
-    total_dividend_amount: '',
+    total_dividend_amount: '', // For display only
     dividend_yield: '',
-    year: new Date().getFullYear(),
-    notes: ''
+    notes: '',
+    Currency: 'USD'
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -84,38 +84,63 @@ export function DividendEntryForm({ positions, onSuccess }: DividendEntryFormPro
     }
   }, [formData.dividend_per_share, formData.shares_owned]);
 
-  // Auto-extract year from ex_dividend_date
-  useEffect(() => {
-    if (formData.ex_dividend_date) {
-      const year = new Date(formData.ex_dividend_date).getFullYear();
-      setFormData(prev => ({ ...prev, year }));
-    }
-  }, [formData.ex_dividend_date]);
-
   const handleAutoFill = async (position: PositionForDividend) => {
     setIsAutoFilling(true);
     setError(null);
 
     try {
-      const res = await fetch(`/api/dividend-autofill?ticker=${encodeURIComponent(position.ticker)}`);
-      const result = await res.json();
+      // Step 1: Fetch data from AlphaVantage
+      const alphaRes = await fetch(`/api/dividend-autofill?ticker=${encodeURIComponent(position.ticker)}`);
+      const alphaResult = await alphaRes.json();
 
-      if (result.error) {
-        setError(result.error);
+      if (alphaResult.error) {
+        setError(alphaResult.error);
+        setIsAutoFilling(false);
         return;
       }
 
-      const { data } = result;
+      const { data: alphaData } = alphaResult;
 
+      // Step 2: If we have an ex-dividend date, fetch exact amount from Yahoo Finance
+      let dividendAmount = '';
+      
+      if (alphaData.exDividendDate) {
+        try {
+          const yahooRes = await fetch(
+            `/api/yahoo-dividend?ticker=${encodeURIComponent(position.ticker)}&exDividendDate=${alphaData.exDividendDate}`
+          );
+          const yahooResult = await yahooRes.json();
+
+          if (yahooResult.amount) {
+            dividendAmount = yahooResult.amount.toString();
+          } else {
+            // Fallback: Use AlphaVantage annual dividend divided by 4 (assuming quarterly)
+            if (alphaData.dividendPerShare) {
+              const annual = parseFloat(alphaData.dividendPerShare);
+              dividendAmount = (annual / 4).toFixed(4);
+            }
+          }
+        } catch (yahooErr) {
+          console.error('Yahoo Finance fetch failed, using AlphaVantage fallback:', yahooErr);
+          // Fallback to AlphaVantage data
+          if (alphaData.dividendPerShare) {
+            const annual = parseFloat(alphaData.dividendPerShare);
+            dividendAmount = (annual / 4).toFixed(4);
+          }
+        }
+      }
+
+      // Step 3: Populate the form
       setFormData(prev => ({
         ...prev,
         ticker: position.ticker,
         shares_owned: position.total_shares.toString(),
-        dividend_per_share: data.dividendPerShare || '',
-        dividend_yield: data.dividendYield || '',
-        ex_dividend_date: data.exDividendDate || '',
-        payment_date: data.dividendDate || ''
+        dividend_per_share: dividendAmount || alphaData.dividendPerShare || '',
+        dividend_yield: alphaData.dividendYield || '',
+        ex_dividend_date: alphaData.exDividendDate || '',
+        payment_date: alphaData.dividendDate || ''
       }));
+
     } catch (err: any) {
       setError(err.message || 'Failed to fetch dividend data');
     } finally {
@@ -124,12 +149,23 @@ export function DividendEntryForm({ positions, onSuccess }: DividendEntryFormPro
   };
 
   const handleSubmit = async () => {
-    if (!formData.ticker || !formData.ex_dividend_date || !formData.payment_date || 
+    if (!formData.ticker || !formData.ex_dividend_date || 
         !formData.dividend_per_share || !formData.shares_owned) {
       setError('Please fill in all required fields');
       return;
     }
 
+    // Validate payment date is after ex-dividend date (if payment date is provided)
+    if (formData.payment_date && formData.ex_dividend_date) {
+      const exDate = new Date(formData.ex_dividend_date);
+      const payDate = new Date(formData.payment_date);
+      
+      if (payDate <= exDate) {
+        setError('Payment date must be later than ex-dividend date');
+        return;
+      }
+    }
+    
     setError(null);
     setIsSubmitting(true);
 
@@ -150,12 +186,11 @@ export function DividendEntryForm({ positions, onSuccess }: DividendEntryFormPro
       await createDividend(CURRENT_USER_ID, {
         ticker: formData.ticker.toUpperCase(),
         ex_dividend_date: formData.ex_dividend_date,
-        payment_date: formData.payment_date,
+        payment_date: formData.payment_date || undefined,
         dividend_per_share: parseFloat(formData.dividend_per_share),
         shares_owned: parseFloat(formData.shares_owned),
-        total_dividend_amount: parseFloat(formData.total_dividend_amount),
         dividend_yield: formData.dividend_yield ? parseFloat(formData.dividend_yield) : undefined,
-        year: formData.year,
+        Currency: formData.Currency || undefined,
         notes: formData.notes || undefined
       });
 
@@ -168,8 +203,8 @@ export function DividendEntryForm({ positions, onSuccess }: DividendEntryFormPro
         shares_owned: '',
         total_dividend_amount: '',
         dividend_yield: '',
-        year: new Date().getFullYear(),
-        notes: ''
+        notes: '',
+        Currency: 'USD'
       });
 
       onSuccess();
@@ -257,7 +292,7 @@ export function DividendEntryForm({ positions, onSuccess }: DividendEntryFormPro
 
           {/* Payment Date */}
           <div>
-            <label className="text-blue-200 text-sm mb-2 block font-medium">Payment Date *</label>
+            <label className="text-blue-200 text-sm mb-2 block font-medium">Payment Date</label>
             <input
               type="date"
               value={formData.payment_date}
@@ -306,13 +341,17 @@ export function DividendEntryForm({ positions, onSuccess }: DividendEntryFormPro
           </div>
 
           {/* Year (auto-extracted) */}
+          {/* Currency */}
+          {/* Currency */}
           <div>
-            <label className="text-blue-200 text-sm mb-2 block font-medium">Year</label>
+            <label className="text-blue-200 text-sm mb-2 block font-medium">Currency</label>
             <input
-              type="number"
-              value={formData.year}
-              readOnly
-              className="w-full funding-input rounded-xl px-4 py-3 bg-white/5 cursor-not-allowed"
+              type="text"
+              value={formData.Currency || 'USD'}
+              onChange={(e) => setFormData({ ...formData, Currency: e.target.value.toUpperCase() })}
+              placeholder="USD"
+              className="w-full funding-input rounded-xl px-4 py-3 uppercase"
+              maxLength={3}
             />
           </div>
 
