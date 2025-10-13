@@ -275,31 +275,31 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
         {/* Transaction Type */}
         <div>
           <label className="text-blue-200 text-sm mb-2 block font-medium">Transaction Type *</label>
-          <div className={`flex gap-4 ${editingTransaction ? 'opacity-50 pointer-events-none' : ''}`}>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="transaction_type"
-                value={1}
-                checked={formData.transaction_type_id === 1}
-                onChange={() => setFormData({ ...formData, transaction_type_id: 1 })}
-                className="w-4 h-4"
-                disabled={!!editingTransaction}
-              />
-              <span className="text-white">Buy</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="transaction_type"
-                value={2}
-                checked={formData.transaction_type_id === 2}
-                onChange={() => setFormData({ ...formData, transaction_type_id: 2 })}
-                className="w-4 h-4"
-                disabled={!!editingTransaction}
-              />
-              <span className="text-white">Sell</span>
-            </label>
+          <div className={`inline-flex rounded-xl overflow-hidden border border-white/20 ${editingTransaction ? 'opacity-50 pointer-events-none' : ''}`}>
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, transaction_type_id: 1 })}
+              disabled={!!editingTransaction}
+              className={`px-6 py-3 font-semibold transition-all ${
+                formData.transaction_type_id === 1
+                  ? 'bg-green-600 text-white'
+                  : 'bg-white/5 text-blue-200 hover:bg-white/10'
+              }`}
+            >
+              Buy
+            </button>
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, transaction_type_id: 2 })}
+              disabled={!!editingTransaction}
+              className={`px-6 py-3 font-semibold transition-all ${
+                formData.transaction_type_id === 2
+                  ? 'bg-rose-600 text-white'
+                  : 'bg-white/5 text-blue-200 hover:bg-white/10'
+              }`}
+            >
+              Sell
+            </button>
           </div>
         </div>
 
