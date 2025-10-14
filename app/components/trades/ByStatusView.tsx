@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, ChevronDown, ChevronUp } from 'lucide-react';
-import { Position, TradeLot, Transaction } from '../../lib/types/transaction';
+import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Tag } from 'lucide-react';
+import { Position, TradeLot, Transaction, AssetClass, AssetType, AssetClassification } from '../../lib/types/transaction';
 import { getPositions } from '../../services/positionServiceClient';
 import { getTradeLots } from '../../services/tradeLotServiceClient';
 import { getTransactions } from '../../services/transactionServiceClient';
 import { CURRENT_USER_ID } from '../../lib/auth';
 import { TransactionDetailModal } from './TransactionDetailModal';
+import { AssignAttributesModal } from './AssignAttributesModal';
 
 interface ByStatusViewProps {
   onEdit?: (transaction: Transaction) => void;
@@ -23,6 +24,9 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
   const [tickerTransactions, setTickerTransactions] = useState<Record<string, Transaction[]>>({});
   const [loading, setLoading] = useState(true);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [selectedPositionForAttributes, setSelectedPositionForAttributes] = useState<Position | null>(null);
+  const [transactionPages, setTransactionPages] = useState<Record<string, number>>({});
+  const transactionPageSize = 5;
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 20;
 
@@ -57,20 +61,22 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
 
     setExpandedTicker(ticker);
 
-    // Fetch lots and transactions for this ticker if not already loaded
-    if (!tickerLots[ticker]) {
-      try {
-        const lots = await getTradeLots(CURRENT_USER_ID, ticker);
-        setTickerLots(prev => ({ ...prev, [ticker]: lots }));
-      } catch (err) {
-        console.error('Failed to fetch trade lots:', err);
-      }
-    }
+    // Reset transaction pagination for this ticker
+    setTransactionPages(prev => ({ ...prev, [ticker]: 1 }));
 
     if (!tickerTransactions[ticker]) {
       try {
-        const transactions = await getTransactions(CURRENT_USER_ID, ticker);
-        setTickerTransactions(prev => ({ ...prev, [ticker]: transactions }));
+        const allTransactions = await getTransactions(CURRENT_USER_ID, ticker);
+        
+        // Find the position's opened_date
+        const position = positions.find(p => p.ticker === ticker);
+        
+        // Filter transactions to only include those on or after opened_date
+        const filteredTransactions = position 
+          ? allTransactions.filter(t => t.transaction_date >= position.opened_date)
+          : allTransactions;
+        
+        setTickerTransactions(prev => ({ ...prev, [ticker]: filteredTransactions }));
       } catch (err) {
         console.error('Failed to fetch transactions:', err);
       }
@@ -232,16 +238,37 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
                           {position.ticker_name && (
                             <span className="text-blue-200 text-sm">{position.ticker_name}</span>
                           )}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent card expansion
+                              setSelectedPositionForAttributes(position);
+                            }}
+                            className="ml-2 w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 flex items-center justify-center transition-all shadow-lg hover:shadow-emerald-500/50"
+                            title="Assign Attributes"
+                          >
+                            <Tag className="w-4 h-4 text-white" />
+                          </button>
                         </div>
-                        
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div className="grid grid-cols-2 md:grid-cols-7 gap-4 text-sm">
                           <div>
                             <p className="text-blue-300">Shares</p>
                             <p className="text-white font-semibold">{position.total_shares.toLocaleString()}</p>
                           </div>
                           <div>
-                            <p className="text-blue-300">Avg Cost</p>
+                            <p className="text-blue-300">Avg Price</p>
                             <p className="text-white font-semibold">${position.average_cost.toFixed(2)}</p>
+                          </div>
+                          <div>
+                            <p className="text-blue-300">Invested Capital</p>
+                            <p className="text-white font-semibold">
+                              ${(position.total_shares * position.average_cost).toFixed(2)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-blue-300">Current Market Price</p>
+                            <p className="text-white font-semibold">
+                              ${position.current_market_price ? position.current_market_price.toFixed(2) : 'N/A'}
+                            </p>
                           </div>
                           <div>
                             <p className="text-blue-300">Current Value</p>
@@ -262,9 +289,14 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
                               ${position.unrealized_pnl ? position.unrealized_pnl.toFixed(2) : '0.00'}
                             </p>
                           </div>
+                          <div>
+                            <p className="text-blue-300">Opened</p>
+                            <p className="text-white font-semibold">
+                              {new Date(position.opened_date).toLocaleDateString()}
+                            </p>
+                          </div>
                         </div>
                       </div>
-
                       <div className="ml-4">
                         {expandedTicker === position.ticker ? (
                           <ChevronUp className="w-6 h-6 text-blue-300" />
@@ -278,126 +310,108 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
                   {/* Expanded Content: Trade Lots and Transactions */}
                   {expandedTicker === position.ticker && (
                     <div className="border-t border-white/20 p-6 space-y-6">
-                      {/* Trade Lots Section */}
-                      <div>
-                        <h4 className="text-lg font-bold text-white mb-4">Trade Lots</h4>
-                        {tickerLots[position.ticker] && tickerLots[position.ticker].length > 0 ? (
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                              <thead>
-                                <tr className="border-b border-white/10">
-                                  <th className="text-left text-blue-300 pb-2">Entry Date</th>
-                                  <th className="text-left text-blue-300 pb-2">Exit Date</th>
-                                  <th className="text-right text-blue-300 pb-2">Qty</th>
-                                  <th className="text-right text-blue-300 pb-2">Entry Price</th>
-                                  <th className="text-right text-blue-300 pb-2">Exit Price</th>
-                                  <th className="text-right text-blue-300 pb-2">P/L</th>
-                                  <th className="text-right text-blue-300 pb-2">P/L %</th>
-                                  <th className="text-center text-blue-300 pb-2">Hold Days</th>
-                                  <th className="text-center text-blue-300 pb-2">Strategy</th>
-                                  <th className="text-center text-blue-300 pb-2">Status</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {tickerLots[position.ticker].map((lot) => (
-                                  <tr key={lot.lot_id} className="border-b border-white/5">
-                                    <td className="py-3 text-white">
-                                      {new Date(lot.entry_date).toLocaleDateString()}
-                                    </td>
-                                    <td className="py-3 text-white">
-                                      {lot.exit_date ? new Date(lot.exit_date).toLocaleDateString() : '-'}
-                                    </td>
-                                    <td className="py-3 text-right text-white">{lot.quantity}</td>
-                                    <td className="py-3 text-right text-white">${lot.entry_price.toFixed(2)}</td>
-                                    <td className="py-3 text-right text-white">
-                                      {lot.exit_price ? `$${lot.exit_price.toFixed(2)}` : '-'}
-                                    </td>
-                                    <td className={`py-3 text-right font-semibold ${
-                                      (lot.realized_pl || 0) >= 0 ? 'text-green-400' : 'text-rose-400'
-                                    }`}>
-                                      {lot.realized_pl ? `$${lot.realized_pl.toFixed(2)}` : '-'}
-                                    </td>
-                                    <td className={`py-3 text-right font-semibold ${
-                                      (lot.realized_pl_percent || 0) >= 0 ? 'text-green-400' : 'text-rose-400'
-                                    }`}>
-                                      {lot.realized_pl_percent ? `${lot.realized_pl_percent.toFixed(2)}%` : '-'}
-                                    </td>
-                                    <td className="py-3 text-center text-white">
-                                      {lot.trade_hold_days || '-'}
-                                    </td>
-                                    <td className="py-3 text-center">
-                                      <span className="px-2 py-1 bg-purple-500/20 text-purple-300 rounded text-xs">
-                                        {getStrategyName(lot.trade_strategy)}
-                                      </span>
-                                    </td>
-                                    <td className="py-3 text-center">
-                                      <span className={`px-2 py-1 border rounded text-xs ${getStatusBadge(lot.lot_status)}`}>
-                                        {lot.lot_status}
-                                      </span>
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        ) : (
-                          <p className="text-blue-200 text-sm">No trade lots found.</p>
-                        )}
-                      </div>
 
                       {/* Transaction History Section */}
                       <div>
                         <h4 className="text-lg font-bold text-white mb-4">Transaction History</h4>
                         {tickerTransactions[position.ticker] && tickerTransactions[position.ticker].length > 0 ? (
-                          <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                              <thead>
-                                <tr className="border-b border-white/10">
-                                  <th className="text-left text-blue-300 pb-2">Date</th>
-                                  <th className="text-center text-blue-300 pb-2">Type</th>
-                                  <th className="text-right text-blue-300 pb-2">Quantity</th>
-                                  <th className="text-right text-blue-300 pb-2">Price</th>
-                                  <th className="text-right text-blue-300 pb-2">Fees</th>
-                                  <th className="text-right text-blue-300 pb-2">Trade Value</th>
-                                  <th className="text-left text-blue-300 pb-2">Notes</th>
-                                  <th className="text-center text-blue-300 pb-2">Actions</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {tickerTransactions[position.ticker].map((transaction) => (
-                                  <tr key={transaction.transaction_id} className="border-b border-white/5">
-                                    <td className="py-3 text-white">
-                                      {new Date(transaction.transaction_date).toLocaleDateString()}
-                                    </td>
-                                    <td className="py-3 text-center">
-                                      <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                                        transaction.transaction_type_id === 1 
-                                          ? 'bg-green-500/20 text-green-300' 
-                                          : 'bg-rose-500/20 text-rose-300'
-                                      }`}>
-                                        {transaction.transaction_type_id === 1 ? 'BUY' : 'SELL'}
-                                      </span>
-                                    </td>
-                                    <td className="py-3 text-right text-white">{transaction.quantity}</td>
-                                    <td className="py-3 text-right text-white">${transaction.price.toFixed(2)}</td>
-                                    <td className="py-3 text-right text-white">${transaction.fees.toFixed(2)}</td>
-                                    <td className="py-3 text-right text-white">${transaction.trade_value.toFixed(2)}</td>
-                                    <td className="py-3 text-white text-sm truncate max-w-[150px]">
-                                      {transaction.notes || '-'}
-                                    </td>
-                                    <td className="py-3 text-center">
-                                      <button
-                                        onClick={() => setSelectedTransaction(transaction)}
-                                        className="text-blue-400 hover:text-blue-300 text-xs underline"
-                                      >
-                                        View
-                                      </button>
-                                    </td>
+                          <>
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-sm">
+                                <thead>
+                                  <tr className="border-b border-white/10">
+                                    <th className="text-left text-blue-300 pb-2">Date</th>
+                                    <th className="text-center text-blue-300 pb-2">Type</th>
+                                    <th className="text-right text-blue-300 pb-2">Quantity</th>
+                                    <th className="text-right text-blue-300 pb-2">Price</th>
+                                    <th className="text-right text-blue-300 pb-2">Fees</th>
+                                    <th className="text-right text-blue-300 pb-2">Trade Value</th>
+                                    <th className="text-left text-blue-300 pb-2">Notes</th>
+                                    <th className="text-center text-blue-300 pb-2">Actions</th>
                                   </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
+                                </thead>
+                                <tbody>
+                                  {(() => {
+                                    const currentPage = transactionPages[position.ticker] || 1;
+                                    const startIdx = (currentPage - 1) * transactionPageSize;
+                                    const endIdx = startIdx + transactionPageSize;
+                                    const paginatedTransactions = tickerTransactions[position.ticker].slice(startIdx, endIdx);
+                                    
+                                    return paginatedTransactions.map((transaction) => (
+                                      <tr key={transaction.transaction_id} className="border-b border-white/5">
+                                        <td className="py-3 text-white">
+                                          {new Date(transaction.transaction_date).toLocaleDateString()}
+                                        </td>
+                                        <td className="py-3 text-center">
+                                          <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                                            transaction.transaction_type_id === 1 
+                                              ? 'bg-green-500/20 text-green-300' 
+                                              : 'bg-rose-500/20 text-rose-300'
+                                          }`}>
+                                            {transaction.transaction_type_id === 1 ? 'BUY' : 'SELL'}
+                                          </span>
+                                        </td>
+                                        <td className="py-3 text-right text-white">{transaction.quantity}</td>
+                                        <td className="py-3 text-right text-white">${transaction.price.toFixed(2)}</td>
+                                        <td className="py-3 text-right text-white">${transaction.fees.toFixed(2)}</td>
+                                        <td className="py-3 text-right text-white">${transaction.trade_value.toFixed(2)}</td>
+                                        <td className="py-3 text-white text-sm truncate max-w-[150px]">
+                                          {transaction.notes || '-'}
+                                        </td>
+                                        <td className="py-3 text-center">
+                                          <button
+                                            onClick={() => setSelectedTransaction(transaction)}
+                                            className="text-blue-400 hover:text-blue-300 text-xs underline"
+                                          >
+                                            View
+                                          </button>
+                                        </td>
+                                      </tr>
+                                    ));
+                                  })()}
+                                </tbody>
+                              </table>
+                            </div>
+
+                            {/* Transaction Pagination */}
+                            {tickerTransactions[position.ticker].length > transactionPageSize && (() => {
+                              const currentPage = transactionPages[position.ticker] || 1;
+                              const totalPages = Math.ceil(tickerTransactions[position.ticker].length / transactionPageSize);
+                              
+                              return (
+                                <div className="mt-4 flex items-center justify-between text-sm">
+                                  <p className="text-blue-200">
+                                    Showing {((currentPage - 1) * transactionPageSize) + 1} to {Math.min(currentPage * transactionPageSize, tickerTransactions[position.ticker].length)} of {tickerTransactions[position.ticker].length} transactions
+                                  </p>
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={() => setTransactionPages(prev => ({ 
+                                        ...prev, 
+                                        [position.ticker]: Math.max(1, currentPage - 1) 
+                                      }))}
+                                      disabled={currentPage === 1}
+                                      className="px-3 py-1 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs"
+                                    >
+                                      Previous
+                                    </button>
+                                    <span className="px-3 py-1 text-white">
+                                      Page {currentPage} of {totalPages}
+                                    </span>
+                                    <button
+                                      onClick={() => setTransactionPages(prev => ({ 
+                                        ...prev, 
+                                        [position.ticker]: Math.min(totalPages, currentPage + 1) 
+                                      }))}
+                                      disabled={currentPage === totalPages}
+                                      className="px-3 py-1 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs"
+                                    >
+                                      Next
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                          </>
                         ) : (
                           <p className="text-blue-200 text-sm">No transactions found.</p>
                         )}
@@ -558,6 +572,17 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
           setSelectedTransaction(null);
         }}
         onDelete={handleDeleteComplete}
+      />
+
+      {/* Assign Attributes Modal */}
+      <AssignAttributesModal
+        position={selectedPositionForAttributes}
+        onClose={() => setSelectedPositionForAttributes(null)}
+        onSuccess={async () => {
+          // Refresh positions data
+          const data = await getPositions(CURRENT_USER_ID, true);
+          setPositions(data);
+        }}
       />
     </div>
   );

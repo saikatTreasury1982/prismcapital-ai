@@ -95,3 +95,32 @@ export interface TransactionType {
   type_name: string;
   type_multiplier: number;
 }
+
+// Asset Classification Types
+export interface AssetClass {
+  class_id: number;
+  class_code: string;
+  class_name: string;
+  description: string | null;
+  created_at: string;
+}
+
+export interface AssetType {
+  type_id: number;
+  type_code: string;
+  type_name: string;
+  class_id: number | null;
+  description: string | null;
+  created_at: string;
+}
+
+export interface AssetClassification {
+  classification_id: string;
+  user_id: string;
+  ticker: string;
+  exchange_id: number;
+  class_id: number;
+  type_id: number | null;
+  created_at: string;
+  updated_at: string;
+}
