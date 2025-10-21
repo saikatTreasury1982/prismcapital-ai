@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { db, schema } from '@/app/lib/db';
+import { eq, and, desc } from 'drizzle-orm';
+
+const { transactions } = schema;
 
 // GET - Fetch single transaction or list of transactions
 export async function GET(request: Request) {
@@ -9,25 +12,19 @@ export async function GET(request: Request) {
     const userId = searchParams.get('userId');
     const ticker = searchParams.get('ticker');
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
     // Fetch single transaction
     if (transactionId) {
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('transaction_id', transactionId)
-        .single();
+      const data = await db
+        .select()
+        .from(transactions)
+        .where(eq(transactions.transactionId, transactionId))
+        .limit(1);
 
-      if (error) {
-        console.error('Transaction fetch error:', error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+      if (!data || data.length === 0) {
+        return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
       }
 
-      return NextResponse.json({ data });
+      return NextResponse.json({ data: data[0] });
     }
 
     // Fetch transactions list
@@ -35,23 +32,19 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'userId required' }, { status: 400 });
     }
 
-    let query = supabase
-      .from('transactions')
-      .select('*')
-      .eq('user_id', userId)
-      .order('transaction_date', { ascending: false });
+    // Build query with optional ticker filter
+    const conditions = ticker
+      ? and(
+          eq(transactions.userId, userId),
+          eq(transactions.ticker, ticker)
+        )
+      : eq(transactions.userId, userId);
 
-    // Filter by ticker if provided
-    if (ticker) {
-      query = query.eq('ticker', ticker);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      console.error('Transactions fetch error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
+    const data = await db
+      .select()
+      .from(transactions)
+      .where(conditions)
+      .orderBy(desc(transactions.transactionDate));
 
     return NextResponse.json({ data });
   } catch (e: any) {
@@ -70,34 +63,27 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'userId and transactionData required' }, { status: 400 });
     }
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    // Generate a unique transaction ID (you can use UUID library or any other method)
+    const transactionId = `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    const { data, error } = await supabase
-      .from('transactions')
-      .insert({
-        user_id: userId,
+    const data = await db
+      .insert(transactions)
+      .values({
+        transactionId,
+        userId,
         ticker: transactionData.ticker.toUpperCase(),
-        exchange_id: transactionData.exchange_id,
-        transaction_type_id: transactionData.transaction_type_id,
-        transaction_date: transactionData.transaction_date,
+        exchangeId: transactionData.exchange_id,
+        transactionTypeId: transactionData.transaction_type_id,
+        transactionDate: transactionData.transaction_date,
         quantity: transactionData.quantity,
         price: transactionData.price,
         fees: transactionData.fees || 0,
-        transaction_currency: transactionData.transaction_currency || 'USD',
-        notes: transactionData.notes || null
+        transactionCurrency: transactionData.transaction_currency || 'USD',
+        notes: transactionData.notes || null,
       })
-      .select()
-      .single();
+      .returning();
 
-    if (error) {
-      console.error('Transaction create error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ data });
+    return NextResponse.json({ data: data[0] });
   } catch (e: any) {
     console.error('Unexpected error:', e);
     return NextResponse.json({ error: e.message || 'Failed to create transaction' }, { status: 500 });
@@ -114,29 +100,22 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'transactionId and transactionData required' }, { status: 400 });
     }
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
-    // Only allow updating notes and fees
+    // Build update object with only allowed fields
     const updateData: any = {};
     if (transactionData.notes !== undefined) updateData.notes = transactionData.notes;
     if (transactionData.fees !== undefined) updateData.fees = transactionData.fees;
 
-    const { data, error } = await supabase
-      .from('transactions')
-      .update(updateData)
-      .eq('transaction_id', transactionId)
-      .select()
-      .single();
+    const data = await db
+      .update(transactions)
+      .set(updateData)
+      .where(eq(transactions.transactionId, transactionId))
+      .returning();
 
-    if (error) {
-      console.error('Transaction update error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (!data || data.length === 0) {
+      return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ data });
+    return NextResponse.json({ data: data[0] });
   } catch (e: any) {
     console.error('Unexpected error:', e);
     return NextResponse.json({ error: e.message || 'Failed to update transaction' }, { status: 500 });
@@ -153,20 +132,9 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'transactionId required' }, { status: 400 });
     }
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
-    const { error } = await supabase
-      .from('transactions')
-      .delete()
-      .eq('transaction_id', transactionId);
-
-    if (error) {
-      console.error('Transaction delete error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
+    await db
+      .delete(transactions)
+      .where(eq(transactions.transactionId, transactionId));
 
     return NextResponse.json({ success: true });
   } catch (e: any) {

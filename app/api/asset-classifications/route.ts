@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { db, schema } from '@/app/lib/db';
+import { eq, and } from 'drizzle-orm';
+
+const { assetClassifications } = schema;
 
 // GET - Fetch classification for a ticker
 export async function GET(request: Request) {
@@ -13,25 +16,19 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'userId, ticker, and exchangeId required' }, { status: 400 });
     }
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const data = await db
+      .select()
+      .from(assetClassifications)
+      .where(
+        and(
+          eq(assetClassifications.userId, userId),
+          eq(assetClassifications.ticker, ticker),
+          eq(assetClassifications.exchangeId, parseInt(exchangeId))
+        )
+      )
+      .limit(1);
 
-    const { data, error } = await supabase
-      .from('asset_classifications')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('ticker', ticker)
-      .eq('exchange_id', parseInt(exchangeId))
-      .single();
-
-    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
-      console.error('Asset classification fetch error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ data: data || null });
+    return NextResponse.json({ data: data[0] || null });
   } catch (e: any) {
     console.error('Unexpected error:', e);
     return NextResponse.json({ error: e.message || 'Failed to fetch asset classification' }, { status: 500 });
@@ -48,32 +45,51 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'userId and classificationData required' }, { status: 400 });
     }
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    // Generate classification ID
+    const classificationId = `cls_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    // Upsert (insert or update if exists)
-    const { data, error } = await supabase
-      .from('asset_classifications')
-      .upsert({
-        user_id: userId,
-        ticker: classificationData.ticker.toUpperCase(),
-        exchange_id: classificationData.exchange_id,
-        class_id: classificationData.class_id,
-        type_id: classificationData.type_id || null
-      }, {
-        onConflict: 'user_id,ticker,exchange_id'
-      })
+    // Check if classification already exists
+    const existing = await db
       .select()
-      .single();
+      .from(assetClassifications)
+      .where(
+        and(
+          eq(assetClassifications.userId, userId),
+          eq(assetClassifications.ticker, classificationData.ticker.toUpperCase()),
+          eq(assetClassifications.exchangeId, classificationData.exchange_id)
+        )
+      )
+      .limit(1);
 
-    if (error) {
-      console.error('Asset classification upsert error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    let data;
+
+    if (existing.length > 0) {
+      // Update existing
+      data = await db
+        .update(assetClassifications)
+        .set({
+          classId: classificationData.class_id,
+          typeId: classificationData.type_id || null,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(assetClassifications.classificationId, existing[0].classificationId))
+        .returning();
+    } else {
+      // Insert new
+      data = await db
+        .insert(assetClassifications)
+        .values({
+          classificationId,
+          userId,
+          ticker: classificationData.ticker.toUpperCase(),
+          exchangeId: classificationData.exchange_id,
+          classId: classificationData.class_id,
+          typeId: classificationData.type_id || null,
+        })
+        .returning();
     }
 
-    return NextResponse.json({ data });
+    return NextResponse.json({ data: data[0] });
   } catch (e: any) {
     console.error('Unexpected error:', e);
     return NextResponse.json({ error: e.message || 'Failed to save asset classification' }, { status: 500 });
@@ -90,20 +106,9 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'classificationId required' }, { status: 400 });
     }
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
-    const { error } = await supabase
-      .from('asset_classifications')
-      .delete()
-      .eq('classification_id', classificationId);
-
-    if (error) {
-      console.error('Asset classification delete error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
+    await db
+      .delete(assetClassifications)
+      .where(eq(assetClassifications.classificationId, classificationId));
 
     return NextResponse.json({ success: true });
   } catch (e: any) {

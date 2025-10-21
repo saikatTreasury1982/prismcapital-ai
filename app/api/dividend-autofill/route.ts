@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { db, schema } from '@/app/lib/db';
+import { eq, and } from 'drizzle-orm';
+
+const { systemApiKeys } = schema;
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -11,27 +14,26 @@ export async function GET(request: Request) {
 
   try {
     // Get AlphaVantage API key from database
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const apiKeyData = await db
+      .select()
+      .from(systemApiKeys)
+      .where(
+        and(
+          eq(systemApiKeys.serviceId, 1),
+          eq(systemApiKeys.environment, 'PRODUCTION'),
+          eq(systemApiKeys.isActive, 1),
+          eq(systemApiKeys.isPrimary, 1)
+        )
+      )
+      .limit(1);
 
-    const { data: apiKeyData, error: keyError } = await supabase
-      .from('system_api_keys')
-      .select('api_key')
-      .eq('service_id', 1)
-      .eq('environment', 'PRODUCTION')
-      .eq('is_active', true)
-      .eq('is_primary', true)
-      .single();
-
-    if (keyError || !apiKeyData?.api_key) {
+    if (!apiKeyData || apiKeyData.length === 0 || !apiKeyData[0].apiKey) {
       throw new Error('Failed to fetch AlphaVantage API key');
     }
 
-    const apiKey = apiKeyData.api_key;
+    const apiKey = apiKeyData[0].apiKey;
 
-    // Call AlphaVantage OVERVIEW endpoint (includes company name, dividend info, and more)
+    // Call AlphaVantage OVERVIEW endpoint
     const url = `https://www.alphavantage.co/query?function=OVERVIEW&symbol=${encodeURIComponent(ticker)}&apikey=${apiKey}`;
     
     const response = await fetch(url);
@@ -42,14 +44,13 @@ export async function GET(request: Request) {
 
     const data = await response.json();
 
-    // Check for API errors
     if (data.Note || data.Information || data['Error Message']) {
       return NextResponse.json({ 
         error: data.Note || data.Information || data['Error Message'] || 'API error'
       }, { status: 400 });
     }
 
-    // Also get current price from GLOBAL_QUOTE
+    // Get current price from GLOBAL_QUOTE
     const quoteUrl = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${encodeURIComponent(ticker)}&apikey=${apiKey}`;
     const quoteResponse = await fetch(quoteUrl);
     let currentPrice = null;
@@ -61,13 +62,9 @@ export async function GET(request: Request) {
       }
     }
 
-    // Extract all relevant data
     const tickerData = {
-      // Company info
       name: data.Name || null,
-      // Current price
       currentPrice: currentPrice,
-      // Dividend data
       dividendPerShare: data.DividendPerShare || null,
       dividendYield: data.DividendYield || null,
       exDividendDate: data.ExDividendDate || null,

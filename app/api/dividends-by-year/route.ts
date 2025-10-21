@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { db, schema } from '@/app/lib/db';
+import { eq, and, gte, lt, desc, sql } from 'drizzle-orm';
+
+const { dividends } = schema;
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -13,39 +16,45 @@ export async function GET(request: Request) {
   }
 
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
-    // If year is provided, get detailed dividends
+    // If year provided, get detailed dividends
     if (year) {
-      const from = (page - 1) * pageSize;
-      const to = from + pageSize - 1;
+      const offset = (page - 1) * pageSize;
       const yearNum = parseInt(year);
 
-      const { data, error, count } = await supabase
-        .from('dividends')
-        .select('*', { count: 'exact' })
-        .eq('user_id', userId)
-        .gte('ex_dividend_date', `${yearNum}-01-01`)
-        .lt('ex_dividend_date', `${yearNum + 1}-01-01`)
-        .order('ex_dividend_date', { ascending: false })
-        .range(from, to);
+      const data = await db
+        .select()
+        .from(dividends)
+        .where(
+          and(
+            eq(dividends.userId, userId),
+            gte(dividends.exDividendDate, `${yearNum}-01-01`),
+            lt(dividends.exDividendDate, `${yearNum + 1}-01-01`)
+          )
+        )
+        .orderBy(desc(dividends.exDividendDate))
+        .limit(pageSize)
+        .offset(offset);
 
-      if (error) throw error;
+      const countResult = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(dividends)
+        .where(
+          and(
+            eq(dividends.userId, userId),
+            gte(dividends.exDividendDate, `${yearNum}-01-01`),
+            lt(dividends.exDividendDate, `${yearNum + 1}-01-01`)
+          )
+        );
 
-      return NextResponse.json({ data, total: count || 0 });
+      return NextResponse.json({ data, total: countResult[0]?.count || 0 });
     }
 
-    // Otherwise, get summary by year
-    const { data, error } = await supabase
-      .from('dividend_summary_by_year')
-      .select('*')
-      .eq('user_id', userId)
-      .order('year', { ascending: false });
-
-    if (error) throw error;
+    // Get summary by year (using view)
+    const data = await db.all(sql`
+      SELECT * FROM dividend_summary_by_year
+      WHERE user_id = ${userId}
+      ORDER BY year DESC
+    `);
 
     return NextResponse.json({ data });
   } catch (e: any) {

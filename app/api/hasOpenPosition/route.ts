@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { db, schema } from '@/app/lib/db';
+import { eq, and, sql } from 'drizzle-orm';
+
+const { positions } = schema;
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -11,28 +14,23 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Use service role to bypass RLS
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-    
-    // Check if user has open position for this ticker and get ticker_name
-    const { data, error } = await supabase
-      .from('positions')
-      .select('position_id, ticker_name')
-      .eq('user_id', userId)
-      .eq('is_active', true)
-      .ilike('ticker', ticker)
+    const data = await db
+      .select({
+        positionId: positions.positionId,
+        tickerName: positions.tickerName,
+      })
+      .from(positions)
+      .where(
+        and(
+          eq(positions.userId, userId),
+          eq(positions.isActive, 1),
+          sql`LOWER(${positions.ticker}) = LOWER(${ticker})`
+        )
+      )
       .limit(1);
-    
-    if (error) {
-      console.error('Position check error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
 
     const hasPosition = data.length > 0;
-    const tickerName = hasPosition ? data[0].ticker_name : null;
+    const tickerName = hasPosition ? data[0].tickerName : null;
 
     return NextResponse.json({ 
       hasPosition, 

@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { db, schema } from '@/app/lib/db';
+import { eq } from 'drizzle-orm';
 import { CreateDividendInput } from '../../lib/types/dividend';
+
+const { dividends } = schema;
 
 export async function GET(request: Request) {
   try {
@@ -11,23 +14,17 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'dividendId required' }, { status: 400 });
     }
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const data = await db
+      .select()
+      .from(dividends)
+      .where(eq(dividends.dividendId, dividendId))
+      .limit(1);
 
-    const { data, error } = await supabase
-      .from('dividends')
-      .select('*')
-      .eq('dividend_id', dividendId)
-      .single();
-
-    if (error) {
-      console.error('Dividend fetch error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (!data || data.length === 0) {
+      return NextResponse.json({ error: 'Dividend not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ data });
+    return NextResponse.json({ data: data[0] });
   } catch (e: any) {
     console.error('Unexpected error:', e);
     return NextResponse.json({ error: e.message || 'Failed to fetch dividend' }, { status: 500 });
@@ -43,35 +40,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'userId and dividendData required' }, { status: 400 });
     }
 
-    // Use service role to bypass RLS
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    const dividendId = `div_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    const { data, error } = await supabase
-      .from('dividends')
-      .insert({
-        user_id: userId,
+    const data = await db
+      .insert(dividends)
+      .values({
+        dividendId,
+        userId,
         ticker: dividendData.ticker,
-        ex_dividend_date: dividendData.ex_dividend_date,
-        payment_date: dividendData.payment_date || null,
-        dividend_per_share: dividendData.dividend_per_share,
-        shares_owned: dividendData.shares_owned,
-        // total_dividend_amount is auto-generated, don't insert it
-        dividend_yield: dividendData.dividend_yield || null,
-        Currency: dividendData.Currency || null,
-        notes: dividendData.notes || null
+        exDividendDate: dividendData.ex_dividend_date,
+        paymentDate: dividendData.payment_date || null,
+        dividendPerShare: dividendData.dividend_per_share,
+        sharesOwned: dividendData.shares_owned,
+        dividendYield: dividendData.dividend_yield || null,
+        currency: dividendData.Currency || null,
+        notes: dividendData.notes || null,
       })
-      .select()
-      .single();
+      .returning();
 
-    if (error) {
-      console.error('Dividend insert error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ data });
+    return NextResponse.json({ data: data[0] });
   } catch (e: any) {
     console.error('Unexpected error:', e);
     return NextResponse.json({ error: e.message || 'Failed to create dividend' }, { status: 500 });
@@ -87,33 +74,26 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'dividendId and dividendData required' }, { status: 400 });
     }
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
-    const { data, error } = await supabase
-      .from('dividends')
-      .update({
+    const data = await db
+      .update(dividends)
+      .set({
         ticker: dividendData.ticker,
-        ex_dividend_date: dividendData.ex_dividend_date,
-        payment_date: dividendData.payment_date || null,
-        dividend_per_share: dividendData.dividend_per_share,
-        shares_owned: dividendData.shares_owned,
-        dividend_yield: dividendData.dividend_yield || null,
-        Currency: dividendData.Currency || null,
-        notes: dividendData.notes || null
+        exDividendDate: dividendData.ex_dividend_date,
+        paymentDate: dividendData.payment_date || null,
+        dividendPerShare: dividendData.dividend_per_share,
+        sharesOwned: dividendData.shares_owned,
+        dividendYield: dividendData.dividend_yield || null,
+        currency: dividendData.Currency || null,
+        notes: dividendData.notes || null,
       })
-      .eq('dividend_id', dividendId)
-      .select()
-      .single();
+      .where(eq(dividends.dividendId, dividendId))
+      .returning();
 
-    if (error) {
-      console.error('Dividend update error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (!data || data.length === 0) {
+      return NextResponse.json({ error: 'Dividend not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ data });
+    return NextResponse.json({ data: data[0] });
   } catch (e: any) {
     console.error('Unexpected error:', e);
     return NextResponse.json({ error: e.message || 'Failed to update dividend' }, { status: 500 });
@@ -129,20 +109,9 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'dividendId required' }, { status: 400 });
     }
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
-    const { error } = await supabase
-      .from('dividends')
-      .delete()
-      .eq('dividend_id', dividendId);
-
-    if (error) {
-      console.error('Dividend delete error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
+    await db
+      .delete(dividends)
+      .where(eq(dividends.dividendId, dividendId));
 
     return NextResponse.json({ success: true });
   } catch (e: any) {

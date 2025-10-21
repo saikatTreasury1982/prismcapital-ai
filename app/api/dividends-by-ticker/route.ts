@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { db, schema } from '@/app/lib/db';
+import { eq, and, desc, sql } from 'drizzle-orm';
+
+const { dividends } = schema;
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -13,37 +16,42 @@ export async function GET(request: Request) {
   }
 
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
-    // If ticker is provided, get detailed dividends for that ticker
+    // If ticker provided, get detailed dividends
     if (ticker) {
-      const from = (page - 1) * pageSize;
-      const to = from + pageSize - 1;
+      const offset = (page - 1) * pageSize;
 
-      const { data, error, count } = await supabase
-        .from('dividends')
-        .select('*', { count: 'exact' })
-        .eq('user_id', userId)
-        .eq('ticker', ticker)
-        .order('payment_date', { ascending: false })
-        .range(from, to);
+      const data = await db
+        .select()
+        .from(dividends)
+        .where(
+          and(
+            eq(dividends.userId, userId),
+            eq(dividends.ticker, ticker)
+          )
+        )
+        .orderBy(desc(dividends.paymentDate))
+        .limit(pageSize)
+        .offset(offset);
 
-      if (error) throw error;
+      const countResult = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(dividends)
+        .where(
+          and(
+            eq(dividends.userId, userId),
+            eq(dividends.ticker, ticker)
+          )
+        );
 
-      return NextResponse.json({ data, total: count || 0 });
+      return NextResponse.json({ data, total: countResult[0]?.count || 0 });
     }
 
-    // Otherwise, get summary by ticker
-    const { data, error } = await supabase
-      .from('dividend_summary_by_ticker')
-      .select('*')
-      .eq('user_id', userId)
-      .order('total_dividends_received', { ascending: false });
-
-    if (error) throw error;
+    // Get summary by ticker (using view)
+    const data = await db.all(sql`
+      SELECT * FROM dividend_summary_by_ticker
+      WHERE user_id = ${userId}
+      ORDER BY total_dividends_received DESC
+    `);
 
     return NextResponse.json({ data });
   } catch (e: any) {

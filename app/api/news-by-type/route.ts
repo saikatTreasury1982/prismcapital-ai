@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { db, schema } from '@/app/lib/db';
+import { eq, and, desc, sql } from 'drizzle-orm';
+
+const { news, newsTypes } = schema;
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -13,48 +16,74 @@ export async function GET(request: Request) {
   }
 
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
-    // If typeName is provided, get detailed news for that type
+    // If typeName provided, get detailed news for that type
     if (typeName) {
-      const from = (page - 1) * pageSize;
-      const to = from + pageSize - 1;
+      const offset = (page - 1) * pageSize;
 
-      const { data: newsTypeData, error: typeError } = await supabase
-        .from('news_types')
-        .select('news_type_id')
-        .eq('type_name', typeName)
-        .single();
+      // Get news_type_id first
+      const newsTypeData = await db
+        .select()
+        .from(newsTypes)
+        .where(eq(newsTypes.typeName, typeName))
+        .limit(1);
 
-      if (typeError) throw typeError;
+      if (!newsTypeData || newsTypeData.length === 0) {
+        return NextResponse.json({ error: 'News type not found' }, { status: 404 });
+      }
 
-      const { data, error, count } = await supabase
-        .from('news')
-        .select(`
-          *,
-          news_type:news_types(type_code, type_name)
-        `, { count: 'exact' })
-        .eq('user_id', userId)
-        .eq('news_type_id', newsTypeData.news_type_id)
-        .order('news_date', { ascending: false })
-        .range(from, to);
+      const data = await db
+        .select({
+          newsId: news.newsId,
+          userId: news.userId,
+          ticker: news.ticker,
+          exchangeId: news.exchangeId,
+          companyName: news.companyName,
+          newsTypeId: news.newsTypeId,
+          newsDescription: news.newsDescription,
+          newsDate: news.newsDate,
+          alertDate: news.alertDate,
+          alertNotes: news.alertNotes,
+          newsSource: news.newsSource,
+          newsUrl: news.newsUrl,
+          tags: news.tags,
+          createdAt: news.createdAt,
+          updatedAt: news.updatedAt,
+          news_type: {
+            type_code: newsTypes.typeCode,
+            type_name: newsTypes.typeName,
+          },
+        })
+        .from(news)
+        .leftJoin(newsTypes, eq(news.newsTypeId, newsTypes.newsTypeId))
+        .where(
+          and(
+            eq(news.userId, userId),
+            eq(news.newsTypeId, newsTypeData[0].newsTypeId)
+          )
+        )
+        .orderBy(desc(news.newsDate))
+        .limit(pageSize)
+        .offset(offset);
 
-      if (error) throw error;
+      const countResult = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(news)
+        .where(
+          and(
+            eq(news.userId, userId),
+            eq(news.newsTypeId, newsTypeData[0].newsTypeId)
+          )
+        );
 
-      return NextResponse.json({ data, total: count || 0 });
+      return NextResponse.json({ data, total: countResult[0]?.count || 0 });
     }
 
-    // Otherwise, get summary by type
-    const { data, error } = await supabase
-      .from('news_summary_by_type')
-      .select('*')
-      .eq('user_id', userId)
-      .order('total_news_items', { ascending: false });
-
-    if (error) throw error;
+    // Get summary by type (using view)
+    const data = await db.all(sql`
+      SELECT * FROM news_summary_by_type
+      WHERE user_id = ${userId}
+      ORDER BY total_news_items DESC
+    `);
 
     return NextResponse.json({ data });
   } catch (e: any) {

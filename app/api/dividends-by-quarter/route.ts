@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { db, schema } from '@/app/lib/db';
+import { eq, and, gte, lt, desc, sql } from 'drizzle-orm';
+
+const { dividends } = schema;
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -14,47 +17,51 @@ export async function GET(request: Request) {
   }
 
   try {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
-    // If year and quarter are provided, get detailed dividends
+    // If year and quarter provided, get detailed dividends
     if (year && quarter) {
-      const from = (page - 1) * pageSize;
-      const to = from + pageSize - 1;
+      const offset = (page - 1) * pageSize;
       const yearNum = parseInt(year);
       const quarterNum = parseInt(quarter);
 
-      // Calculate start and end dates for the quarter
       const startMonth = (quarterNum - 1) * 3 + 1;
       const endMonth = quarterNum * 3 + 1;
       const startDate = `${yearNum}-${String(startMonth).padStart(2, '0')}-01`;
       const endDate = quarterNum === 4 ? `${yearNum + 1}-01-01` : `${yearNum}-${String(endMonth).padStart(2, '0')}-01`;
 
-      const { data, error, count } = await supabase
-        .from('dividends')
-        .select('*', { count: 'exact' })
-        .eq('user_id', userId)
-        .gte('ex_dividend_date', startDate)
-        .lt('ex_dividend_date', endDate)
-        .order('ex_dividend_date', { ascending: false })
-        .range(from, to);
+      const data = await db
+        .select()
+        .from(dividends)
+        .where(
+          and(
+            eq(dividends.userId, userId),
+            gte(dividends.exDividendDate, startDate),
+            lt(dividends.exDividendDate, endDate)
+          )
+        )
+        .orderBy(desc(dividends.exDividendDate))
+        .limit(pageSize)
+        .offset(offset);
 
-      if (error) throw error;
+      const countResult = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(dividends)
+        .where(
+          and(
+            eq(dividends.userId, userId),
+            gte(dividends.exDividendDate, startDate),
+            lt(dividends.exDividendDate, endDate)
+          )
+        );
 
-      return NextResponse.json({ data, total: count || 0 });
+      return NextResponse.json({ data, total: countResult[0]?.count || 0 });
     }
 
-    // Otherwise, get summary by quarter
-    const { data, error } = await supabase
-      .from('dividend_summary_by_quarter')
-      .select('*')
-      .eq('user_id', userId)
-      .order('year', { ascending: false })
-      .order('quarter', { ascending: false });
-
-    if (error) throw error;
+    // Get summary by quarter (using raw SQL for view)
+    const data = await db.all(sql`
+      SELECT * FROM dividend_summary_by_quarter
+      WHERE user_id = ${userId}
+      ORDER BY year DESC, quarter DESC
+    `);
 
     return NextResponse.json({ data });
   } catch (e: any) {

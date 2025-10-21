@@ -1,32 +1,20 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { db, schema } from '@/app/lib/db';
+import { eq, asc } from 'drizzle-orm';
+
+const { assetTypes } = schema;
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const classId = searchParams.get('classId');
 
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
-    let query = supabase
-      .from('asset_types')
-      .select('*')
-      .order('type_name', { ascending: true });
+    let query = db.select().from(assetTypes).orderBy(asc(assetTypes.typeName));
 
     // Filter by class_id if provided
-    if (classId) {
-      query = query.eq('class_id', parseInt(classId));
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      console.error('Asset types fetch error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
+    const data = classId
+      ? await query.where(eq(assetTypes.classId, parseInt(classId)))
+      : await query;
 
     return NextResponse.json({ data });
   } catch (e: any) {

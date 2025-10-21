@@ -10,7 +10,6 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Fetch dividend data from Yahoo Finance
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=5y&events=div`;
     const response = await fetch(url);
     
@@ -20,7 +19,6 @@ export async function GET(request: Request) {
 
     const data = await response.json();
 
-    // Check if dividend data exists
     if (!data.chart?.result?.[0]?.events?.dividends) {
       return NextResponse.json({ 
         amount: null, 
@@ -30,13 +28,11 @@ export async function GET(request: Request) {
 
     const dividends = data.chart.result[0].events.dividends;
 
-    // If exDividendDate is provided, find matching dividend
     if (exDividendDate) {
       const targetDate = new Date(exDividendDate);
       let closestDividend = null;
       let smallestDiff = Infinity;
 
-      // Find dividend closest to the ex-dividend date (within 3 days)
       for (const timestamp in dividends) {
         const divDate = new Date(parseInt(timestamp) * 1000);
         const diff = Math.abs(divDate.getTime() - targetDate.getTime());
@@ -64,7 +60,6 @@ export async function GET(request: Request) {
       }
     }
 
-    // If no specific date requested, return the latest dividend
     let latestTimestamp = 0;
     let latestDividend = null;
 
