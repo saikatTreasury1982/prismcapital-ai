@@ -9,11 +9,11 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const classId = searchParams.get('classId');
 
-    let query = db.select().from(assetTypes).orderBy(asc(assetTypes.typeName));
+    let query = db.select().from(assetTypes).orderBy(asc(assetTypes.type_name));
 
     // Filter by class_id if provided
     const data = classId
-      ? await query.where(eq(assetTypes.classId, parseInt(classId)))
+      ? await query.where(eq(assetTypes.class_id, parseInt(classId)))
       : await query;
 
     return NextResponse.json({ data });

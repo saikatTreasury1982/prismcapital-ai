@@ -8,7 +8,7 @@ const { news } = schema;
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const newsId = searchParams.get('newsId');
+    const newsId = searchParams.get('news_id');
 
     if (!newsId) {
       return NextResponse.json({ error: 'newsId required' }, { status: 400 });
@@ -17,7 +17,7 @@ export async function GET(request: Request) {
     const data = await db
       .select()
       .from(news)
-      .where(eq(news.newsId, newsId))
+      .where(eq(news.news_id, newsId))
       .limit(1);
 
     if (!data || data.length === 0) {
@@ -45,18 +45,18 @@ export async function POST(request: Request) {
     const data = await db
       .insert(news)
       .values({
-        newsId,
-        userId,
+        news_id: newsId,
+        user_id: userId,
         ticker: newsData.ticker,
-        exchangeId: newsData.exchange_id,
-        companyName: newsData.company_name || null,
-        newsTypeId: newsData.news_type_id,
-        newsDescription: newsData.news_description,
-        newsDate: newsData.news_date,
-        alertDate: newsData.alert_date || null,
-        alertNotes: newsData.alert_notes || null,
-        newsSource: newsData.news_source || null,
-        newsUrl: newsData.news_url || null,
+        exchange_id: newsData.exchange_id,
+        company_name: newsData.company_name || null,
+        news_type_id: newsData.news_type_id,
+        news_description: newsData.news_description,
+        news_date: newsData.news_date,
+        alert_date: newsData.alert_date || null,
+        alert_notes: newsData.alert_notes || null,
+        news_source: newsData.news_source || null,
+        news_url: newsData.news_url || null,
         tags: Array.isArray(newsData.tags) ? newsData.tags.join(',') : newsData.tags || null,
       })
       .returning();
@@ -81,18 +81,18 @@ export async function PATCH(request: Request) {
       .update(news)
       .set({
         ticker: newsData.ticker,
-        exchangeId: newsData.exchange_id,
-        companyName: newsData.company_name || null,
-        newsTypeId: newsData.news_type_id,
-        newsDescription: newsData.news_description,
-        newsDate: newsData.news_date,
-        alertDate: newsData.alert_date || null,
-        alertNotes: newsData.alert_notes || null,
-        newsSource: newsData.news_source || null,
-        newsUrl: newsData.news_url || null,
+        exchange_id: newsData.exchange_id,
+        company_name: newsData.company_name || null,
+        news_type_id: newsData.news_type_id,
+        news_description: newsData.news_description,
+        news_date: newsData.news_date,
+        alert_date: newsData.alert_date || null,
+        alert_notes: newsData.alert_notes || null,
+        news_source: newsData.news_source || null,
+        news_url: newsData.news_url || null,
         tags: Array.isArray(newsData.tags) ? newsData.tags.join(',') : newsData.tags || null,
       })
-      .where(eq(news.newsId, newsId))
+      .where(eq(news.news_id, newsId))
       .returning();
 
     if (!data || data.length === 0) {
@@ -117,7 +117,7 @@ export async function DELETE(request: Request) {
 
     await db
       .delete(news)
-      .where(eq(news.newsId, newsId));
+      .where(eq(news.news_id, newsId));
 
     return NextResponse.json({ success: true });
   } catch (e: any) {

@@ -22,35 +22,35 @@ export async function GET(request: Request) {
 
       const data = await db
         .select({
-          newsId: news.newsId,
-          userId: news.userId,
+          newsId: news.news_id,
+          userId: news.user_id,
           ticker: news.ticker,
-          exchangeId: news.exchangeId,
-          companyName: news.companyName,
-          newsTypeId: news.newsTypeId,
-          newsDescription: news.newsDescription,
-          newsDate: news.newsDate,
-          alertDate: news.alertDate,
-          alertNotes: news.alertNotes,
-          newsSource: news.newsSource,
-          newsUrl: news.newsUrl,
+          exchangeId: news.exchange_id,
+          companyName: news.company_name,
+          newsTypeId: news.news_type_id,
+          newsDescription: news.news_description,
+          newsDate: news.news_date,
+          alertDate: news.alert_date,
+          alertNotes: news.alert_notes,
+          newsSource: news.news_source,
+          newsUrl: news.news_url,
           tags: news.tags,
-          createdAt: news.createdAt,
-          updatedAt: news.updatedAt,
+          createdAt: news.created_at,
+          updatedAt: news.updated_at,
           news_type: {
-            type_code: newsTypes.typeCode,
-            type_name: newsTypes.typeName,
+            type_code: newsTypes.type_code,
+            type_name: newsTypes.type_name,
           },
         })
         .from(news)
-        .leftJoin(newsTypes, eq(news.newsTypeId, newsTypes.newsTypeId))
+        .leftJoin(newsTypes, eq(news.news_type_id, newsTypes.news_type_id))
         .where(
           and(
-            eq(news.userId, userId),
+            eq(news.user_id, userId),
             eq(news.ticker, ticker)
           )
         )
-        .orderBy(desc(news.newsDate))
+        .orderBy(desc(news.news_date))
         .limit(pageSize)
         .offset(offset);
 
@@ -59,7 +59,7 @@ export async function GET(request: Request) {
         .from(news)
         .where(
           and(
-            eq(news.userId, userId),
+            eq(news.user_id, userId),
             eq(news.ticker, ticker)
           )
         );

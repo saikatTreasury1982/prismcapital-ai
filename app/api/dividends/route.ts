@@ -17,7 +17,7 @@ export async function GET(request: Request) {
     const data = await db
       .select()
       .from(dividends)
-      .where(eq(dividends.dividendId, dividendId))
+      .where(eq(dividends.dividend_id, dividendId))
       .limit(1);
 
     if (!data || data.length === 0) {
@@ -45,15 +45,15 @@ export async function POST(request: Request) {
     const data = await db
       .insert(dividends)
       .values({
-        dividendId,
-        userId,
+        dividend_id: dividendId,  // ← map variable to snake_case key
+        user_id: userId,          // ← map variable to snake_case key
         ticker: dividendData.ticker,
-        exDividendDate: dividendData.ex_dividend_date,
-        paymentDate: dividendData.payment_date || null,
-        dividendPerShare: dividendData.dividend_per_share,
-        sharesOwned: dividendData.shares_owned,
-        dividendYield: dividendData.dividend_yield || null,
-        currency: dividendData.Currency || null,
+        ex_dividend_date: dividendData.ex_dividend_date,
+        payment_date: dividendData.payment_date || null,
+        dividend_per_share: dividendData.dividend_per_share,
+        shares_owned: dividendData.shares_owned,
+        dividend_yield: dividendData.dividend_yield || null,
+        Currency: dividendData.Currency || null,
         notes: dividendData.notes || null,
       })
       .returning();
@@ -78,15 +78,15 @@ export async function PATCH(request: Request) {
       .update(dividends)
       .set({
         ticker: dividendData.ticker,
-        exDividendDate: dividendData.ex_dividend_date,
-        paymentDate: dividendData.payment_date || null,
-        dividendPerShare: dividendData.dividend_per_share,
-        sharesOwned: dividendData.shares_owned,
-        dividendYield: dividendData.dividend_yield || null,
-        currency: dividendData.Currency || null,
+        ex_dividend_date: dividendData.ex_dividend_date,
+        payment_date: dividendData.payment_date || null,
+        dividend_per_share: dividendData.dividend_per_share,
+        shares_owned: dividendData.shares_owned,
+        dividend_yield: dividendData.dividend_yield || null,
+        Currency: dividendData.Currency || null,
         notes: dividendData.notes || null,
       })
-      .where(eq(dividends.dividendId, dividendId))
+      .where(eq(dividends.dividend_id, dividendId))
       .returning();
 
     if (!data || data.length === 0) {
@@ -111,7 +111,7 @@ export async function DELETE(request: Request) {
 
     await db
       .delete(dividends)
-      .where(eq(dividends.dividendId, dividendId));
+      .where(eq(dividends.dividend_id, dividendId));
 
     return NextResponse.json({ success: true });
   } catch (e: any) {

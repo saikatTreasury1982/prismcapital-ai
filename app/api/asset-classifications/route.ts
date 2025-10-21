@@ -21,9 +21,9 @@ export async function GET(request: Request) {
       .from(assetClassifications)
       .where(
         and(
-          eq(assetClassifications.userId, userId),
+          eq(assetClassifications.user_id, userId),
           eq(assetClassifications.ticker, ticker),
-          eq(assetClassifications.exchangeId, parseInt(exchangeId))
+          eq(assetClassifications.exchange_id, parseInt(exchangeId))
         )
       )
       .limit(1);
@@ -54,9 +54,9 @@ export async function POST(request: Request) {
       .from(assetClassifications)
       .where(
         and(
-          eq(assetClassifications.userId, userId),
+          eq(assetClassifications.user_id, userId),
           eq(assetClassifications.ticker, classificationData.ticker.toUpperCase()),
-          eq(assetClassifications.exchangeId, classificationData.exchange_id)
+          eq(assetClassifications.exchange_id, classificationData.exchange_id)
         )
       )
       .limit(1);
@@ -68,25 +68,25 @@ export async function POST(request: Request) {
       data = await db
         .update(assetClassifications)
         .set({
-          classId: classificationData.class_id,
-          typeId: classificationData.type_id || null,
-          updatedAt: new Date().toISOString(),
+          class_id: classificationData.class_id,
+          type_id: classificationData.type_id || null,
+          updated_at: new Date().toISOString(),
         })
-        .where(eq(assetClassifications.classificationId, existing[0].classificationId))
+        .where(eq(assetClassifications.classification_id, existing[0].classification_id))
         .returning();
     } else {
       // Insert new
       data = await db
-        .insert(assetClassifications)
-        .values({
-          classificationId,
-          userId,
-          ticker: classificationData.ticker.toUpperCase(),
-          exchangeId: classificationData.exchange_id,
-          classId: classificationData.class_id,
-          typeId: classificationData.type_id || null,
+      .insert(assetClassifications)
+      .values({
+        classification_id: classificationId,  // ← map variable to snake_case key
+        user_id: userId,  // ← changed
+        ticker: classificationData.ticker.toUpperCase(),
+        exchange_id: classificationData.exchange_id,  // ← changed
+        class_id: classificationData.class_id,  // ← changed
+        type_id: classificationData.type_id || null,  // ← changed
         })
-        .returning();
+      .returning();
     }
 
     return NextResponse.json({ data: data[0] });
@@ -108,7 +108,7 @@ export async function DELETE(request: Request) {
 
     await db
       .delete(assetClassifications)
-      .where(eq(assetClassifications.classificationId, classificationId));
+      .where(eq(assetClassifications.classification_id, classificationId));
 
     return NextResponse.json({ success: true });
   } catch (e: any) {

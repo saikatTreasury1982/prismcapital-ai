@@ -17,7 +17,7 @@ export async function GET(request: Request) {
 
     // Build conditions
     const conditions = [];
-    conditions.push(eq(tradeLots.userId, userId));
+    conditions.push(eq(tradeLots.user_id, userId));
     
     if (ticker) {
       conditions.push(eq(tradeLots.ticker, ticker));
@@ -25,9 +25,9 @@ export async function GET(request: Request) {
     
     if (status) {
       if (status === 'OPEN') {
-        conditions.push(inArray(tradeLots.lotStatus, ['OPEN', 'PARTIAL']));
+        conditions.push(inArray(tradeLots.lot_status, ['OPEN', 'PARTIAL']));
       } else {
-        conditions.push(eq(tradeLots.lotStatus, status));
+        conditions.push(eq(tradeLots.lot_status, status));
       }
     }
 
@@ -35,7 +35,7 @@ export async function GET(request: Request) {
       .select()
       .from(tradeLots)
       .where(and(...conditions))
-      .orderBy(desc(tradeLots.entryDate));
+      .orderBy(desc(tradeLots.entry_date));
 
     return NextResponse.json({ data });
   } catch (e: any) {

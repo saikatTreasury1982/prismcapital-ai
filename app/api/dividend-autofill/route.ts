@@ -19,19 +19,19 @@ export async function GET(request: Request) {
       .from(systemApiKeys)
       .where(
         and(
-          eq(systemApiKeys.serviceId, 1),
+          eq(systemApiKeys.service_id, 1),
           eq(systemApiKeys.environment, 'PRODUCTION'),
-          eq(systemApiKeys.isActive, 1),
-          eq(systemApiKeys.isPrimary, 1)
+          eq(systemApiKeys.is_active, 1),
+          eq(systemApiKeys.is_primary, 1)
         )
       )
       .limit(1);
 
-    if (!apiKeyData || apiKeyData.length === 0 || !apiKeyData[0].apiKey) {
+    if (!apiKeyData || apiKeyData.length === 0 || !apiKeyData[0].api_key) {
       throw new Error('Failed to fetch AlphaVantage API key');
     }
 
-    const apiKey = apiKeyData[0].apiKey;
+    const apiKey = apiKeyData[0].api_key;
 
     // Call AlphaVantage OVERVIEW endpoint
     const url = `https://www.alphavantage.co/query?function=OVERVIEW&symbol=${encodeURIComponent(ticker)}&apikey=${apiKey}`;

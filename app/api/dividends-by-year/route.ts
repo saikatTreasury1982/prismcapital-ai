@@ -26,12 +26,12 @@ export async function GET(request: Request) {
         .from(dividends)
         .where(
           and(
-            eq(dividends.userId, userId),
-            gte(dividends.exDividendDate, `${yearNum}-01-01`),
-            lt(dividends.exDividendDate, `${yearNum + 1}-01-01`)
+            eq(dividends.user_id, userId),
+            gte(dividends.ex_dividend_date, `${yearNum}-01-01`),
+            lt(dividends.ex_dividend_date, `${yearNum + 1}-01-01`)
           )
         )
-        .orderBy(desc(dividends.exDividendDate))
+        .orderBy(desc(dividends.ex_dividend_date))
         .limit(pageSize)
         .offset(offset);
 
@@ -40,9 +40,9 @@ export async function GET(request: Request) {
         .from(dividends)
         .where(
           and(
-            eq(dividends.userId, userId),
-            gte(dividends.exDividendDate, `${yearNum}-01-01`),
-            lt(dividends.exDividendDate, `${yearNum + 1}-01-01`)
+            eq(dividends.user_id, userId),
+            gte(dividends.ex_dividend_date, `${yearNum}-01-01`),
+            lt(dividends.ex_dividend_date, `${yearNum + 1}-01-01`)
           )
         );
 

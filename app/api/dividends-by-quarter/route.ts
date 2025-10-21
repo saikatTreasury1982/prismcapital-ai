@@ -33,12 +33,12 @@ export async function GET(request: Request) {
         .from(dividends)
         .where(
           and(
-            eq(dividends.userId, userId),
-            gte(dividends.exDividendDate, startDate),
-            lt(dividends.exDividendDate, endDate)
+            eq(dividends.user_id, userId),
+            gte(dividends.ex_dividend_date, startDate),
+            lt(dividends.ex_dividend_date, endDate)
           )
         )
-        .orderBy(desc(dividends.exDividendDate))
+        .orderBy(desc(dividends.ex_dividend_date))
         .limit(pageSize)
         .offset(offset);
 
@@ -47,9 +47,9 @@ export async function GET(request: Request) {
         .from(dividends)
         .where(
           and(
-            eq(dividends.userId, userId),
-            gte(dividends.exDividendDate, startDate),
-            lt(dividends.exDividendDate, endDate)
+            eq(dividends.user_id, userId),
+            gte(dividends.ex_dividend_date, startDate),
+            lt(dividends.ex_dividend_date, endDate)
           )
         );
 

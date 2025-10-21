@@ -17,7 +17,7 @@ export async function GET(request: Request) {
       const data = await db
         .select()
         .from(transactions)
-        .where(eq(transactions.transactionId, transactionId))
+        .where(eq(transactions.transaction_id, transactionId))
         .limit(1);
 
       if (!data || data.length === 0) {
@@ -35,16 +35,16 @@ export async function GET(request: Request) {
     // Build query with optional ticker filter
     const conditions = ticker
       ? and(
-          eq(transactions.userId, userId),
+          eq(transactions.user_id, userId),
           eq(transactions.ticker, ticker)
         )
-      : eq(transactions.userId, userId);
+      : eq(transactions.user_id, userId);
 
     const data = await db
       .select()
       .from(transactions)
       .where(conditions)
-      .orderBy(desc(transactions.transactionDate));
+      .orderBy(desc(transactions.transaction_date));
 
     return NextResponse.json({ data });
   } catch (e: any) {
@@ -69,16 +69,16 @@ export async function POST(request: Request) {
     const data = await db
       .insert(transactions)
       .values({
-        transactionId,
-        userId,
+        transaction_id: transactionId,
+        user_id: userId,
         ticker: transactionData.ticker.toUpperCase(),
-        exchangeId: transactionData.exchange_id,
-        transactionTypeId: transactionData.transaction_type_id,
-        transactionDate: transactionData.transaction_date,
+        exchange_id: transactionData.exchange_id,
+        transaction_type_id: transactionData.transaction_type_id,
+        transaction_date: transactionData.transaction_date,
         quantity: transactionData.quantity,
         price: transactionData.price,
         fees: transactionData.fees || 0,
-        transactionCurrency: transactionData.transaction_currency || 'USD',
+        transaction_currency: transactionData.transaction_currency || 'USD',
         notes: transactionData.notes || null,
       })
       .returning();
@@ -108,7 +108,7 @@ export async function PATCH(request: Request) {
     const data = await db
       .update(transactions)
       .set(updateData)
-      .where(eq(transactions.transactionId, transactionId))
+      .where(eq(transactions.transaction_id, transactionId))
       .returning();
 
     if (!data || data.length === 0) {
@@ -134,7 +134,7 @@ export async function DELETE(request: Request) {
 
     await db
       .delete(transactions)
-      .where(eq(transactions.transactionId, transactionId));
+      .where(eq(transactions.transaction_id, transactionId));
 
     return NextResponse.json({ success: true });
   } catch (e: any) {

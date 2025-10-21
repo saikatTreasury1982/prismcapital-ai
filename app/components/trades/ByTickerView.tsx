@@ -209,7 +209,7 @@ export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
                       <td className="p-4 text-right text-white">${transaction.price.toFixed(2)}</td>
                       <td className="p-4 text-right text-white">${transaction.fees.toFixed(2)}</td>
                       <td className="p-4 text-right text-white font-semibold">
-                        ${transaction.trade_value.toFixed(2)}
+                        ${transaction.trade_value?.toFixed(2) || (transaction.quantity * transaction.price).toFixed(2)}
                       </td>
                       <td className="p-4 text-white text-xs truncate max-w-[150px]">
                         {transaction.notes || '-'}

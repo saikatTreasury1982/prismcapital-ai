@@ -25,11 +25,11 @@ export async function GET(request: Request) {
         .from(dividends)
         .where(
           and(
-            eq(dividends.userId, userId),
+            eq(dividends.user_id, userId),
             eq(dividends.ticker, ticker)
           )
         )
-        .orderBy(desc(dividends.paymentDate))
+        .orderBy(desc(dividends.payment_date))
         .limit(pageSize)
         .offset(offset);
 
@@ -38,7 +38,7 @@ export async function GET(request: Request) {
         .from(dividends)
         .where(
           and(
-            eq(dividends.userId, userId),
+            eq(dividends.user_id, userId),
             eq(dividends.ticker, ticker)
           )
         );

@@ -16,10 +16,10 @@ export async function GET(request: Request) {
 
     const conditions = isActive !== null && isActive !== undefined
       ? and(
-          eq(positions.userId, userId),
-          eq(positions.isActive, isActive === 'true' ? 1 : 0)
+          eq(positions.user_id, userId),
+          eq(positions.is_active, isActive === 'true' ? 1 : 0)
         )
-      : eq(positions.userId, userId);
+      : eq(positions.user_id, userId);
 
     const data = await db
       .select()

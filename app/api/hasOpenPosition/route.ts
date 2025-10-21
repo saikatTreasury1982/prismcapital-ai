@@ -16,14 +16,14 @@ export async function GET(request: Request) {
   try {
     const data = await db
       .select({
-        positionId: positions.positionId,
-        tickerName: positions.tickerName,
+        positionId: positions.position_id,
+        tickerName: positions.ticker_name,
       })
       .from(positions)
       .where(
         and(
-          eq(positions.userId, userId),
-          eq(positions.isActive, 1),
+          eq(positions.user_id, userId),
+          eq(positions.is_active, 1),
           sql`LOWER(${positions.ticker}) = LOWER(${ticker})`
         )
       )
