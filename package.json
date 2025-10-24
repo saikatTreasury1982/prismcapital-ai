@@ -9,12 +9,16 @@
   },
   "dependencies": {
     "@libsql/client": "^0.15.15",
+    "@simplewebauthn/browser": "^9.0.1",
+    "@simplewebauthn/server": "^9.0.3",
     "@supabase/ssr": "^0.7.0",
     "drizzle-orm": "^0.44.6",
     "lucide-react": "^0.545.0",
     "next": "15.5.4",
+    "next-auth": "^5.0.0-beta.29",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "twilio": "^5.10.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
