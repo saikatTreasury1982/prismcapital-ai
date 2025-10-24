@@ -1,46 +1,132 @@
-import Link from 'next/link';
-import { Button } from './components/ui/Button';
-import { ArrowRight } from 'lucide-react';
+'use client';
 
-export default function LandingPage() {
+import { useState } from 'react';
+import { signIn } from 'next-auth/react';
+import { Fingerprint, Smartphone } from 'lucide-react';
+
+export default function LoginPage() {
+  const [showOTP, setShowOTP] = useState(false);
+  const [phone, setPhone] = useState('');
+  const [code, setCode] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handlePasskey = async () => {
+    setLoading(true);
+    try {
+      await signIn('passkey', { redirect: true, callbackUrl: '/launcher' });
+    } catch (error) {
+      console.error('Passkey failed:', error);
+      setShowOTP(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendOTP = async () => {
+    setLoading(true);
+    try {
+      await fetch('/api/auth/otp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone }),
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async () => {
+    setLoading(true);
+    try {
+      await signIn('otp', {
+        phone,
+        code,
+        redirect: true,
+        callbackUrl: '/launcher',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen">
-      {/* Navigation */}
-      <nav className="container mx-auto px-4 sm:px-6 py-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg"></div>
-            <span className="text-xl sm:text-2xl font-bold text-white">Prism Capital</span>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
+      <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 sm:p-12 border border-white/20 max-w-md w-full shadow-2xl">
+        <h1 className="text-3xl font-bold text-white mb-2 text-center">Welcome</h1>
+        <p className="text-blue-200 text-center mb-8">Sign in to your account</p>
+
+        {!showOTP ? (
+          <div className="space-y-4">
+            <button
+              onClick={handlePasskey}
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-blue-500 to-emerald-600 bg-clip-text text-transparent text-white py-4 rounded-2xl font-semibold flex items-center justify-center gap-3 hover:from-blue-600 hover:to-blue-700 hover:shadow-xl transition-all disabled:opacity-50"
+            >
+              <Fingerprint className="w-6 h-6" />
+              {loading ? 'Authenticating...' : 'Sign in with Passkey'}
+            </button>
+
+            <button
+              onClick={() => setShowOTP(true)}
+              className="w-full bg-gradient-to-r from-blue-500 to-emerald-600 bg-clip-text text-transparent text-white py-4 rounded-2xl font-semibold flex items-center justify-center gap-3 hover:from-blue-600 hover:to-blue-700 hover:shadow-xl transition-all disabled:opacity-50"
+            >
+              <Smartphone className="w-6 h-6" />
+              Use SMS Code Instead
+            </button>
           </div>
-        </div>
-      </nav>
+        ) : (
+          <div className="space-y-4">
+            <div>
+              <input
+                type="tel"
+                placeholder="Phone Number"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
+              />
+            </div>
 
-      {/* Hero Section */}
-      <div className="container mx-auto px-4 sm:px-6 pt-16 sm:pt-32 pb-16 sm:pb-32">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-4 sm:mb-6 leading-tight">
-            Smart Portfolio Tracking for
-            <span className="block bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
-              Trades and Investments
-            </span>
-          </h1>
-          
-          <p className="text-base sm:text-xl text-gray-300 mb-8 sm:mb-12 max-w-2xl mx-auto px-4">
-            Track your day trades, swing positions, and long-term holdings all in one intelligent platform.
-          </p>
-
-          <div className="flex gap-4 justify-center">
-            <Link href="/dashboard">
-              <Button 
-                variant="glass" 
-                size="lg" 
-                className="!w-24 !h-24 sm:!w-28 sm:!h-28 !rounded-full !text-2xl !font-bold !flex !items-center !justify-center !p-0"
+            {!code && (
+              <button
+                onClick={handleSendOTP}
+                disabled={loading || !phone}
+                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent text-white py-3 rounded-2xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed enabled:hover:from-blue-600 enabled:hover:to-blue-700 enabled:hover:shadow-xl"
               >
-                <ArrowRight size={40} className="sm:w-12 sm:h-12" strokeWidth={2.5} />
-              </Button>
-            </Link>
+                {loading ? 'Sending...' : 'Send Code'}
+              </button>
+            )}
+
+            {code !== '' && (
+              <>
+                <div>
+                  <input
+                    type="text"
+                    placeholder="6-Digit Code"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    maxLength={6}
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 text-center text-2xl tracking-widest"
+                  />
+                </div>
+
+                <button
+                  onClick={handleVerifyOTP}
+                  disabled={loading || code.length !== 6}
+                  className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-2xl font-semibold hover:from-blue-600 hover:to-blue-700 hover:shadow-xl transition-all disabled:opacity-50"
+                >
+                  {loading ? 'Verifying...' : 'Verify & Sign In'}
+                </button>
+              </>
+            )}
+
+            <button
+              onClick={() => setShowOTP(false)}
+              className="w-full text-blue-300 text-sm hover:text-white transition-colors"
+            >
+              ← Back to Passkey
+            </button>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
