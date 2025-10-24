@@ -313,7 +313,10 @@ export const auditLog = sqliteTable('audit_log', {
 export const authSessions = sqliteTable('auth_sessions', {
   session_id: text('session_id').primaryKey(),
   user_id: text('user_id').notNull().references(() => users.user_id),
-  expires_at: text('expires_at').notNull(),
+  session_status: text('session_status').default('OPEN'),
+  closed_at: text('closed_at'),
+  credential_id: text('credential_id').references(() => authPasskeys.credential_id),
+  otp_id: text('otp_id').references(() => authOtpCodes.otp_id),
   created_at: text('created_at').default(sql`(datetime('now'))`),
 });
 

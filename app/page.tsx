@@ -16,33 +16,57 @@ export default function LoginPage() {
     try {
       const userId = 'beb2f83d-998e-4bb2-9510-ae9916e339f3';
 
-      const optionsResponse = await fetch('/api/auth/passkey/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId }),
-      });
+      // Try to authenticate with existing passkey first
+      const authOptionsResponse = await fetch(`/api/auth/passkey/authenticate?userId=${userId}`);
+      
+      if (authOptionsResponse.ok) {
+        // User has existing passkey - authenticate
+        const options = await authOptionsResponse.json();
+        const { startAuthentication } = await import('@simplewebauthn/browser');
+        const credential = await startAuthentication(options);
 
-      const options = await optionsResponse.json();
-      const credential = await startRegistration(options);
+        const verifyResponse = await fetch('/api/auth/passkey/authenticate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, credential, challenge: options.challenge }),
+        });
 
-      const verifyResponse = await fetch('/api/auth/passkey/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, credential, challenge: options.challenge }),
-      });
-
-      const { verified } = await verifyResponse.json();
-
-      if (verified) {
-        window.location.href = '/launcher';
+        const { verified } = await verifyResponse.json();
+        if (verified) {
+          window.location.href = '/launcher';
+          return;
+        }
       } else {
-        throw new Error('Verification failed');
+        // No passkey exists - register new one
+        const { startRegistration } = await import('@simplewebauthn/browser');
+        
+        const optionsResponse = await fetch('/api/auth/passkey/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId }),
+        });
+
+        const options = await optionsResponse.json();
+        const credential = await startRegistration(options);
+
+        const verifyResponse = await fetch('/api/auth/passkey/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, credential, challenge: options.challenge }),
+        });
+
+        const { verified } = await verifyResponse.json();
+        if (verified) {
+          window.location.href = '/launcher';
+          return;
+        }
       }
 
+      throw new Error('Authentication failed');
     } catch (error) {
-        console.error('Passkey failed:', error);
-        alert('Passkey authentication failed. Please try SMS instead.');
-        setShowOTP(true);
+      console.error('Passkey failed:', error);
+      alert('Passkey authentication failed. Please try SMS instead.');
+      setShowOTP(true);
     } finally {
       setLoading(false);
     }

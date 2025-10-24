@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { verifyRegistrationResponse } from '@simplewebauthn/server';
 import { db, schema } from '@/app/lib/db';
 
-const { authPasskeys } = schema;
+const { authPasskeys, authSessions } = schema;
 
 const rpID = process.env.NEXTAUTH_WEBAUTHN_RP_ID!;
 const origin = process.env.NEXTAUTH_WEBAUTHN_ORIGIN!;
@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     if (verification.verified && verification.registrationInfo) {
       const { credentialPublicKey, credentialID, counter } = verification.registrationInfo;
 
-      const credId = `cred_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const credId = Buffer.from(credentialID).toString('base64');
 
       await db.insert(authPasskeys).values({
         credential_id: credId,
@@ -31,7 +31,16 @@ export async function POST(request: Request) {
         device_name: 'Device',
       });
 
-      return NextResponse.json({ verified: true });
+      // Create session
+      const sessionId = `sess_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      await db.insert(authSessions).values({
+        session_id: sessionId,
+        user_id: userId,
+        session_status: 'OPEN',
+        credential_id: credId,
+      });
+
+      return NextResponse.json({ verified: true, sessionId });
     }
 
     return NextResponse.json({ verified: false }, { status: 400 });
