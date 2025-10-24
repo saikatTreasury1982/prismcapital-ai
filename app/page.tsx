@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { Fingerprint, Smartphone } from 'lucide-react';
+import { startRegistration } from '@simplewebauthn/browser';
 
 export default function LoginPage() {
   const [showOTP, setShowOTP] = useState(false);
@@ -13,10 +14,35 @@ export default function LoginPage() {
   const handlePasskey = async () => {
     setLoading(true);
     try {
-      await signIn('passkey', { redirect: true, callbackUrl: '/launcher' });
+      const userId = 'beb2f83d-998e-4bb2-9510-ae9916e339f3';
+
+      const optionsResponse = await fetch('/api/auth/passkey/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
+
+      const options = await optionsResponse.json();
+      const credential = await startRegistration(options);
+
+      const verifyResponse = await fetch('/api/auth/passkey/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, credential, challenge: options.challenge }),
+      });
+
+      const { verified } = await verifyResponse.json();
+
+      if (verified) {
+        window.location.href = '/launcher';
+      } else {
+        throw new Error('Verification failed');
+      }
+
     } catch (error) {
-      console.error('Passkey failed:', error);
-      setShowOTP(true);
+        console.error('Passkey failed:', error);
+        alert('Passkey authentication failed. Please try SMS instead.');
+        setShowOTP(true);
     } finally {
       setLoading(false);
     }
