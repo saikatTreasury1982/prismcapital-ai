@@ -93,11 +93,7 @@ export function PeriodTimeline({ periods, homeCurrency, tradingCurrency }: Perio
         <div className="absolute top-6 left-6 z-10 backdrop-blur-xl bg-slate-900/95 rounded-xl p-4 border-2 border-blue-400/50 shadow-2xl min-w-[200px]">
           {/* Date */}
           <div className="text-blue-300 text-sm font-semibold mb-3 border-b border-white/20 pb-2">
-            {new Date(selectedPeriod.period).toLocaleDateString('en-US', { 
-              month: 'short', 
-              day: 'numeric', 
-              year: 'numeric' 
-            })}
+            {selectedPeriod.period_display}
           </div>
           
           {/* Inflow */}
@@ -272,7 +268,7 @@ export function PeriodTimeline({ periods, homeCurrency, tradingCurrency }: Perio
                   textAnchor="middle"
                   className="select-none pointer-events-none"
                 >
-                  {new Date(period.period).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  {selectedPeriod.period_display}
                 </text>
               </g>
             );

@@ -3,15 +3,16 @@
 import { useState, useEffect } from 'react';
 import { getUniquePeriods, getMovementsForPeriod } from '../../services/cashMovementServiceClient';
 import { CURRENT_USER_ID } from '../../lib/auth';
-import { ArrowLeftRight, TrendingUp, TrendingDown } from 'lucide-react';
-import { PeriodStats } from '../../lib/types/funding';
-import { CashMovementWithDirection } from '../../lib/types/funding';
+import { ArrowLeftRight } from 'lucide-react';
+import { PeriodStats, CashMovementWithDirection } from '../../lib/types/funding';
 
 interface PeriodCompareProps {
-  homeCurrency: string;
+  periods: PeriodStats[];
+  allMovements: CashMovementWithDirection[];
+  home_currency: string;  // Keep snake_case to match database
 }
 
-export function PeriodCompare({ homeCurrency }: PeriodCompareProps) {
+export function PeriodCompare({ home_currency }: PeriodCompareProps) {
   const [periods, setPeriods] = useState<Array<{period_from: string, period_to: string | null, period_display: string}>>([]);
   const [movements1, setMovements1] = useState<CashMovementWithDirection[]>([]);
   const [movements2, setMovements2] = useState<CashMovementWithDirection[]>([]);
@@ -150,19 +151,19 @@ export function PeriodCompare({ homeCurrency }: PeriodCompareProps) {
             <div className="flex justify-between items-center">
               <span className="text-blue-200">Inflow</span>
               <span className="text-emerald-300 text-xl font-bold">
-                {homeCurrency} {stats1.inflow_home.toFixed(2)}
+                {home_currency} {stats1.inflow_home.toFixed(2)}
               </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-blue-200">Outflow</span>
               <span className="text-rose-300 text-xl font-bold">
-                {homeCurrency} {stats1.outflow_home.toFixed(2)}
+                {home_currency} {stats1.outflow_home.toFixed(2)}
               </span>
             </div>
             <div className="flex justify-between items-center pt-4 border-t border-white/20">
               <span className="text-white font-semibold">Net Flow</span>
               <span className={`text-2xl font-bold ${stats1.net_flow_home >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
-                {homeCurrency} {stats1.net_flow_home.toFixed(2)}
+                {home_currency} {stats1.net_flow_home.toFixed(2)}
               </span>
             </div>
             <div className="flex justify-between items-center text-sm">
@@ -180,7 +181,7 @@ export function PeriodCompare({ homeCurrency }: PeriodCompareProps) {
                     {new Date(txn.transaction_date).toLocaleDateString()}
                   </span>
                   <span className={`font-semibold ${txn.direction.direction_code === 'IN' ? 'text-emerald-300' : 'text-rose-300'}`}>
-                    {txn.direction.direction_code === 'IN' ? '+' : '-'}{homeCurrency} {Math.abs(txn.home_currency_value).toFixed(2)}
+                    {txn.direction.direction_code === 'IN' ? '+' : '-'}{home_currency} {Math.abs(txn.home_currency_value).toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -206,19 +207,19 @@ export function PeriodCompare({ homeCurrency }: PeriodCompareProps) {
             <div className="flex justify-between items-center">
               <span className="text-purple-200">Inflow</span>
               <span className="text-emerald-300 text-xl font-bold">
-                {homeCurrency} {stats2.inflow_home.toFixed(2)}
+                {home_currency} {stats2.inflow_home.toFixed(2)}
               </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-purple-200">Outflow</span>
               <span className="text-rose-300 text-xl font-bold">
-                {homeCurrency} {stats2.outflow_home.toFixed(2)}
+                {home_currency} {stats2.outflow_home.toFixed(2)}
               </span>
             </div>
             <div className="flex justify-between items-center pt-4 border-t border-white/20">
               <span className="text-white font-semibold">Net Flow</span>
               <span className={`text-2xl font-bold ${stats2.net_flow_home >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
-                {homeCurrency} {stats2.net_flow_home.toFixed(2)}
+                {home_currency} {stats2.net_flow_home.toFixed(2)}
               </span>
             </div>
             <div className="flex justify-between items-center text-sm">
@@ -236,7 +237,7 @@ export function PeriodCompare({ homeCurrency }: PeriodCompareProps) {
                     {new Date(txn.transaction_date).toLocaleDateString()}
                   </span>
                   <span className={`font-semibold ${txn.direction.direction_code === 'IN' ? 'text-emerald-300' : 'text-rose-300'}`}>
-                    {txn.direction.direction_code === 'IN' ? '+' : '-'}{homeCurrency} {Math.abs(txn.home_currency_value).toFixed(2)}
+                    {txn.direction.direction_code === 'IN' ? '+' : '-'}{home_currency} {Math.abs(txn.home_currency_value).toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -252,19 +253,19 @@ export function PeriodCompare({ homeCurrency }: PeriodCompareProps) {
           <div>
             <div className="text-blue-200 text-sm mb-1">Inflow Change</div>
             <div className={`text-xl font-bold ${stats2.inflow_home - stats1.inflow_home >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
-              {stats2.inflow_home - stats1.inflow_home >= 0 ? '+' : ''}{homeCurrency} {(stats2.inflow_home - stats1.inflow_home).toFixed(2)}
+              {stats2.inflow_home - stats1.inflow_home >= 0 ? '+' : ''}{home_currency} {(stats2.inflow_home - stats1.inflow_home).toFixed(2)}
             </div>
           </div>
           <div>
             <div className="text-blue-200 text-sm mb-1">Outflow Change</div>
             <div className={`text-xl font-bold ${stats2.outflow_home - stats1.outflow_home >= 0 ? 'text-rose-300' : 'text-emerald-300'}`}>
-              {stats2.outflow_home - stats1.outflow_home >= 0 ? '+' : ''}{homeCurrency} {(stats2.outflow_home - stats1.outflow_home).toFixed(2)}
+              {stats2.outflow_home - stats1.outflow_home >= 0 ? '+' : ''}{home_currency} {(stats2.outflow_home - stats1.outflow_home).toFixed(2)}
             </div>
           </div>
           <div>
             <div className="text-blue-200 text-sm mb-1">Net Flow Change</div>
             <div className={`text-xl font-bold ${stats2.net_flow_home - stats1.net_flow_home >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
-              {stats2.net_flow_home - stats1.net_flow_home >= 0 ? '+' : ''}{homeCurrency} {(stats2.net_flow_home - stats1.net_flow_home).toFixed(2)}
+              {stats2.net_flow_home - stats1.net_flow_home >= 0 ? '+' : ''}{home_currency} {(stats2.net_flow_home - stats1.net_flow_home).toFixed(2)}
             </div>
           </div>
         </div>

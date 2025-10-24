@@ -117,7 +117,7 @@ export function FundingClientWrapper({
           <PeriodCompare 
             periods={initialPeriodStats}
             allMovements={initialMovements}
-            homeCurrency={currencies.home_currency}
+            home_currency={currencies.home_currency}
           />
         </div>
       )}

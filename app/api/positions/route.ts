@@ -14,17 +14,19 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'userId required' }, { status: 400 });
     }
 
-    const conditions = isActive !== null && isActive !== undefined
-      ? and(
-          eq(positions.user_id, userId),
-          eq(positions.is_active, isActive === 'true' ? 1 : 0)
-        )
-      : eq(positions.user_id, userId);
+    // Build conditions array
+    const conditions = [eq(positions.user_id, userId)];
+    
+    if (isActive === 'true') {
+      conditions.push(eq(positions.is_active, 1));
+    } else if (isActive === 'false') {
+      conditions.push(eq(positions.is_active, 0));
+    }
 
     const data = await db
       .select()
       .from(positions)
-      .where(conditions)
+      .where(and(...conditions))
       .orderBy(asc(positions.ticker));
 
     return NextResponse.json({ data });

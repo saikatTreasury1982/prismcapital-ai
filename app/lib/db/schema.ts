@@ -308,3 +308,41 @@ export const auditLog = sqliteTable('audit_log', {
   user_agent: text('user_agent'),
   created_at: text('created_at').default(sql`(datetime('now'))`),
 });
+
+// AUTH TABLES
+export const authSessions = sqliteTable('auth_sessions', {
+  session_id: text('session_id').primaryKey(),
+  user_id: text('user_id').notNull().references(() => users.user_id),
+  expires_at: text('expires_at').notNull(),
+  created_at: text('created_at').default(sql`(datetime('now'))`),
+});
+
+export const authPasskeys = sqliteTable('auth_passkeys', {
+  credential_id: text('credential_id').primaryKey(),
+  user_id: text('user_id').notNull().references(() => users.user_id),
+  public_key: text('public_key').notNull(),
+  counter: integer('counter').default(0),
+  device_name: text('device_name'),
+  created_at: text('created_at').default(sql`(datetime('now'))`),
+  last_used_at: text('last_used_at'),
+});
+
+export const authOtpCodes = sqliteTable('auth_otp_codes', {
+  otp_id: text('otp_id').primaryKey(),
+  user_id: text('user_id').notNull().references(() => users.user_id),
+  phone_number: text('phone_number').notNull(),
+  code: text('code').notNull(),
+  expires_at: text('expires_at').notNull(),
+  is_used: integer('is_used').default(0),
+  created_at: text('created_at').default(sql`(datetime('now'))`),
+});
+
+export const pnlStrategies = sqliteTable('pnl_strategies', {
+  strategy_id: integer('strategy_id').primaryKey({ autoIncrement: true }),
+  strategy_code: text('strategy_code').notNull().unique(),
+  strategy_name: text('strategy_name').notNull(),
+  strategy_description: text('strategy_description'),
+  requires_lot_tracking: integer('requires_lot_tracking').default(0),
+  is_active: integer('is_active').default(1),
+  created_at: text('created_at').default(sql`(datetime('now'))`),
+});

@@ -15,5 +15,6 @@ export async function getPositions(userId: string, isActive?: boolean): Promise<
   }
 
   const result = await response.json();
+  
   return result.data;
 }
