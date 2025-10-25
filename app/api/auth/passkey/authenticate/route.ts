@@ -28,10 +28,6 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'No passkey found', needsRegistration: true }, { status: 404 });
     }
 
-    // Add this debug log
-    console.log('🔑 Found passkey:', passkeys[0].credential_id);
-    console.log('📊 Passkey data:', passkeys[0]);
-
     const options = await generateAuthenticationOptions({
       rpID,
       allowCredentials: passkeys.map(p => ({

@@ -94,7 +94,7 @@ export default function LauncherPage() {
                 <p className="text-blue-200 text-sm">{app.description}</p>
             </div>
             ) : (
-            <Link key={app.name} href={app.href}>
+            <Link key={app.name} href={app.href} target="_blank" rel="noopener noreferrer">
                 <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20 hover:bg-white/15 transition-all cursor-pointer group hover:scale-105 hover:shadow-2xl">
                 <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${app.gradient} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                     <app.icon className="w-8 h-8 text-white" />

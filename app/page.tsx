@@ -23,7 +23,15 @@ export default function LoginPage() {
         // User has existing passkey - authenticate
         const options = await authOptionsResponse.json();
         const { startAuthentication } = await import('@simplewebauthn/browser');
-        const credential = await startAuthentication(options);
+        let credential;
+        try {
+          credential = await startAuthentication(options);
+        } catch (err: any) {
+          if (err.name === 'NotAllowedError') {
+            return; // User cancelled, exit gracefully
+          }
+          throw err; // Re-throw other errors
+        }
 
         const verifyResponse = await fetch('/api/auth/passkey/authenticate', {
           method: 'POST',
@@ -47,7 +55,16 @@ export default function LoginPage() {
         });
 
         const options = await optionsResponse.json();
-        const credential = await startRegistration(options);
+        
+        let credential;
+        try {
+          credential = await startRegistration(options);
+        } catch (err: any) {
+          if (err.name === 'NotAllowedError') {
+            return; // User cancelled
+          }
+          throw err;
+        }
 
         const verifyResponse = await fetch('/api/auth/passkey/verify', {
           method: 'POST',
@@ -63,8 +80,15 @@ export default function LoginPage() {
       }
 
       throw new Error('Authentication failed');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Passkey failed:', error);
+
+      // User cancelled - don't show error
+      if (error.name === 'NotAllowedError') {
+        setLoading(false);
+        return;
+      }
+
       alert('Passkey authentication failed. Please try SMS instead.');
       setShowOTP(true);
     } finally {
