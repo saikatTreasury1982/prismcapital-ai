@@ -33,6 +33,7 @@ export const userPreferences = sqliteTable('user_preferences', {
   notifications_enabled: integer('notifications_enabled').default(1),
   updated_at: text('updated_at').default(sql`(datetime('now'))`),
   default_trading_currency: text('default_trading_currency').default('USD'),
+  pnl_strategy_id: integer('pnl_strategy_id'),
 });
 
 // API SERVICES
@@ -231,6 +232,7 @@ export const positions = sqliteTable('positions', {
   ticker_name: text('ticker_name'),
   current_value: real('current_value'),
   unrealized_pnl: real('unrealized_pnl'),
+  realized_pnl: real('realized_pnl').default(0),
 });
 
 // TRANSACTIONS
@@ -297,7 +299,7 @@ export const watchlist = sqliteTable('watchlist', {
 
 // AUDIT LOG
 export const auditLog = sqliteTable('audit_log', {
-  log_id: text('log_id').primaryKey(),
+  session_id: text('log_id').primaryKey(),
   user_id: text('user_id').references(() => users.user_id),
   action_type: text('action_type'),
   table_name: text('table_name'),

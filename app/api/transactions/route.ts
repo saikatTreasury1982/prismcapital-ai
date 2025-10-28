@@ -83,6 +83,43 @@ export async function POST(request: Request) {
       })
       .returning();
 
+    // Update position based on user's PnL strategy
+    const userPrefs = await db
+      .select()
+      .from(schema.userPreferences)
+      .where(eq(schema.userPreferences.user_id, userId))
+      .limit(1);
+
+    if (userPrefs && userPrefs.length > 0 && userPrefs[0].pnl_strategy_id === 1) {
+      // Aggregated strategy - update positions table
+      const { aggregateToPosition, reducePosition } = await import('@/app/services/positionService');
+      
+      // Determine transaction type (BUY or SELL)
+      // Assuming transaction_type_id: 1 = BUY, 2 = SELL (adjust based on your DB)
+      if (transactionData.transaction_type_id === 1) {
+        await aggregateToPosition({
+          user_id: userId,
+          ticker: transactionData.ticker.toUpperCase(),
+          exchange_id: transactionData.exchange_id,
+          quantity: transactionData.quantity,
+          price: transactionData.price,
+          transaction_date: transactionData.transaction_date,
+          strategy_id: 1, // Aggregated strategy
+          transaction_currency: transactionData.transaction_currency || 'USD',
+        });
+      } else if (transactionData.transaction_type_id === 2) {
+        await reducePosition({
+          user_id: userId,
+          ticker: transactionData.ticker.toUpperCase(),
+          exchange_id: transactionData.exchange_id,
+          quantity: transactionData.quantity,
+          price: transactionData.price,
+          transaction_date: transactionData.transaction_date,
+          strategy_id: 1,
+        });
+      }
+    }
+
     return NextResponse.json({ data: data[0] });
   } catch (e: any) {
     console.error('Unexpected error:', e);

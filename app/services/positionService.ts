@@ -1,5 +1,8 @@
-import { createClient } from '@/utils/supabase/server';
-import { CURRENT_USER_ID } from '@/app/lib/auth';
+
+import { db, schema } from '../lib/db';
+import { eq, and } from 'drizzle-orm';
+
+const { positions } = schema;
 
 export interface Position {
   position_id: string;
@@ -33,71 +36,54 @@ export async function aggregateToPosition(transaction: {
   strategy_id: number;
   transaction_currency: string;
 }) {
-  const supabase = await createClient();
-
   // Check for existing active position
-  const { data: existingPosition, error: fetchError } = await supabase
-    .from('positions')
-    .select('*')
-    .eq('user_id', transaction.user_id)
-    .eq('ticker', transaction.ticker)
-    .eq('exchange_id', transaction.exchange_id)
-    .eq('is_active', true)
-    .eq('strategy_id', transaction.strategy_id)
-    .maybeSingle();
+  const existingPosition = await db
+    .select()
+    .from(positions)
+    .where(
+      and(
+        eq(positions.user_id, transaction.user_id),
+        eq(positions.ticker, transaction.ticker),
+        eq(positions.exchange_id, transaction.exchange_id),
+        eq(positions.is_active, 1),
+        eq(positions.strategy_id, transaction.strategy_id)
+      )
+    )
+    .limit(1);
 
-  if (fetchError) {
-    throw new Error(`Failed to fetch position: ${fetchError.message}`);
-  }
+  if (existingPosition && existingPosition.length > 0) {
+    const pos = existingPosition[0];
+    const newTotalShares = (pos.total_shares || 0) + transaction.quantity;
+    const newAverageCost = ((pos.average_cost || 0) * (pos.total_shares || 0) + transaction.price * transaction.quantity) / newTotalShares;
 
-  if (existingPosition) {
-    // Update existing position with new weighted average cost
-    const newTotalShares = parseFloat(existingPosition.total_shares) + transaction.quantity;
-    const newAverageCost =
-      (parseFloat(existingPosition.average_cost) * parseFloat(existingPosition.total_shares) +
-        transaction.price * transaction.quantity) /
-      newTotalShares;
-
-    const { data, error } = await supabase
-      .from('positions')
-      .update({
+    await db
+      .update(positions)
+      .set({
         total_shares: newTotalShares,
         average_cost: newAverageCost,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
-      .eq('position_id', existingPosition.position_id)
-      .select()
-      .single();
+      .where(eq(positions.position_id, pos.position_id));
 
-    if (error) {
-      throw new Error(`Failed to update position: ${error.message}`);
-    }
-
-    return data;
+    return pos;
   } else {
-    // Create new position
-    const { data, error } = await supabase
-      .from('positions')
-      .insert({
-        user_id: transaction.user_id,
-        ticker: transaction.ticker,
-        exchange_id: transaction.exchange_id,
-        total_shares: transaction.quantity,
-        average_cost: transaction.price,
-        strategy_id: transaction.strategy_id,
-        opened_date: transaction.transaction_date,
-        position_currency: transaction.transaction_currency,
-        is_active: true,
-        realized_pnl: 0
-      })
-      .select()
-      .single();
+    const positionId = `pos_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    if (error) {
-      throw new Error(`Failed to create position: ${error.message}`);
-    }
+    await db.insert(positions).values({
+      position_id: positionId,
+      user_id: transaction.user_id,
+      ticker: transaction.ticker,
+      exchange_id: transaction.exchange_id,
+      total_shares: transaction.quantity,
+      average_cost: transaction.price,
+      strategy_id: transaction.strategy_id,
+      opened_date: transaction.transaction_date,
+      position_currency: transaction.transaction_currency,
+      is_active: 1,
+      realized_pnl: 0,
+    });
 
-    return data;
+    return { position_id: positionId };
   }
 }
 
@@ -113,75 +99,65 @@ export async function reducePosition(transaction: {
   transaction_date: string;
   strategy_id: number;
 }) {
-  const supabase = await createClient();
+  const existingPosition = await db
+    .select()
+    .from(positions)
+    .where(
+      and(
+        eq(positions.user_id, transaction.user_id),
+        eq(positions.ticker, transaction.ticker),
+        eq(positions.exchange_id, transaction.exchange_id),
+        eq(positions.is_active, 1),
+        eq(positions.strategy_id, transaction.strategy_id)
+      )
+    )
+    .limit(1);
 
-  // Get active position
-  const { data: position, error: fetchError } = await supabase
-    .from('positions')
-    .select('*')
-    .eq('user_id', transaction.user_id)
-    .eq('ticker', transaction.ticker)
-    .eq('exchange_id', transaction.exchange_id)
-    .eq('is_active', true)
-    .eq('strategy_id', transaction.strategy_id)
-    .single();
-
-  if (fetchError) {
-    throw new Error(`Failed to fetch position: ${fetchError.message}`);
+  if (!existingPosition || existingPosition.length === 0) {
+    throw new Error('No active position found');
   }
 
-  const newTotalShares = parseFloat(position.total_shares) - transaction.quantity;
+  const pos = existingPosition[0];
+  const newTotalShares = (pos.total_shares || 0) - transaction.quantity;
 
-  // Calculate realized P&L for this sale
-  const costBasis = parseFloat(position.average_cost) * transaction.quantity;
+  if (newTotalShares < 0) {
+    throw new Error(`Insufficient shares. Available: ${pos.total_shares}, Trying to sell: ${transaction.quantity}`);
+  }
+
+  const costBasis = pos.average_cost * transaction.quantity;
   const saleProceeds = transaction.price * transaction.quantity;
   const realizedPnlFromSale = saleProceeds - costBasis;
-  const totalRealizedPnl = parseFloat(position.realized_pnl || '0') + realizedPnlFromSale;
+  const totalRealizedPnl = (pos.realized_pnl || 0) + realizedPnlFromSale;
 
-  if (newTotalShares <= 0) {
-    // Position fully closed
-    const { data, error } = await supabase
-      .from('positions')
-      .update({
+  if (newTotalShares === 0) {
+    await db
+      .update(positions)
+      .set({
         total_shares: 0,
-        is_active: false,
-        closed_date: transaction.transaction_date,
+        is_active: 0,
         realized_pnl: totalRealizedPnl,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
-      .eq('position_id', position.position_id)
-      .select()
-      .single();
+      .where(eq(positions.position_id, pos.position_id));
 
-    if (error) {
-      throw new Error(`Failed to close position: ${error.message}`);
-    }
-
-    return data;
+    return pos;
   } else {
-    // Partial sell
-    const { data, error } = await supabase
-      .from('positions')
-      .update({
+    await db
+      .update(positions)
+      .set({
         total_shares: newTotalShares,
         realized_pnl: totalRealizedPnl,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
-      .eq('position_id', position.position_id)
-      .select()
-      .single();
+      .where(eq(positions.position_id, pos.position_id));
 
-    if (error) {
-      throw new Error(`Failed to reduce position: ${error.message}`);
-    }
-
-    return data;
+    return pos;
   }
 }
 
 /**
  * Get all active positions for a user
- */
+
 export async function getActivePositions(userId: string) {
   const supabase = await createClient();
 
@@ -208,10 +184,11 @@ export async function getActivePositions(userId: string) {
 
   return data;
 }
+*/
 
 /**
  * Get position by ticker
- */
+
 export async function getPositionByTicker(
   userId: string,
   ticker: string,
@@ -234,3 +211,4 @@ export async function getPositionByTicker(
 
   return data;
 }
+*/
