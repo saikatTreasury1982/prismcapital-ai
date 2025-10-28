@@ -1,4 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
+
+import { db, schema } from '../lib/db';
+import { eq, and } from 'drizzle-orm';
+
+const { systemApiKeys } = schema;
 
 interface AlphaVantageSearchResult {
   bestMatches?: Array<{
@@ -17,25 +21,24 @@ interface AlphaVantageSearchResult {
 }
 
 export async function getAlphaVantageApiKey(): Promise<string> {
-  // Use service role to access system_api_keys
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
-  
-  const { data, error } = await supabase
-    .from('system_api_keys')
-    .select('api_key')
-    .eq('service_id', 1)
-    .eq('environment', 'PRODUCTION')
-    .eq('is_active', true)
-    .eq('is_primary', true)
-    .single();
+  const data = await db
+    .select()
+    .from(systemApiKeys)
+    .where(
+      and(
+        eq(systemApiKeys.service_id, 1),
+        eq(systemApiKeys.environment, 'PRODUCTION'),
+        eq(systemApiKeys.is_active, 1),
+        eq(systemApiKeys.is_primary, 1)
+      )
+    )
+    .limit(1);
 
-  if (error) throw new Error('Failed to fetch AlphaVantage API key');
-  if (!data?.api_key) throw new Error('AlphaVantage API key not found');
+  if (!data || data.length === 0 || !data[0].api_key) {
+    throw new Error('AlphaVantage API key not found');
+  }
   
-  return data.api_key;
+  return data[0].api_key;
 }
 
 export async function searchTicker(ticker: string): Promise<{ name: string | null; error: string | null }> {

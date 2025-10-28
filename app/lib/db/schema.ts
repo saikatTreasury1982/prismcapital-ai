@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, real, sqliteView } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 
 // USERS AND RELATED TABLES
@@ -351,3 +351,17 @@ export const pnlStrategies = sqliteTable('pnl_strategies', {
   is_active: integer('is_active').default(1),
   created_at: text('created_at').default(sql`(datetime('now'))`),
 });
+
+// Cash Balance summary views
+export const cashBalanceSummary = sqliteView('cash_balance_summary').as((qb: any) => qb.sql``);
+
+// Dividend summary views
+export const dividendSummaryByTicker = sqliteView('dividend_summary_by_ticker').as((qb: any) => qb.sql``);
+export const dividendSummaryByQuarter = sqliteView('dividend_summary_by_quarter').as((qb: any) => qb.sql``);
+export const dividendSummaryByYear = sqliteView('dividend_summary_by_year').as((qb: any) => qb.sql``);
+
+// News summary views
+export const newsSummaryByTicker = sqliteView('news_summary_by_ticker').as((qb: any) => qb.sql``);
+export const newsSummaryByType = sqliteView('news_summary_by_type').as((qb: any) => qb.sql``);
+export const earningsNews = sqliteView('earnings_news').as((qb: any) => qb.sql``);
+export const generalNews = sqliteView('general_news').as((qb: any) => qb.sql``);

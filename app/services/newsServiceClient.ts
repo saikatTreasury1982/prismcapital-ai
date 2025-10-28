@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/client';
+
 import { CreateNewsInput, News } from '../lib/types/news';
 
 export async function createNews(userId: string, input: CreateNewsInput): Promise<News> {

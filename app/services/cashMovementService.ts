@@ -1,4 +1,6 @@
-import { createClient } from '@/utils/supabase/server';
+
+import { db, schema } from '../lib/db';
+import { eq, and, isNull, isNotNull, desc, asc } from 'drizzle-orm';
 import { 
   CashMovement, 
   CashMovementWithDirection, 
@@ -8,79 +10,99 @@ import {
   PeriodStats 
 } from '../lib/types/funding';
 
-export async function getUserCurrencies(userId: string): Promise<UserCurrencies> {
-  const supabase = await createClient();
-  
-  // Get home currency from users table
-  const { data: userData, error: userError } = await supabase
-    .from('users')
-    .select('home_currency')
-    .eq('user_id', userId)
-    .single();
+const { users, userPreferences, cashMovements, cashMovementDirections, cashBalanceSummary } = schema;
 
-  if (userError) throw userError;
+export async function getUserCurrencies(userId: string): Promise<UserCurrencies> {
+  // Get home currency from users table
+  const userData = await db
+    .select()
+    .from(users)
+    .where(eq(users.user_id, userId))
+    .limit(1);
+
+  if (!userData || userData.length === 0) throw new Error('User not found');
 
   // Get trading currency from user_preferences table
-  const { data: prefData, error: prefError } = await supabase
-    .from('user_preferences')
-    .select('default_trading_currency')
-    .eq('user_id', userId)
-    .single();
+  const prefData = await db
+    .select()
+    .from(userPreferences)
+    .where(eq(userPreferences.user_id, userId))
+    .limit(1);
 
-  if (prefError) throw prefError;
+  if (!prefData || prefData.length === 0) throw new Error('User preferences not found');
 
   return {
-    home_currency: userData.home_currency,
-    trading_currency: prefData.default_trading_currency || 'USD'
+    home_currency: userData[0].home_currency,
+    trading_currency: prefData[0].default_trading_currency || 'USD'
   };
 }
 
 export async function getCashMovements(userId: string): Promise<CashMovementWithDirection[]> {
-  const supabase = await createClient();
-  
-  const { data, error } = await supabase
-    .from('cash_movements')
-    .select(`
-      *,
-      direction:cash_movement_directions(*)
-    `)
-    .eq('user_id', userId)
-    .order('transaction_date', { ascending: false });
+  const movements = await db
+    .select({
+      movement: cashMovements,
+      direction: cashMovementDirections,
+    })
+    .from(cashMovements)
+    .leftJoin(
+      cashMovementDirections,
+      eq(cashMovements.direction_id, cashMovementDirections.direction_id)
+    )
+    .where(eq(cashMovements.user_id, userId))
+    .orderBy(desc(cashMovements.transaction_date));
 
-  if (error) throw error;
-  
-  return data as CashMovementWithDirection[];
+  return movements.map(m => ({
+    ...m.movement,
+    direction: m.direction
+  })) as CashMovementWithDirection[];
 }
 
 export async function getCashBalanceSummary(userId: string): Promise<CashBalanceSummary> {
-  const supabase = await createClient();
-  
-  const { data, error } = await supabase
-    .from('cash_balance_summary')
-    .select('*')
-    .eq('user_id', userId)
-    .single();
+  const data = await db
+    .select()
+    .from(cashBalanceSummary)
+    .where(eq(cashBalanceSummary.user_id, userId))
+    .limit(1);
 
-  if (error) throw error;
+  if (!data || data.length === 0) {
+    const currencies = await getUserCurrencies(userId);
+    return {
+      user_id: userId,
+      home_currency_code: currencies.home_currency,
+      trading_currency_code: currencies.trading_currency,
+      total_deposited_home: 0,
+      total_withdrawn_home: 0,
+      net_home_currency: 0,
+      total_deposited_trading: 0,
+      total_withdrawn_trading: 0,
+      net_trading_currency: 0,
+      weighted_avg_rate: 0,
+      deposit_count: 0,
+      withdrawal_count: 0,
+      first_transaction_date: new Date().toISOString(),
+      last_transaction_date: new Date().toISOString(),
+    };
+  }
   
-  return data;
+  return data[0] as any;
 }
 
 export async function createCashMovement(
   userId: string, 
   input: CreateCashMovementInput
 ): Promise<CashMovement> {
-  const supabase = await createClient();
-  
   // Get user currencies
   const currencies = await getUserCurrencies(userId);
   
   // Calculate trading currency value
   const trading_currency_value = input.home_currency_value * input.spot_rate;
   
-  const { data, error } = await supabase
-    .from('cash_movements')
-    .insert({
+  const movementId = `cm_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  
+  const data = await db
+    .insert(cashMovements)
+    .values({
+      cash_movement_id: movementId,
       user_id: userId,
       home_currency_code: currencies.home_currency,
       home_currency_value: input.home_currency_value,
@@ -93,27 +115,30 @@ export async function createCashMovement(
       period_to: input.period_to || null,
       notes: input.notes || null
     })
-    .select()
-    .single();
+    .returning();
 
-  if (error) throw error;
-  
-  return data;
+  return data[0] as CashMovement;;
 }
 
 export async function getPeriodStats(userId: string): Promise<PeriodStats[]> {
-  const supabase = await createClient();
-  
-  const { data: movements, error } = await supabase
-    .from('cash_movements')
-    .select(`
-      *,
-      direction:cash_movement_directions(*)
-    `)
-    .eq('user_id', userId)
-    .order('period_from', { ascending: true });
+ 
+  const movementsData = await db
+    .select({
+      movement: cashMovements,
+      direction: cashMovementDirections,
+    })
+    .from(cashMovements)
+    .leftJoin(
+      cashMovementDirections,
+      eq(cashMovements.direction_id, cashMovementDirections.direction_id)
+    )
+    .where(eq(cashMovements.user_id, userId))
+    .orderBy(asc(cashMovements.period_from));
 
-  if (error) throw error;
+  const movements = movementsData.map(m => ({
+    ...m.movement,
+    direction: m.direction
+  }));
 
   // Group by period_from AND period_to combination
   const periodMap = new Map<string, PeriodStats>();
@@ -191,16 +216,20 @@ export async function getPeriodStats(userId: string): Promise<PeriodStats[]> {
 }
 
 export async function getUniquePeriods(userId: string): Promise<Array<{period_from: string, period_to: string | null, period_display: string}>> {
-  const supabase = await createClient();
   
-  const { data: movements, error } = await supabase
-    .from('cash_movements')
-    .select('period_from, period_to')
-    .eq('user_id', userId)
-    .not('period_from', 'is', null)
-    .order('period_from', { ascending: true });
-
-  if (error) throw error;
+  const movements = await db
+    .select({
+      period_from: cashMovements.period_from,
+      period_to: cashMovements.period_to,
+    })
+    .from(cashMovements)
+    .where(
+      and(
+        eq(cashMovements.user_id, userId),
+        isNotNull(cashMovements.period_from)
+      )
+    )
+    .orderBy(asc(cashMovements.period_from));
 
   // Get unique period combinations
   const uniquePeriods = new Map<string, {period_from: string, period_to: string | null, period_display: string}>();
@@ -239,26 +268,33 @@ export async function getUniquePeriods(userId: string): Promise<Array<{period_fr
 }
 
 export async function getMovementsForPeriod(userId: string, periodFrom: string, periodTo: string | null): Promise<CashMovementWithDirection[]> {
-  const supabase = await createClient();
-  
-  let query = supabase
-    .from('cash_movements')
-    .select(`
-      *,
-      direction:cash_movement_directions(*)
-    `)
-    .eq('user_id', userId)
-    .eq('period_from', periodFrom);
-  
-  if (periodTo) {
-    query = query.eq('period_to', periodTo);
-  } else {
-    query = query.is('period_to', null);
-  }
-  
-  const { data, error } = await query.order('transaction_date', { ascending: false });
+  const conditions = periodTo
+    ? and(
+        eq(cashMovements.user_id, userId),
+        eq(cashMovements.period_from, periodFrom),
+        eq(cashMovements.period_to, periodTo)
+      )
+    : and(
+        eq(cashMovements.user_id, userId),
+        eq(cashMovements.period_from, periodFrom),
+        isNull(cashMovements.period_to)
+      );
 
-  if (error) throw error;
-  
-  return data as CashMovementWithDirection[];
+  const movementsData = await db
+    .select({
+      movement: cashMovements,
+      direction: cashMovementDirections,
+    })
+    .from(cashMovements)
+    .leftJoin(
+      cashMovementDirections,
+      eq(cashMovements.direction_id, cashMovementDirections.direction_id)
+    )
+    .where(conditions)
+    .orderBy(desc(cashMovements.transaction_date));
+
+  return movementsData.map(m => ({
+    ...m.movement,
+    direction: m.direction
+  })) as CashMovementWithDirection[];
 }

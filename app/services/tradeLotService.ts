@@ -1,5 +1,8 @@
-import { createClient } from '@/utils/supabase/server';
-import { CURRENT_USER_ID } from '@/app/lib/auth';
+/*
+import { db, schema } from '../lib/db';
+import { eq, and, gte, lte, asc, desc } from 'drizzle-orm';
+
+const { tradeLots, tradeStrategies, transactions } = schema;
 
 export interface TradeLot {
   lot_id: string;
@@ -23,9 +26,7 @@ export interface TradeLot {
   strategy_id?: number;
 }
 
-/**
- * Create new trade lot (for DAY_TRADE, SWING_TRADE, POSITION_TRADE)
- */
+// Create new trade lot (for DAY_TRADE, SWING_TRADE, POSITION_TRADE)
 export async function createTradeLot(transaction: {
   transaction_id: string;
   user_id: string;
@@ -38,18 +39,19 @@ export async function createTradeLot(transaction: {
   strategy_id: number;
   transaction_currency: string;
 }) {
-  const supabase = await createClient();
-
   // Get strategy code for trade_type
-  const { data: strategy } = await supabase
-    .from('trade_strategies')
-    .select('strategy_code')
-    .eq('strategy_id', transaction.strategy_id)
-    .single();
+  const strategy = await db
+    .select()
+    .from(tradeStrategies)
+    .where(eq(tradeStrategies.strategy_id, transaction.strategy_id))
+    .limit(1);
 
-  const { data, error } = await supabase
-    .from('trade_lots')
-    .insert({
+  const lotId = `lot_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+  const data = await db
+    .insert(tradeLots)
+    .values({
+      lot_id: lotId,
       user_id: transaction.user_id,
       ticker: transaction.ticker,
       exchange_id: transaction.exchange_id,
@@ -58,24 +60,16 @@ export async function createTradeLot(transaction: {
       quantity: transaction.quantity,
       entry_fees: transaction.fees || 0,
       entry_transaction_id: transaction.transaction_id,
-      strategy_id: transaction.strategy_id,
-      trade_type: strategy?.strategy_code,
+      trade_strategy: transaction.strategy_id,
       lot_status: 'OPEN',
-      entry_currency: transaction.transaction_currency
+      trade_currency: transaction.transaction_currency,
     })
-    .select()
-    .single();
+    .returning();
 
-  if (error) {
-    throw new Error(`Failed to create trade lot: ${error.message}`);
-  }
-
-  return data;
+  return data[0];
 }
 
-/**
- * Close trade lot when selling
- */
+// Close trade lot when selling
 export async function closeTradeLot(closeData: {
   lot_id: string;
   exit_transaction_id: string;
@@ -84,122 +78,95 @@ export async function closeTradeLot(closeData: {
   exit_fees: number;
   exit_currency: string;
 }) {
-  const supabase = await createClient();
-
   // Get lot details
-  const { data: lot, error: fetchError } = await supabase
-    .from('trade_lots')
-    .select('*')
-    .eq('lot_id', closeData.lot_id)
-    .single();
+  const lot = await db
+    .select()
+    .from(tradeLots)
+    .where(eq(tradeLots.lot_id, closeData.lot_id))
+    .limit(1);
 
-  if (fetchError) {
-    throw new Error(`Failed to fetch lot: ${fetchError.message}`);
+  if (!lot || lot.length === 0) {
+    throw new Error('Lot not found');
   }
 
+  const lotData = lot[0];
+
   // Calculate P&L
-  const totalEntry = parseFloat(lot.entry_price) * parseFloat(lot.quantity) + parseFloat(lot.entry_fees || '0');
-  const totalExit = closeData.exit_price * parseFloat(lot.quantity) - closeData.exit_fees;
+  const totalEntry = (lotData.entry_price || 0) * (lotData.quantity || 0) + (lotData.entry_fees || 0);
+  const totalExit = closeData.exit_price * (lotData.quantity || 0) - closeData.exit_fees;
   const realizedPnl = totalExit - totalEntry;
   const realizedPnlPct = (realizedPnl / totalEntry) * 100;
 
   // Calculate holding days
-  const entryDate = new Date(lot.entry_date);
+  const entryDate = new Date(lotData.entry_date || '');
   const exitDate = new Date(closeData.exit_date);
   const holdingDays = Math.floor((exitDate.getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24));
 
-  const { data, error } = await supabase
-    .from('trade_lots')
-    .update({
+  const data = await db
+    .update(tradeLots)
+    .set({
       exit_date: closeData.exit_date,
       exit_price: closeData.exit_price,
       exit_fees: closeData.exit_fees,
       exit_transaction_id: closeData.exit_transaction_id,
-      exit_currency: closeData.exit_currency,
       realized_pnl: realizedPnl,
-      realized_pnl_percentage: realizedPnlPct,
-      holding_days: holdingDays,
+      realized_pnl_percent: realizedPnlPct,
+      trade_hold_days: holdingDays,
       lot_status: 'CLOSED',
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     })
-    .eq('lot_id', closeData.lot_id)
-    .select()
-    .single();
+    .where(eq(tradeLots.lot_id, closeData.lot_id))
+    .returning();
 
-  if (error) {
-    throw new Error(`Failed to close lot: ${error.message}`);
-  }
-
-  return data;
+  return data[0];
 }
 
-/**
- * Get oldest open lot for a ticker (FIFO)
- */
+// Get oldest open lot for a ticker (FIFO)
 export async function getOldestOpenLot(
   userId: string,
   ticker: string,
   exchangeId: number
 ) {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from('trade_lots')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('ticker', ticker)
-    .eq('exchange_id', exchangeId)
-    .eq('lot_status', 'OPEN')
-    .order('entry_date', { ascending: true })
-    .limit(1)
-    .maybeSingle();
-
-  if (error) {
-    throw new Error(`Failed to fetch open lot: ${error.message}`);
-  }
-
-  return data;
-}
-
-/**
- * Get all open lots for a user
- */
-export async function getOpenLots(userId: string, ticker?: string) {
-  const supabase = await createClient();
-
-  let query = supabase
-    .from('trade_lots')
-    .select(`
-      *,
-      exchanges (
-        exchange_code,
-        exchange_name
-      ),
-      trade_strategies (
-        strategy_code,
-        strategy_name
+  const data = await db
+    .select()
+    .from(tradeLots)
+    .where(
+      and(
+        eq(tradeLots.user_id, userId),
+        eq(tradeLots.ticker, ticker),
+        eq(tradeLots.exchange_id, exchangeId),
+        eq(tradeLots.lot_status, 'OPEN')
       )
-    `)
-    .eq('user_id', userId)
-    .eq('lot_status', 'OPEN')
-    .order('entry_date', { ascending: false });
+    )
+    .orderBy(asc(tradeLots.entry_date))
+    .limit(1);
 
-  if (ticker) {
-    query = query.eq('ticker', ticker);
-  }
+  return data.length > 0 ? data[0] : null;
+}
 
-  const { data, error } = await query;
+// Get all open lots for a user
+export async function getOpenLots(userId: string, ticker?: string) {
+  const conditions = ticker
+    ? and(
+        eq(tradeLots.user_id, userId),
+        eq(tradeLots.lot_status, 'OPEN'),
+        eq(tradeLots.ticker, ticker)
+      )
+    : and(
+        eq(tradeLots.user_id, userId),
+        eq(tradeLots.lot_status, 'OPEN')
+      );
 
-  if (error) {
-    throw new Error(`Failed to fetch open lots: ${error.message}`);
-  }
+  const data = await db
+    .select()
+    .from(tradeLots)
+    .where(conditions)
+    .orderBy(desc(tradeLots.entry_date));
 
   return data;
 }
 
-/**
- * Get all closed lots for a user with optional filters
- */
+// Get all closed lots for a user with optional filters
 export async function getClosedLots(
   userId: string,
   filters?: {
@@ -209,118 +176,96 @@ export async function getClosedLots(
     endDate?: string;
   }
 ) {
-  const supabase = await createClient();
-
-  let query = supabase
-    .from('trade_lots')
-    .select(`
-      *,
-      exchanges (
-        exchange_code,
-        exchange_name
-      ),
-      trade_strategies (
-        strategy_code,
-        strategy_name
-      )
-    `)
-    .eq('user_id', userId)
-    .eq('lot_status', 'CLOSED')
-    .order('exit_date', { ascending: false });
+  const conditions = [
+    eq(tradeLots.user_id, userId),
+    eq(tradeLots.lot_status, 'CLOSED')
+  ];
 
   if (filters?.ticker) {
-    query = query.eq('ticker', filters.ticker);
+    conditions.push(eq(tradeLots.ticker, filters.ticker));
   }
 
   if (filters?.strategyCode) {
-    query = query.eq('trade_type', filters.strategyCode);
+    conditions.push(eq(tradeLots.trade_type, filters.strategyCode));
   }
 
   if (filters?.startDate) {
-    query = query.gte('exit_date', filters.startDate);
+    conditions.push(gte(tradeLots.exit_date, filters.startDate));
   }
 
   if (filters?.endDate) {
-    query = query.lte('exit_date', filters.endDate);
+    conditions.push(lte(tradeLots.exit_date, filters.endDate));
   }
 
-  const { data, error } = await query;
-
-  if (error) {
-    throw new Error(`Failed to fetch closed lots: ${error.message}`);
-  }
+  const data = await db
+    .select()
+    .from(tradeLots)
+    .where(and(...conditions))
+    .orderBy(desc(tradeLots.exit_date));
 
   return data;
 }
 
-/**
- * Convert trade lot to long-term position
- */
+// Convert trade lot to long-term position
 export async function convertLotToLongTerm(lotId: string) {
-  const supabase = await createClient();
-
   // Get lot details
-  const { data: lot, error: fetchError } = await supabase
-    .from('trade_lots')
-    .select('*')
-    .eq('lot_id', lotId)
-    .single();
+  const lot = await db
+    .select()
+    .from(tradeLots)
+    .where(eq(tradeLots.lot_id, lotId))
+    .limit(1);
 
-  if (fetchError) {
-    throw new Error(`Failed to fetch lot: ${fetchError.message}`);
+  if (!lot || lot.length === 0) {
+    throw new Error('Lot not found');
   }
 
-  // Get LONG_TERM strategy ID
-  const { data: longTermStrategy, error: strategyError } = await supabase
-    .from('trade_strategies')
-    .select('strategy_id')
-    .eq('strategy_code', 'LONG_TERM')
-    .single();
+  const lotData = lot[0];
 
-  if (strategyError) {
-    throw new Error(`Failed to fetch LONG_TERM strategy: ${strategyError.message}`);
+  // Get LONG_TERM strategy ID
+  const longTermStrategy = await db
+    .select()
+    .from(tradeStrategies)
+    .where(eq(tradeStrategies.strategy_code, 'LONG_TERM'))
+    .limit(1);
+
+  if (!longTermStrategy || longTermStrategy.length === 0) {
+    throw new Error('LONG_TERM strategy not found');
   }
 
   // 1. Update lot status
-  const { error: lotError } = await supabase
-    .from('trade_lots')
-    .update({
+  await db
+    .update(tradeLots)
+    .set({
       lot_status: 'CONVERTED_TO_LONG_TERM',
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     })
-    .eq('lot_id', lotId);
-
-  if (lotError) {
-    throw new Error(`Failed to update lot: ${lotError.message}`);
-  }
+    .where(eq(tradeLots.lot_id, lotId));
 
   // 2. Update original transaction's strategy
-  const { error: txnError } = await supabase
-    .from('transactions')
-    .update({
-      strategy_id: longTermStrategy.strategy_id,
-      trade_lot_id: null, // Unlink from lot
-      updated_at: new Date().toISOString()
+  await db
+    .update(transactions)
+    .set({
+      trade_strategy: longTermStrategy[0].strategy_id,
+      trade_lot_id: null,
+      updated_at: new Date().toISOString(),
     })
-    .eq('transaction_id', lot.entry_transaction_id);
+    .where(eq(transactions.transaction_id, lotData.entry_transaction_id || ''));
 
-  if (txnError) {
-    throw new Error(`Failed to update transaction: ${txnError.message}`);
-  }
-
-  // 3. Aggregate to position (import from positionService)
+  // 3. Aggregate to position
   const { aggregateToPosition } = await import('./positionService');
   
   await aggregateToPosition({
-    user_id: lot.user_id,
-    ticker: lot.ticker,
-    exchange_id: lot.exchange_id,
-    quantity: parseFloat(lot.quantity),
-    price: parseFloat(lot.entry_price),
-    transaction_date: lot.entry_date,
-    strategy_id: longTermStrategy.strategy_id,
-    transaction_currency: lot.entry_currency || 'USD'
+    user_id: lotData.user_id,
+    ticker: lotData.ticker,
+    exchange_id: lotData.exchange_id,
+    quantity: lotData.quantity || 0,
+    price: lotData.entry_price || 0,
+    transaction_date: lotData.entry_date || '',
+    strategy_id: longTermStrategy[0].strategy_id,
+    transaction_currency: lotData.trade_currency || 'USD'
   });
 
   return { success: true, message: 'Lot converted to long-term position' };
 }
+
+*/

@@ -1,193 +1,184 @@
-import { createClient } from '@/utils/supabase/server';
+
 import { News, NewsWithDetails, CreateNewsInput, NewsType } from '../lib/types/news';
 import { NewsSummaryByTicker, NewsSummaryByType, NewsListItem } from '../lib/types/newsViews';
+import { db, schema } from '../lib/db';
+import { eq, ilike, desc, and } from 'drizzle-orm';
+
+const { 
+  newsTypes, 
+  positions, 
+  news, 
+  newsSummaryByTicker, 
+  newsSummaryByType,
+  earningsNews,
+  generalNews
+} = schema;
 
 export async function getNewsTypes(): Promise<NewsType[]> {
-  const supabase = await createClient();
-  
-  const { data, error } = await supabase
-    .from('news_types')
-    .select('*')
-    .order('type_name', { ascending: true });
-
-  if (error) throw error;
+  const data = await db
+    .select()
+    .from(newsTypes)
+    .orderBy(newsTypes.type_name);
   
   return data;
 }
 
 export async function hasOpenPosition(ticker: string): Promise<boolean> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('positions')
-    .select('id')
-    .ilike('ticker', ticker)
+  const data = await db
+    .select()
+    .from(positions)
+    .where(ilike(positions.ticker, ticker))
     .limit(1);
-  if (error) throw error;
+  
   return data.length > 0;
 }
 
 export async function getAllNews(userId: string): Promise<NewsWithDetails[]> {
-  const supabase = await createClient();
+  const data = await db
+    .select({
+      news: news,
+      news_type: newsTypes,
+    })
+    .from(news)
+    .leftJoin(newsTypes, eq(news.news_type_id, newsTypes.news_type_id))
+    .where(eq(news.user_id, userId))
+    .orderBy(desc(news.news_date));
   
-  const { data, error } = await supabase
-    .from('news')
-    .select(`
-      *,
-      news_type:news_types(*),
-      news_status:news_status(*)
-    `)
-    .eq('user_id', userId)
-    .order('news_date', { ascending: false });
-
-  if (error) throw error;
-  
-  return data as NewsWithDetails[];
+  return data.map(d => ({
+    ...d.news,
+    news_type: d.news_type
+  })) as NewsWithDetails[];
 }
 
 export async function getEarningsNews(userId: string): Promise<NewsWithDetails[]> {
-  const supabase = await createClient();
+  const data = await db
+    .select()
+    .from(earningsNews)
+    .where(eq(earningsNews.user_id, userId))
+    .orderBy(desc(earningsNews.news_date));
   
-  const { data, error } = await supabase
-    .from('earnings_news')
-    .select('*')
-    .eq('user_id', userId)
-    .order('news_date', { ascending: false });
-
-  if (error) throw error;
-  
-  return data as NewsWithDetails[];
+  return data as any;
 }
 
 export async function getGeneralNews(userId: string): Promise<NewsWithDetails[]> {
-  const supabase = await createClient();
+  const data = await db
+    .select()
+    .from(generalNews)
+    .where(eq(generalNews.user_id, userId))
+    .orderBy(desc(generalNews.news_date));
   
-  const { data, error } = await supabase
-    .from('general_news')
-    .select('*')
-    .eq('user_id', userId)
-    .order('news_date', { ascending: false });
-
-  if (error) throw error;
-  
-  return data as NewsWithDetails[];
+  return data as any;
 }
 
 export async function getNewsSummaryByTicker(userId: string): Promise<NewsSummaryByTicker[]> {
-  const supabase = await createClient();
+  const data = await db
+    .select()
+    .from(newsSummaryByTicker)
+    .where(eq(newsSummaryByTicker.user_id, userId))
+    .orderBy(desc(newsSummaryByTicker.latest_news_date));
   
-  const { data, error } = await supabase
-    .from('news_summary_by_ticker')
-    .select('*')
-    .eq('user_id', userId)
-    .order('latest_news_date', { ascending: false });
-
-  if (error) throw error;
-  
-  return data;
+  return data as any;
 }
 
 export async function getNewsSummaryByType(userId: string): Promise<NewsSummaryByType[]> {
-  const supabase = await createClient();
+  const data = await db
+    .select()
+    .from(newsSummaryByType)
+    .where(eq(newsSummaryByType.user_id, userId));
   
-  const { data, error } = await supabase
-    .from('news_summary_by_type')
-    .select('*')
-    .eq('user_id', userId);
-
-  if (error) throw error;
-  
-  return data;
+  return data as any;
 }
 
 export async function getNewsSummaryByTickerView(userId: string): Promise<NewsSummaryByTicker[]> {
-  const supabase = await createClient();
+  const data = await db
+    .select()
+    .from(newsSummaryByTicker)
+    .where(eq(newsSummaryByTicker.user_id, userId))
+    .orderBy(desc(newsSummaryByTicker.latest_news_date));
   
-  const { data, error } = await supabase
-    .from('news_summary_by_ticker')
-    .select('*')
-    .eq('user_id', userId)
-    .order('latest_news_date', { ascending: false });
-
-  if (error) throw error;
-  
-  return data;
+  return data as any;
 }
 
 export async function getNewsSummaryByTypeView(userId: string): Promise<NewsSummaryByType[]> {
-  const supabase = await createClient();
+  const data = await db
+    .select()
+    .from(newsSummaryByType)
+    .where(eq(newsSummaryByType.user_id, userId))
+    .orderBy(desc(newsSummaryByType.total_news_items));
   
-  const { data, error } = await supabase
-    .from('news_summary_by_type')
-    .select('*')
-    .eq('user_id', userId)
-    .order('total_news_items', { ascending: false });
-
-  if (error) throw error;
-  
-  return data;
+  return data as any;
 }
 
 export async function getNewsByTicker(userId: string, ticker: string, page: number = 1, pageSize: number = 5) {
-  const supabase = await createClient();
+  const offset = (page - 1) * pageSize;
   
-  const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
-  
-  const { data, error, count } = await supabase
-    .from('news')
-    .select(`
-      *,
-      news_type:news_types(type_code, type_name)
-    `, { count: 'exact' })
-    .eq('user_id', userId)
-    .eq('ticker', ticker)
-    .order('news_date', { ascending: false })
-    .range(from, to);
+  const data = await db
+    .select({
+      news: news,
+      news_type: newsTypes,
+    })
+    .from(news)
+    .leftJoin(newsTypes, eq(news.news_type_id, newsTypes.news_type_id))
+    .where(
+      and(
+        eq(news.user_id, userId),
+        eq(news.ticker, ticker)
+      )
+    )
+    .orderBy(desc(news.news_date))
+    .limit(pageSize)
+    .offset(offset);
 
-  if (error) throw error;
+  const countResult = await db
+    .select()
+    .from(news)
+    .where(
+      and(
+        eq(news.user_id, userId),
+        eq(news.ticker, ticker)
+      )
+    );
   
-  return { data: data as NewsListItem[], total: count || 0 };
+  return { 
+    data: data.map(d => ({ ...d.news, news_type: d.news_type })) as any, 
+    total: countResult.length 
+  };
 }
 
 export async function getNewsByType(userId: string, typeName: string, page: number = 1, pageSize: number = 5) {
-  const supabase = await createClient();
+  const offset = (page - 1) * pageSize;
   
-  const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
-  
-  const { data, error, count } = await supabase
-    .from('news')
-    .select(`
-      *,
-      news_type:news_types(type_code, type_name)
-    `, { count: 'exact' })
-    .eq('user_id', userId)
-    .order('news_date', { ascending: false })
-    .range(from, to);
+  const data = await db
+    .select({
+      news: news,
+      news_type: newsTypes,
+    })
+    .from(news)
+    .leftJoin(newsTypes, eq(news.news_type_id, newsTypes.news_type_id))
+    .where(eq(news.user_id, userId))
+    .orderBy(desc(news.news_date))
+    .limit(pageSize)
+    .offset(offset);
 
-  if (error) throw error;
-  
-  // Filter by type_name (since we're joining)
-  const filtered = (data as NewsListItem[]).filter(
-    item => item.news_type.type_name === typeName
-  );
-  
-  return { data: filtered, total: count || 0 };
+  const filtered = data
+    .filter(d => d.news_type?.type_name === typeName)
+    .map(d => ({ ...d.news, news_type: d.news_type })) as NewsListItem[];
+
+  return { data: filtered, total: filtered.length };
 }
 
 export async function getNewsById(newsId: string) {
-  const supabase = await createClient();
-  
-  const { data, error } = await supabase
-    .from('news')
-    .select(`
-      *,
-      news_type:news_types(type_code, type_name)
-    `)
-    .eq('news_id', newsId)
-    .single();
+  const data = await db
+    .select({
+      news: news,
+      news_type: newsTypes,
+    })
+    .from(news)
+    .leftJoin(newsTypes, eq(news.news_type_id, newsTypes.news_type_id))
+    .where(eq(news.news_id, newsId))
+    .limit(1);
 
-  if (error) throw error;
+  if (!data || data.length === 0) throw new Error('News not found');
   
-  return data as NewsListItem;
+  return { ...data[0].news, news_type: data[0].news_type } as NewsListItem;
 }

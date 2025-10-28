@@ -1,5 +1,8 @@
-import { createClient } from '@/utils/supabase/server';
-import { CURRENT_USER_ID } from '@/app/lib/auth';
+
+import { db, schema } from '../lib/db';
+import { eq, and } from 'drizzle-orm';
+
+const { assetClassifications, assetTypes } = schema;
 
 export interface AssetClassification {
   classification_id: string;
@@ -23,38 +26,35 @@ export async function getAssetClassification(
   exchangeId: number,
   userId: string
 ): Promise<{ classification: AssetClassification; strategyCode: string; strategyName: string } | null> {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from('asset_classifications')
-    .select(`
-      classification_id,
-      user_id,
-      ticker,
-      exchange_id,
-      class_id,
-      type_id,
-      asset_types!inner (
-        type_code,
-        type_name
+  const data = await db
+    .select({
+      classification: assetClassifications,
+      assetType: assetTypes,
+    })
+    .from(assetClassifications)
+    .innerJoin(assetTypes, eq(assetClassifications.type_id, assetTypes.type_id))
+    .where(
+      and(
+        eq(assetClassifications.user_id, userId),
+        eq(assetClassifications.ticker, ticker),
+        eq(assetClassifications.exchange_id, exchangeId)
       )
-    `)
-    .eq('user_id', userId)
-    .eq('ticker', ticker)
-    .eq('exchange_id', exchangeId)
-    .single();
+    )
+    .limit(1);
 
-  if (error) {
-    console.error('Error fetching asset classification:', error);
+  if (!data || data.length === 0) {
+    console.error('No asset classification found');
     return null;
   }
 
-  // Extract the first asset_type from the array
-  const assetType = data.asset_types[0];
+  const result = data[0];
 
   return {
-    classification: data as AssetClassification,
-    strategyCode: assetType.type_code,
-    strategyName: assetType.type_name
+    classification: {
+      ...result.classification,
+      asset_types: result.assetType ? [result.assetType] : []
+    } as AssetClassification,
+    strategyCode: result.assetType?.type_code || '',
+    strategyName: result.assetType?.type_name || ''
   };
 }
