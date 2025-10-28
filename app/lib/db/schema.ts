@@ -352,16 +352,18 @@ export const pnlStrategies = sqliteTable('pnl_strategies', {
   created_at: text('created_at').default(sql`(datetime('now'))`),
 });
 
+import { sql as sqlTemplate } from 'drizzle-orm';
+
 // Cash Balance summary views
-export const cashBalanceSummary = sqliteView('cash_balance_summary').as((qb: any) => qb.sql``);
+export const cashBalanceSummary = sqliteView('cash_balance_summary', {}).as(sqlTemplate`SELECT * FROM cash_balance_summary`);
 
 // Dividend summary views
-export const dividendSummaryByTicker = sqliteView('dividend_summary_by_ticker').as((qb: any) => qb.sql``);
-export const dividendSummaryByQuarter = sqliteView('dividend_summary_by_quarter').as((qb: any) => qb.sql``);
-export const dividendSummaryByYear = sqliteView('dividend_summary_by_year').as((qb: any) => qb.sql``);
+export const dividendSummaryByTicker = sqliteView('dividend_summary_by_ticker', {}).as(sqlTemplate`SELECT * FROM dividend_summary_by_ticker`);
+export const dividendSummaryByQuarter = sqliteView('dividend_summary_by_quarter', {}).as(sqlTemplate`SELECT * FROM dividend_summary_by_quarter`);
+export const dividendSummaryByYear = sqliteView('dividend_summary_by_year', {}).as(sqlTemplate`SELECT * FROM dividend_summary_by_year`);
 
 // News summary views
-export const newsSummaryByTicker = sqliteView('news_summary_by_ticker').as((qb: any) => qb.sql``);
-export const newsSummaryByType = sqliteView('news_summary_by_type').as((qb: any) => qb.sql``);
-export const earningsNews = sqliteView('earnings_news').as((qb: any) => qb.sql``);
-export const generalNews = sqliteView('general_news').as((qb: any) => qb.sql``);
+export const newsSummaryByTicker = sqliteView('news_summary_by_ticker', {}).as(sqlTemplate`SELECT * FROM news_summary_by_ticker`);
+export const newsSummaryByType = sqliteView('news_summary_by_type', {}).as(sqlTemplate`SELECT * FROM news_summary_by_type`);
+export const earningsNews = sqliteView('earnings_news', {}).as(sqlTemplate`SELECT * FROM earnings_news`);
+export const generalNews = sqliteView('general_news', {}).as(sqlTemplate`SELECT * FROM general_news`);
