@@ -30,7 +30,10 @@ export function FundingClientWrapper({
     <div className="min-h-screen p-4 sm:p-6">
     {/* Navigation Tabs */}
     <div className="max-w-7xl mx-auto mb-6">
-      <div className="backdrop-blur-xl bg-white/5 rounded-2xl p-2 border border-white/10 inline-flex gap-2">
+      <div 
+        className="backdrop-blur-xl bg-white/5 rounded-2xl p-2 border border-white/10 inline-flex gap-2"
+        suppressHydrationWarning
+      >
         <button
           type="button"
           onClick={() => setViewMode('entry')}

@@ -12,8 +12,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       name: 'Passkey',
       credentials: {},
       async authorize(credentials) {
-        // Passkey verification happens client-side
-        // This just confirms the user exists
         const userId = (credentials as any)?.userId as string;
         
         if (!userId) return null;
@@ -45,7 +43,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       async authorize(credentials) {
         const { phone, code } = credentials as { phone: string; code: string };
 
-        // Verify OTP
         const otpRecord = await db
           .select()
           .from(authOtpCodes)
@@ -59,13 +56,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (otp.code !== code || otp.is_used === 1) return null;
         if (new Date(otp.expires_at) < new Date()) return null;
 
-        // Mark OTP as used
         await db
           .update(authOtpCodes)
           .set({ is_used: 1 })
           .where(eq(authOtpCodes.otp_id, otp.otp_id));
 
-        // Get user
         const user = await db
           .select()
           .from(users)
@@ -106,4 +101,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
 });
 
-export const CURRENT_USER_ID = 'beb2f83d-998e-4bb2-9510-ae9916e339f3';
+// Helper function to get current user ID from session
+export async function getCurrentUserId(): Promise<string | null> {
+  const session = await auth();
+  return session?.user?.id || null;
+}

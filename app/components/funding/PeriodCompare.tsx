@@ -1,15 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getUniquePeriods, getMovementsForPeriod } from '../../services/cashMovementServiceClient';
-import { CURRENT_USER_ID } from '../../lib/auth';
 import { ArrowLeftRight } from 'lucide-react';
 import { PeriodStats, CashMovementWithDirection } from '../../lib/types/funding';
 
 interface PeriodCompareProps {
   periods: PeriodStats[];
   allMovements: CashMovementWithDirection[];
-  home_currency: string;  // Keep snake_case to match database
+  home_currency: string;
 }
 
 export function PeriodCompare({ home_currency }: PeriodCompareProps) {
@@ -20,64 +18,77 @@ export function PeriodCompare({ home_currency }: PeriodCompareProps) {
   const [selectedPeriod1, setSelectedPeriod1] = useState('');
   const [selectedPeriod2, setSelectedPeriod2] = useState('');
 
-    // Fetch unique periods on mount
-    useEffect(() => {
-      const fetchPeriods = async () => {
-        setLoading(true);
-        try {
-          const uniquePeriods = await getUniquePeriods(CURRENT_USER_ID);
-          setPeriods(uniquePeriods);
+  // Fetch unique periods on mount
+  useEffect(() => {
+    const fetchPeriods = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch('/api/funding/periods');
+        if (!response.ok) throw new Error('Failed to fetch periods');
+        
+        const data = await response.json();
+        setPeriods(data.periods);
+        
+        if (data.periods.length > 0) {
+          const firstPeriod = `${data.periods[0].period_from}|${data.periods[0].period_to}`;
+          const lastPeriod = `${data.periods[data.periods.length - 1].period_from}|${data.periods[data.periods.length - 1].period_to}`;
           
-          if (uniquePeriods.length > 0) {
-            const firstPeriod = `${uniquePeriods[0].period_from}|${uniquePeriods[0].period_to}`;
-            const lastPeriod = `${uniquePeriods[uniquePeriods.length - 1].period_from}|${uniquePeriods[uniquePeriods.length - 1].period_to}`;
-            
-            setSelectedPeriod1(firstPeriod);
-            setSelectedPeriod2(lastPeriod);
-          }
-        } catch (error) {
-          console.error('Error fetching periods:', error);
-        } finally {
-          setLoading(false);
+          setSelectedPeriod1(firstPeriod);
+          setSelectedPeriod2(lastPeriod);
         }
-      };
+      } catch (error) {
+        console.error('Error fetching periods:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      fetchPeriods();
-    }, []);
+    fetchPeriods();
+  }, []);
 
-    // Fetch movements when period 1 changes
-    useEffect(() => {
-      if (!selectedPeriod1) return;
-      
-      const [periodFrom, periodTo] = selectedPeriod1.split('|');
-      const fetchMovements = async () => {
-        try {
-          const data = await getMovementsForPeriod(CURRENT_USER_ID, periodFrom, periodTo === 'null' ? null : periodTo);
-          setMovements1(data);
-        } catch (error) {
-          console.error('Error fetching movements for period 1:', error);
-        }
-      };
+  // Fetch movements when period 1 changes
+  useEffect(() => {
+    if (!selectedPeriod1) return;
+    
+    const [periodFrom, periodTo] = selectedPeriod1.split('|');
+    const fetchMovements = async () => {
+      try {
+        const response = await fetch(
+          `/api/funding/period-movements?periodFrom=${periodFrom}&periodTo=${periodTo}`
+        );
+        if (!response.ok) throw new Error('Failed to fetch movements');
+        
+        const data = await response.json();
+        setMovements1(data.movements);
+      } catch (error) {
+        console.error('Error fetching movements for period 1:', error);
+      }
+    };
 
-      fetchMovements();
-    }, [selectedPeriod1]);
+    fetchMovements();
+  }, [selectedPeriod1]);
 
-    // Fetch movements when period 2 changes
-    useEffect(() => {
-      if (!selectedPeriod2) return;
-      
-      const [periodFrom, periodTo] = selectedPeriod2.split('|');
-      const fetchMovements = async () => {
-        try {
-          const data = await getMovementsForPeriod(CURRENT_USER_ID, periodFrom, periodTo === 'null' ? null : periodTo);
-          setMovements2(data);
-        } catch (error) {
-          console.error('Error fetching movements for period 2:', error);
-        }
-      };
+  // Fetch movements when period 2 changes
+  useEffect(() => {
+    if (!selectedPeriod2) return;
+    
+    const [periodFrom, periodTo] = selectedPeriod2.split('|');
+    const fetchMovements = async () => {
+      try {
+        const response = await fetch(
+          `/api/funding/period-movements?periodFrom=${periodFrom}&periodTo=${periodTo}`
+        );
+        if (!response.ok) throw new Error('Failed to fetch movements');
+        
+        const data = await response.json();
+        setMovements2(data.movements);
+      } catch (error) {
+        console.error('Error fetching movements for period 2:', error);
+      }
+    };
 
-      fetchMovements();
-    }, [selectedPeriod2]);
+    fetchMovements();
+  }, [selectedPeriod2]);
 
   if (loading) {
     return (
@@ -178,7 +189,11 @@ export function PeriodCompare({ home_currency }: PeriodCompareProps) {
               <div key={txn.cash_movement_id} className="bg-white/5 rounded-lg p-3 border border-white/10">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-blue-200">
-                    {new Date(txn.transaction_date).toLocaleDateString()}
+                    {new Date(txn.transaction_date).toLocaleDateString('en-US', { 
+                      year: 'numeric', 
+                      month: 'short', 
+                      day: 'numeric' 
+                    })}
                   </span>
                   <span className={`font-semibold ${txn.direction.direction_code === 'IN' ? 'text-emerald-300' : 'text-rose-300'}`}>
                     {txn.direction.direction_code === 'IN' ? '+' : '-'}{home_currency} {Math.abs(txn.home_currency_value).toFixed(2)}
@@ -234,7 +249,11 @@ export function PeriodCompare({ home_currency }: PeriodCompareProps) {
               <div key={txn.cash_movement_id} className="bg-white/5 rounded-lg p-3 border border-white/10">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-purple-200">
-                    {new Date(txn.transaction_date).toLocaleDateString()}
+                    {new Date(txn.transaction_date).toLocaleDateString('en-US', { 
+                      year: 'numeric', 
+                      month: 'short', 
+                      day: 'numeric' 
+                    })}
                   </span>
                   <span className={`font-semibold ${txn.direction.direction_code === 'IN' ? 'text-emerald-300' : 'text-rose-300'}`}>
                     {txn.direction.direction_code === 'IN' ? '+' : '-'}{home_currency} {Math.abs(txn.home_currency_value).toFixed(2)}
