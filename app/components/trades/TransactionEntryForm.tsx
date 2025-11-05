@@ -5,7 +5,6 @@ import { Plus } from 'lucide-react';
 import { Transaction, Exchange, CreateTransactionInput } from '../../lib/types/transaction';
 import { createTransaction, updateTransaction } from '../../services/transactionServiceClient';
 import { getExchanges } from '../../services/exchangeServiceClient';
-import { CURRENT_USER_ID } from '../../lib/auth';
 import { useDebounce } from '../../lib/hooks/useDebounce';
 
 interface TransactionEntryFormProps {
@@ -80,7 +79,7 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
 
       try {
         // Check positions table first
-        const posRes = await fetch(`/api/hasOpenPosition?ticker=${encodeURIComponent(debouncedTicker)}&userId=${CURRENT_USER_ID}`);
+        const posRes = await fetch(`/api/hasOpenPosition?ticker=${encodeURIComponent(debouncedTicker)}`);
         const posData = await posRes.json();
         
         setHasPosition(posData.hasPosition);
@@ -152,7 +151,7 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
         });
       } else {
         // Create new transaction
-        await createTransaction(CURRENT_USER_ID, {
+        await createTransaction({
           ticker: formData.ticker.toUpperCase(),
           exchange_id: formData.exchange_id,
           transaction_type_id: formData.transaction_type_id,
@@ -225,17 +224,45 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
               required
             />
             {isLoadingTicker ? (
-              <span className="px-3 py-2 rounded-full text-sm font-semibold whitespace-nowrap bg-blue-600 text-white">
-                Loading...
-              </span>
+              <div className="relative group">
+                <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center animate-pulse">
+                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                </div>
+              </div>
             ) : hasPosition !== null ? (
-              <span
-                className={`px-3 py-2 rounded-full text-sm font-semibold whitespace-nowrap ${
-                  hasPosition ? 'bg-green-600 text-white' : 'bg-yellow-600 text-white'
-                }`}
-              >
-                {hasPosition ? 'Open Position' : 'No Position'}
-              </span>
+              <div className="relative group">
+                {hasPosition ? (
+                  <>
+                    <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center shadow-lg">
+                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                      Open Position
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
+                        <div className="border-4 border-transparent border-t-gray-900"></div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-8 h-8 rounded-full bg-yellow-600 flex items-center justify-center shadow-lg">
+                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </div>
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                      No Open Position
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
+                        <div className="border-4 border-transparent border-t-gray-900"></div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             ) : null}
           </div>
           {tickerError && (

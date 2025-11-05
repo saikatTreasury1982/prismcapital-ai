@@ -1,15 +1,23 @@
 import { NextResponse } from 'next/server';
 import { db, schema } from '@/app/lib/db';
 import { eq, and, desc } from 'drizzle-orm';
+import { auth } from '@/app/lib/auth';
 
 const { transactions } = schema;
 
+
+
 // GET - Fetch single transaction or list of transactions
 export async function GET(request: Request) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const transactionId = searchParams.get('transactionId');
-    const userId = searchParams.get('userId');
+    const userId = session.user.id;
     const ticker = searchParams.get('ticker');
 
     // Fetch single transaction
@@ -55,12 +63,18 @@ export async function GET(request: Request) {
 
 // POST - Create new transaction
 export async function POST(request: Request) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
-    const { userId, transactionData } = body;
+    const { transactionData } = body;
+    const userId = session.user.id;
 
-    if (!userId || !transactionData) {
-      return NextResponse.json({ error: 'userId and transactionData required' }, { status: 400 });
+    if (!transactionData) {
+      return NextResponse.json({ error: 'transactionData required' }, { status: 400 });
     }
 
     // Generate a unique transaction ID (you can use UUID library or any other method)

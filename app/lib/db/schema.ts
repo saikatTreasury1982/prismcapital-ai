@@ -50,7 +50,7 @@ export const apiServices = sqliteTable('api_services', {
 
 export const systemApiKeys = sqliteTable('system_api_keys', {
   api_key_id: text('api_key_id').primaryKey(),
-  service_id: integer('service_id').notNull().references(() => apiServices.service_id),
+  service_id: integer('service_id').notNull(),
   api_key: text('api_key').notNull(),
   api_secret: text('api_secret'),
   key_name: text('key_name'),
@@ -59,8 +59,8 @@ export const systemApiKeys = sqliteTable('system_api_keys', {
   is_primary: integer('is_primary').default(0),
   daily_request_limit: integer('daily_request_limit'),
   notes: text('notes'),
-  created_at: text('created_at').default(sql`(datetime('now'))`),
-  updated_at: text('updated_at').default(sql`(datetime('now'))`),
+  created_at: text('created_at').default(sql`datetime('now')`),
+  updated_at: text('updated_at').default(sql`datetime('now')`),
 });
 
 // EXCHANGES

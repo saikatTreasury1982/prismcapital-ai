@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { X, Tag } from 'lucide-react';
-import { Position, AssetClass, AssetType, AssetClassification } from '../../lib/types/transaction';
+import { Position, AssetClass, AssetType } from '../../lib/types/transaction';
 import { getAssetClasses, getAssetTypes, getAssetClassification, saveAssetClassification } from '../../services/assetClassificationServiceClient';
-import { CURRENT_USER_ID } from '../../lib/auth';
 
 interface AssignAttributesModalProps {
   position: Position | null;
@@ -43,8 +42,7 @@ export function AssignAttributesModal({ position, onClose, onSuccess }: AssignAt
         setAllAssetTypes(types);
 
         // Fetch existing classification if any
-        const classification = await getAssetClassification(
-          CURRENT_USER_ID, 
+        const classification = await getAssetClassification( 
           position.ticker, 
           position.exchange_id
         );
@@ -93,7 +91,7 @@ export function AssignAttributesModal({ position, onClose, onSuccess }: AssignAt
     setError(null);
 
     try {
-      await saveAssetClassification(CURRENT_USER_ID, {
+      await saveAssetClassification({
         ticker: position.ticker,
         exchange_id: position.exchange_id,
         class_id: formData.class_id,

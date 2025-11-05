@@ -4,14 +4,13 @@ import {
   UpdateTransactionInput 
 } from '../lib/types/transaction';
 
-export async function createTransaction(userId: string, input: CreateTransactionInput): Promise<Transaction> {
+export async function createTransaction(input: CreateTransactionInput): Promise<Transaction> {
   const response = await fetch('/api/transactions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      userId,
       transactionData: input
     })
   });
@@ -25,10 +24,10 @@ export async function createTransaction(userId: string, input: CreateTransaction
   return result.data;
 }
 
-export async function getTransactions(userId: string, ticker?: string): Promise<Transaction[]> {
-  let url = `/api/transactions?userId=${userId}`;
+export async function getTransactions(ticker?: string): Promise<Transaction[]> {
+  let url = `/api/transactions`;
   if (ticker) {
-    url += `&ticker=${encodeURIComponent(ticker)}`;
+    url += `?ticker=${encodeURIComponent(ticker)}`;
   }
 
   const response = await fetch(url);

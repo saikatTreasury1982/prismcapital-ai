@@ -63,21 +63,21 @@ export interface Position {
   position_id: string;
   user_id: string;
   ticker: string;
-  ticker_name: string | null;
+  ticker_name?: string;
   exchange_id: number;
   total_shares: number;
   average_cost: number;
-  current_market_price: number | null;
+  current_market_price?: number;
+  current_value?: number;
+  unrealized_pnl?: number;
   realized_pnl: number;
   is_active: boolean;
   opened_date: string;
-  closed_date: string | null;
+  closed_date?: string;
+  strategy_id?: number;
   position_currency: string;
-  strategy_id: number | null;
-  current_value: number | null; // Generated
-  unrealized_pnl: number | null; // Generated
-  created_at: string;
-  updated_at: string;
+  asset_class?: string | null;        
+  asset_class_code?: string | null;  
 }
 
 // Exchange Type

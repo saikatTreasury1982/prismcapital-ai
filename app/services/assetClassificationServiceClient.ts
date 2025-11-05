@@ -36,14 +36,8 @@ export async function getAssetTypes(classId?: number): Promise<AssetType[]> {
   return result.data;
 }
 
-export async function getAssetClassification(
-  userId: string, 
-  ticker: string, 
-  exchangeId: number
-): Promise<AssetClassification | null> {
-  const response = await fetch(
-    `/api/asset-classifications?userId=${userId}&ticker=${encodeURIComponent(ticker)}&exchangeId=${exchangeId}`
-  );
+export async function getAssetClassification(ticker: string, exchangeId: number ): Promise<AssetClassification | null> {
+  const response = await fetch(`/api/asset-classifications?ticker=${ticker}&exchangeId=${exchangeId}`);
 
   if (!response.ok) {
     const error = await response.json();
@@ -54,19 +48,13 @@ export async function getAssetClassification(
   return result.data;
 }
 
-export async function saveAssetClassification(
-  userId: string, 
-  input: CreateAssetClassificationInput
-): Promise<AssetClassification> {
+export async function saveAssetClassification(input: CreateAssetClassificationInput): Promise<AssetClassification> {
   const response = await fetch('/api/asset-classifications', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      userId,
-      classificationData: input
-    })
+    body: JSON.stringify({classificationData: input})
   });
 
   if (!response.ok) {

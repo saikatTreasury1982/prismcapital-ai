@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { List } from 'lucide-react';
 import { Transaction } from '../../lib/types/transaction';
 import { getTransactions } from '../../services/transactionServiceClient';
-import { CURRENT_USER_ID } from '../../lib/auth';
 import { TransactionDetailModal } from './TransactionDetailModal';
 
 interface ByTickerViewProps {
@@ -27,7 +26,7 @@ export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
   useEffect(() => {
     const fetchTransactions = async () => {
       try {
-        const data = await getTransactions(CURRENT_USER_ID);
+        const data = await getTransactions();
         setTransactions(data);
         setFilteredTransactions(data);
 
@@ -90,7 +89,7 @@ export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
       onDelete();
     }
     // Refresh transactions
-    const data = await getTransactions(CURRENT_USER_ID);
+    const data = await getTransactions();
     setTransactions(data);
     
     // Update unique tickers
@@ -193,7 +192,11 @@ export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
                   {paginatedTransactions.map((transaction) => (
                     <tr key={transaction.transaction_id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                       <td className="p-4 text-white">
-                        {new Date(transaction.transaction_date).toLocaleDateString()}
+                        {new Date(transaction.transaction_date).toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        })}
                       </td>
                       <td className="p-4 text-white font-semibold">{transaction.ticker}</td>
                       <td className="p-4 text-center">

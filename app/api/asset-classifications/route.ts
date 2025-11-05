@@ -1,19 +1,25 @@
 import { NextResponse } from 'next/server';
 import { db, schema } from '@/app/lib/db';
 import { eq, and } from 'drizzle-orm';
+import { auth } from '@/app/lib/auth';
 
 const { assetClassifications } = schema;
 
 // GET - Fetch classification for a ticker
 export async function GET(request: Request) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
+    const userId = session.user.id;
     const ticker = searchParams.get('ticker');
     const exchangeId = searchParams.get('exchangeId');
 
-    if (!userId || !ticker || !exchangeId) {
-      return NextResponse.json({ error: 'userId, ticker, and exchangeId required' }, { status: 400 });
+    if (!ticker || !exchangeId) {
+      return NextResponse.json({ error: 'ticker and exchangeId required' }, { status: 400 });
     }
 
     const data = await db
@@ -37,12 +43,18 @@ export async function GET(request: Request) {
 
 // POST - Create or Update classification (upsert)
 export async function POST(request: Request) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
-    const { userId, classificationData } = body;
+    const { classificationData } = body;
+    const userId = session.user.id;
 
-    if (!userId || !classificationData) {
-      return NextResponse.json({ error: 'userId and classificationData required' }, { status: 400 });
+    if (!classificationData) {
+      return NextResponse.json({ error: 'classificationData required' }, { status: 400 });
     }
 
     // Generate classification ID

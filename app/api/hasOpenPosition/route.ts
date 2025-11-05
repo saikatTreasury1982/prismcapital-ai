@@ -1,16 +1,22 @@
 import { NextResponse } from 'next/server';
 import { db, schema } from '@/app/lib/db';
 import { eq, and, sql } from 'drizzle-orm';
+import { auth } from '@/app/lib/auth';
 
 const { positions } = schema;
 
 export async function GET(request: Request) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   const { searchParams } = new URL(request.url);
   const ticker = searchParams.get('ticker');
-  const userId = searchParams.get('userId');
+  const userId = session.user.id;
   
-  if (!ticker || !userId) {
-    return NextResponse.json({ error: 'ticker and userId required' }, { status: 400 });
+  if (!ticker) {
+    return NextResponse.json({ error: 'ticker required' }, { status: 400 });
   }
 
   try {

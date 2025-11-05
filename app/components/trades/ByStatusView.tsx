@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Tag } from 'lucide-react';
+import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Tag, RefreshCw } from 'lucide-react';
 import { Position, TradeLot, Transaction, AssetClass, AssetType, AssetClassification } from '../../lib/types/transaction';
 import { getPositions } from '../../services/positionServiceClient';
 import { getTradeLots } from '../../services/tradeLotServiceClient';
 import { getTransactions } from '../../services/transactionServiceClient';
-import { CURRENT_USER_ID } from '../../lib/auth';
 import { TransactionDetailModal } from './TransactionDetailModal';
 import { AssignAttributesModal } from './AssignAttributesModal';
 
@@ -16,6 +15,8 @@ interface ByStatusViewProps {
 }
 
 export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshError, setRefreshError] = useState<string | null>(null);
   const [activeSubTab, setActiveSubTab] = useState<'open' | 'closed'>('open');
   const [positions, setPositions] = useState<Position[]>([]);
   const [closedLots, setClosedLots] = useState<TradeLot[]>([]);
@@ -30,15 +31,91 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 20;
 
+  const handleRefreshPrices = async () => {
+    // Prevent multiple simultaneous refreshes
+    if (isRefreshing) return;
+    
+    setIsRefreshing(true);
+    setRefreshError(null);
+    setExpandedTicker(null); // Collapse all
+
+    // Create abort controller to cancel request if component unmounts
+    const abortController = new AbortController();
+
+    try {
+      const response = await fetch('/api/positions/update-prices', {
+        method: 'POST',
+        signal: abortController.signal, // Pass abort signal
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update prices');
+      }
+
+      const result = await response.json();
+      
+      // Refresh positions data
+      const data = await getPositions(true);
+      setPositions(data);
+
+      // Show success message
+      console.log(`Updated ${result.updated} of ${result.total} positions`);
+      
+    } catch (error: any) {
+      // Ignore abort errors (these are expected when navigating away)
+      if (error.name === 'AbortError') {
+        console.log('Price update cancelled');
+        return;
+      }
+      
+      console.error('Error refreshing prices:', error);
+      setRefreshError(error.message || 'Failed to refresh prices');
+    } finally {
+      setIsRefreshing(false);
+    }
+
+    // Cleanup function (not directly used here, but good practice)
+    return () => {
+      abortController.abort();
+    };
+  };
+
+  // Cleanup when component unmounts
+  useEffect(() => {
+    return () => {
+      // If user navigates away while refreshing, reset state
+      if (isRefreshing) {
+        console.log('Component unmounting, stopping refresh');
+      }
+    };
+  }, [isRefreshing]);
+
+  // Warn user before leaving if refresh is in progress
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isRefreshing) {
+        e.preventDefault();
+        e.returnValue = 'Price refresh is in progress. Are you sure you want to leave?';
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [isRefreshing]);
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
         if (activeSubTab === 'open') {
-          const data = await getPositions(CURRENT_USER_ID, true); // Only active positions
+          const data = await getPositions(true); // Only active positions
           setPositions(data);
         } else {
-          const data = await getTradeLots(CURRENT_USER_ID, undefined, 'CLOSED');
+          const data = await getTradeLots(undefined, 'CLOSED');
           setClosedLots(data);
         }
       } catch (err) {
@@ -66,7 +143,7 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
 
     if (!tickerTransactions[ticker]) {
       try {
-        const allTransactions = await getTransactions(CURRENT_USER_ID, ticker);
+        const allTransactions = await getTransactions(ticker);
         
         // Find the position's opened_date
         const position = positions.find(p => p.ticker === ticker);
@@ -89,13 +166,13 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
     }
     // Refresh data
     if (activeSubTab === 'open') {
-      const data = await getPositions(CURRENT_USER_ID, true);
+      const data = await getPositions(true);
       setPositions(data);
       // Clear cached data for refresh
       setTickerLots({});
       setTickerTransactions({});
     } else {
-      const data = await getTradeLots(CURRENT_USER_ID, undefined, 'CLOSED');
+      const data = await getTradeLots(undefined, 'CLOSED');
       setClosedLots(data);
     }
   };
@@ -116,12 +193,20 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
     return colors[status as keyof typeof colors] || colors.CLOSED;
   };
 
-  // Calculate totals for open positions
+  // Calculate totals for open positions (STOCKS ONLY)
   const openTotals = positions.reduce((acc, pos) => {
+  // Case-insensitive check for stocks
+  const isStock = 
+  pos.asset_class_code?.toUpperCase() === 'STOCK' || 
+  pos.asset_class?.toLowerCase().includes('stock');
+  
+  if (isStock) {
     acc.totalShares += pos.total_shares;
-    acc.totalValue += pos.current_value || 0;
-    acc.unrealizedPL += pos.unrealized_pnl || 0;
-    return acc;
+  }
+  
+  acc.totalValue += pos.current_value || 0;
+  acc.unrealizedPL += pos.unrealized_pnl || 0;
+  return acc;
   }, { totalShares: 0, totalValue: 0, unrealizedPL: 0 });
 
   // Calculate totals for closed lots
@@ -152,39 +237,70 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
 
   return (
     <div className="space-y-6">
-      {/* Sub-tabs */}
-      <div className="backdrop-blur-xl bg-white/5 rounded-2xl p-2 border border-white/10 inline-flex gap-2">
-        <button
-          type="button"
-          onClick={() => setActiveSubTab('open')}
-          className={`px-6 py-3 rounded-xl flex items-center gap-2 transition-all ${
-            activeSubTab === 'open' 
-              ? 'bg-green-600 text-white shadow-lg' 
-              : 'text-blue-200 hover:bg-white/5'
-          }`}
-        >
-          <TrendingUp className="w-5 h-5" />
-          <span>Open Trades</span>
-          <span className="px-2 py-1 bg-white/20 rounded-full text-xs font-bold">
-            {positions.length}
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveSubTab('closed')}
-          className={`px-6 py-3 rounded-xl flex items-center gap-2 transition-all ${
-            activeSubTab === 'closed' 
-              ? 'bg-slate-600 text-white shadow-lg' 
-              : 'text-blue-200 hover:bg-white/5'
-          }`}
-        >
-          <TrendingDown className="w-5 h-5" />
-          <span>Closed Trades</span>
-          <span className="px-2 py-1 bg-white/20 rounded-full text-xs font-bold">
-            {closedLots.length}
-          </span>
-        </button>
+      {/* Sub-tabs with Refresh Button */}
+      <div className="flex items-center gap-4">
+        {/* Original Sub-tabs */}
+        <div className="backdrop-blur-xl bg-white/5 rounded-2xl p-2 border border-white/10 inline-flex gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveSubTab('open')}
+            className={`px-6 py-3 rounded-xl flex items-center gap-2 transition-all ${
+              activeSubTab === 'open' 
+                ? 'bg-green-600 text-white shadow-lg' 
+                : 'text-blue-200 hover:bg-white/5'
+            }`}
+          >
+            <TrendingUp className="w-5 h-5" />
+            <span>Open Trades</span>
+            <span className="px-2 py-1 bg-white/20 rounded-full text-xs font-bold">
+              {positions.length}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveSubTab('closed')}
+            className={`px-6 py-3 rounded-xl flex items-center gap-2 transition-all ${
+              activeSubTab === 'closed' 
+                ? 'bg-slate-600 text-white shadow-lg' 
+                : 'text-blue-200 hover:bg-white/5'
+            }`}
+          >
+            <TrendingDown className="w-5 h-5" />
+            <span>Closed Trades</span>
+            <span className="px-2 py-1 bg-white/20 rounded-full text-xs font-bold">
+              {closedLots.length}
+            </span>
+          </button>
+        </div>
+
+        {/* NEW: Refresh Prices Button (only shows on Open Trades tab) */}
+        {activeSubTab === 'open' && (
+          <button
+            type="button"
+            onClick={handleRefreshPrices}
+            disabled={isRefreshing}
+            className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white flex items-center justify-center transition-all shadow-lg hover:shadow-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed group relative"
+            title="Update market prices"
+          >
+            <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            
+            {/* Tooltip */}
+            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+              {isRefreshing ? 'Updating prices...' : 'Refresh market prices'}
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
+                <div className="border-4 border-transparent border-t-gray-900"></div>
+              </div>
+            </div>
+          </button>
+        )}
       </div>
+
+      {/* Refresh Error Message */}
+      {refreshError && (
+        <div className="backdrop-blur-xl bg-rose-500/20 border border-rose-400/30 rounded-2xl p-4">
+          <p className="text-rose-200 text-sm">{refreshError}</p>
+        </div>
+      )}
 
       {/* Open Trades - Position Cards (copied from ByTickerView) */}
       {activeSubTab === 'open' && (
@@ -292,7 +408,11 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
                           <div>
                             <p className="text-blue-300">Opened</p>
                             <p className="text-white font-semibold">
-                              {new Date(position.opened_date).toLocaleDateString()}
+                              {new Date(position.opened_date).toLocaleDateString('en-US', { 
+                                year: 'numeric', 
+                                month: 'short', 
+                                day: 'numeric' 
+                              })}
                             </p>
                           </div>
                         </div>
@@ -340,7 +460,11 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
                                     return paginatedTransactions.map((transaction) => (
                                       <tr key={transaction.transaction_id} className="border-b border-white/5">
                                         <td className="py-3 text-white">
-                                          {new Date(transaction.transaction_date).toLocaleDateString()}
+                                          {new Date(transaction.transaction_date).toLocaleDateString('en-US', { 
+                                            year: 'numeric', 
+                                            month: 'short', 
+                                            day: 'numeric' 
+                                          })}
                                         </td>
                                         <td className="py-3 text-center">
                                           <span className={`px-2 py-1 rounded text-xs font-semibold ${
@@ -580,7 +704,7 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
         onClose={() => setSelectedPositionForAttributes(null)}
         onSuccess={async () => {
           // Refresh positions data
-          const data = await getPositions(CURRENT_USER_ID, true);
+          const data = await getPositions(true);
           setPositions(data);
         }}
       />

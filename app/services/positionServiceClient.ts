@@ -1,10 +1,10 @@
 import { Position } from '../lib/types/transaction';
 
-export async function getPositions(userId: string, isActive?: boolean): Promise<Position[]> {
-  let url = `/api/positions?userId=${userId}`;
+export async function getPositions(isActive?: boolean): Promise<Position[]> {
+  let url = `/api/positions`;
   
   if (isActive !== undefined) {
-    url += `&isActive=${isActive}`;
+    url += `?isActive=${isActive}`;
   }
 
   const response = await fetch(url);

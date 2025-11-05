@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { Plus, List, BarChart2, Calendar } from 'lucide-react';
-import { Transaction, TradeLot } from '../../lib/types/transaction';
+import { RecentTransactionsList } from './RecentTransactionsList';
+import { Transaction } from '../../lib/types/transaction';
 import { TransactionEntryForm } from './TransactionEntryForm';
 import { ByTickerView } from './ByTickerView';
 import { ByStatusView } from './ByStatusView';
@@ -94,11 +95,21 @@ export function TradesClientWrapper() {
       {/* Content */}
       <div className="max-w-7xl mx-auto">
         {activeTab === 'entry' && (
-          <TransactionEntryForm 
-            onSuccess={handleSuccess}
-            editingTransaction={editingTransaction}
-            onCancelEdit={handleCancelEdit}
-          />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Entry Form */}
+            <div>
+              <TransactionEntryForm 
+                onSuccess={handleSuccess}
+                editingTransaction={editingTransaction}
+                onCancelEdit={handleCancelEdit}
+              />
+            </div>
+
+            {/* Recent Transactions */}
+            <div>
+              <RecentTransactionsList refreshKey={refreshKey} />
+            </div>
+          </div>
         )}
 
         {activeTab === 'ticker' && (

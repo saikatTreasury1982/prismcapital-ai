@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { Calendar } from 'lucide-react';
 import { Transaction } from '../../lib/types/transaction';
 import { getTransactions } from '../../services/transactionServiceClient';
-import { CURRENT_USER_ID } from '../../lib/auth';
 import { TransactionDetailModal } from './TransactionDetailModal';
 
 interface ByDateViewProps {
@@ -30,7 +29,7 @@ export function ByDateView({ onEdit, onDelete }: ByDateViewProps) {
   useEffect(() => {
     const fetchTransactions = async () => {
       try {
-        const data = await getTransactions(CURRENT_USER_ID);
+        const data = await getTransactions();
         setTransactions(data);
         setFilteredTransactions(data);
       } catch (err) {
@@ -98,7 +97,7 @@ export function ByDateView({ onEdit, onDelete }: ByDateViewProps) {
       onDelete();
     }
     // Refresh transactions
-    const data = await getTransactions(CURRENT_USER_ID);
+    const data = await getTransactions();
     setTransactions(data);
   };
 
