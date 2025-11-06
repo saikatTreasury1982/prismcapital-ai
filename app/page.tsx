@@ -6,6 +6,7 @@ import { Fingerprint, Smartphone } from 'lucide-react';
 import { startRegistration } from '@simplewebauthn/browser';
 
 export default function LoginPage() {
+  const [identifier, setIdentifier] = useState('');
   const [showOTP, setShowOTP] = useState(false);
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
@@ -14,7 +15,18 @@ export default function LoginPage() {
   const handlePasskey = async () => {
     setLoading(true);
     try {
-      const userId = 'beb2f83d-998e-4bb2-9510-ae9916e339f3';
+      // Lookup user_id from identifier (could be user_id or email)
+      const lookupResponse = await fetch('/api/auth/user/lookup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier }),
+      });
+
+      if (!lookupResponse.ok) {
+        throw new Error('User not found');
+      }
+
+      const { userId } = await lookupResponse.json();
 
       // Try to authenticate with existing passkey first
       const authOptionsResponse = await fetch(`/api/auth/passkey/authenticate?userId=${userId}`);
@@ -28,6 +40,7 @@ export default function LoginPage() {
           credential = await startAuthentication(options);
         } catch (err: any) {
           if (err.name === 'NotAllowedError') {
+            setLoading(false);
             return; // User cancelled, exit gracefully
           }
           throw err; // Re-throw other errors
@@ -41,8 +54,18 @@ export default function LoginPage() {
 
         const { verified } = await verifyResponse.json();
         if (verified) {
-          window.location.href = '/launcher';
-          return;
+          // Create NextAuth session
+          const result = await signIn('passkey', { 
+            userId,
+            redirect: false,
+          });
+          
+          if (result?.ok) {
+            window.location.href = '/launcher';
+            return;
+          } else {
+            throw new Error('Failed to create session');
+          }
         }
       } else {
         // No passkey exists - register new one
@@ -61,6 +84,7 @@ export default function LoginPage() {
           credential = await startRegistration(options);
         } catch (err: any) {
           if (err.name === 'NotAllowedError') {
+            setLoading(false);
             return; // User cancelled
           }
           throw err;
@@ -74,8 +98,18 @@ export default function LoginPage() {
 
         const { verified } = await verifyResponse.json();
         if (verified) {
-          window.location.href = '/launcher';
-          return;
+          // Create NextAuth session
+          const result = await signIn('passkey', { 
+            userId,
+            redirect: false,
+          });
+          
+          if (result?.ok) {
+            window.location.href = '/launcher';
+            return;
+          } else {
+            throw new Error('Failed to create session');
+          }
         }
       }
 
@@ -131,10 +165,21 @@ export default function LoginPage() {
 
         {!showOTP ? (
           <div className="space-y-4">
+            <div>
+              <input
+                type="text"
+                placeholder="User ID or Email"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
+                suppressHydrationWarning={true}
+              />
+            </div>
+
             <button
               onClick={handlePasskey}
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-500 to-emerald-600 bg-clip-text text-transparent text-white py-4 rounded-2xl font-semibold flex items-center justify-center gap-3 hover:from-blue-600 hover:to-blue-700 hover:shadow-xl transition-all disabled:opacity-50"
+              disabled={loading || !identifier.trim()}
+              className="w-full bg-gradient-to-r from-blue-500 to-emerald-600 text-white py-4 rounded-2xl font-semibold flex items-center justify-center gap-3 hover:from-blue-600 hover:to-blue-700 hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Fingerprint className="w-6 h-6" />
               {loading ? 'Authenticating...' : 'Sign in with Passkey'}
@@ -142,13 +187,14 @@ export default function LoginPage() {
 
             <button
               onClick={() => setShowOTP(true)}
-              className="w-full bg-gradient-to-r from-blue-500 to-emerald-600 bg-clip-text text-transparent text-white py-4 rounded-2xl font-semibold flex items-center justify-center gap-3 hover:from-blue-600 hover:to-blue-700 hover:shadow-xl transition-all disabled:opacity-50"
+              disabled={!identifier.trim()}
+              className="w-full bg-gradient-to-r from-blue-500 to-emerald-600 text-white py-4 rounded-2xl font-semibold flex items-center justify-center gap-3 hover:from-blue-600 hover:to-blue-700 hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Smartphone className="w-6 h-6" />
               Use SMS Code Instead
             </button>
           </div>
-        ) : (
+          ) : (
           <div className="space-y-4">
             <div>
               <input

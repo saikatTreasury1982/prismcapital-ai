@@ -1,12 +1,37 @@
 'use client';
 
 import Link from 'next/link';
-import { BarChart3, Wallet, Plane } from 'lucide-react';
-import { signOut } from 'next-auth/react';
-import { useState } from 'react';
-import { Power } from 'lucide-react';
+import { BarChart3, Wallet, Plane, Power } from 'lucide-react';
+import { signOut, useSession } from 'next-auth/react';
+import { useState, useEffect } from 'react';
 
 export default function LauncherPage() {
+  const { data: session, status } = useSession();
+  const [isSigningOut, setIsSigningOut] = useState(false);
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      window.location.href = '/';
+    }
+  }, [status]);
+
+  // Show loading while checking session
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-400 to-emerald-400">
+        <p className="text-white text-xl">Loading...</p>
+      </div>
+    );
+  }
+
+  // If no session, show nothing (will redirect)
+  if (!session?.user?.id) {
+    return null;
+  }
+
+  const userId = session.user.id;
+
   const apps = [
     {
       name: 'Prism Capital',
@@ -30,21 +55,19 @@ export default function LauncherPage() {
       description: 'Travel Planning',
     },
   ];
-  
-  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
     try {
-      // Close all open sessions for this user
-      const userId = 'beb2f83d-998e-4bb2-9510-ae9916e339f3'; // Hardcoded for now
-      
       await fetch('/api/auth/logout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId }),
       });
 
+      // Sign out from NextAuth
+      await signOut({ redirect: false });
+      
       // Redirect to login
       window.location.href = '/';
     } catch (error) {
@@ -79,32 +102,32 @@ export default function LauncherPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {apps.map((app) => {
+          {apps.map((app) => {
             const isComingSoon = app.name !== 'Prism Capital';
             
             return isComingSoon ? (
-            <div key={app.name} className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20 opacity-60 cursor-not-allowed relative">
+              <div key={app.name} className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20 opacity-60 cursor-not-allowed relative">
                 <div className="absolute top-4 right-4 bg-yellow-500/20 text-yellow-300 text-xs px-3 py-1 rounded-full border border-yellow-500/30">
-                Coming Soon
+                  Coming Soon
                 </div>
                 <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${app.gradient} flex items-center justify-center mb-4`}>
-                <app.icon className="w-8 h-8 text-white" />
+                  <app.icon className="w-8 h-8 text-white" />
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-2">{app.name}</h2>
                 <p className="text-blue-200 text-sm">{app.description}</p>
-            </div>
+              </div>
             ) : (
-            <Link key={app.name} href={app.href} target="_blank" rel="noopener noreferrer">
+              <Link key={app.name} href={app.href} target="_blank" rel="noopener noreferrer">
                 <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20 hover:bg-white/15 transition-all cursor-pointer group hover:scale-105 hover:shadow-2xl">
-                <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${app.gradient} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                  <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${app.gradient} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                     <app.icon className="w-8 h-8 text-white" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-white mb-2">{app.name}</h2>
+                  <p className="text-blue-200 text-sm">{app.description}</p>
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-2">{app.name}</h2>
-                <p className="text-blue-200 text-sm">{app.description}</p>
-                </div>
-            </Link>
+              </Link>
             );
-        })}
+          })}
         </div>
       </div>
     </div>
