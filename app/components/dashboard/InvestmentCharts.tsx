@@ -103,43 +103,48 @@ const InvestmentCharts = memo(function InvestmentCharts({ data }: InvestmentChar
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    {/* Doughnut Chart - Capital Investment by Asset Type */}
-    <div className="backdrop-blur-xl bg-white/10 rounded-2xl border border-white/20 p-6">
-      <h3 className="text-lg font-semibold text-white mb-4">Capital Investment by Asset Type</h3>
-      
-      <ResponsiveContainer width="100%" height={300}>
-        <PieChart>
-          <Pie
-            data={pieData}
-            cx="50%"
-            cy="50%"
-            outerRadius={100}
-            innerRadius={60}
-            fill="#8884d8"
-            dataKey="value"
-            label={({ name, percentage }) => `${name}: ${percentage}%`}
-          >
-            {pieData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-            ))}
-          </Pie>
-          <Tooltip content={<CustomTooltip />} />
-        </PieChart>
-      </ResponsiveContainer>
-      
-      {/* Legend */}
-      <div className="mt-4 grid grid-cols-2 gap-2">
-        {pieData.map((entry, index) => (
-          <div key={index} className="flex items-center gap-2">
-            <div 
-              className="w-3 h-3 rounded-full"
-              style={{ backgroundColor: COLORS[index % COLORS.length] }}
-            />
-            <span className="text-white text-sm">{entry.name}</span>
+      {/* Doughnut Chart - Capital Investment by Asset Type */}
+      <div className="backdrop-blur-xl bg-white/10 rounded-2xl border border-white/20 p-6">
+        <h3 className="text-lg font-semibold text-white mb-4">Capital Investment by Asset Type</h3>
+        
+        <div className="flex gap-6">
+          {/* Chart */}
+          <div className="flex-1">
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={pieData}
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={100}
+                  innerRadius={60}
+                  fill="#8884d8"
+                  dataKey="value"
+                  label={({ name, percentage }) => `${name}: ${percentage}%`}
+                >
+                  {pieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
-        ))}
+          
+          {/* Legend - Side */}
+          <div className="flex flex-col justify-center gap-3 min-w-[140px]">
+            {pieData.map((entry, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <div 
+                  className="w-3 h-3 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                />
+                <span className="text-white text-sm">{entry.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
-    </div>
 
       {/* Line Chart - Capital vs Current Value */}
       <div className="backdrop-blur-xl bg-white/10 rounded-2xl border border-white/20 p-6">

@@ -184,7 +184,7 @@ export function PeriodCompare({ home_currency }: PeriodCompareProps) {
           </div>
 
           {/* Transaction list */}
-          <div className="space-y-2 max-h-64 overflow-y-auto">
+          <div className="space-y-2">
             {movements1.map(txn => (
               <div key={txn.cash_movement_id} className="bg-white/5 rounded-lg p-3 border border-white/10">
                 <div className="flex justify-between items-center">
@@ -244,7 +244,7 @@ export function PeriodCompare({ home_currency }: PeriodCompareProps) {
           </div>
 
           {/* Transaction list */}
-          <div className="space-y-2 max-h-64 overflow-y-auto">
+          <div className="space-y-2">
             {movements2.map(txn => (
               <div key={txn.cash_movement_id} className="bg-white/5 rounded-lg p-3 border border-white/10">
                 <div className="flex justify-between items-center">

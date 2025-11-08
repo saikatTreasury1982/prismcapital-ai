@@ -1,17 +1,30 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Tag, RefreshCw } from 'lucide-react';
-import { Position, TradeLot, Transaction, AssetClass, AssetType, AssetClassification } from '../../lib/types/transaction';
+import { Position, Transaction } from '../../lib/types/transaction';
 import { getPositions } from '../../services/positionServiceClient';
-import { getTradeLots } from '../../services/tradeLotServiceClient';
 import { getTransactions } from '../../services/transactionServiceClient';
-import { TransactionDetailModal } from './TransactionDetailModal';
-import { AssignAttributesModal } from './AssignAttributesModal';
+
 
 interface ByStatusViewProps {
   onEdit?: (transaction: Transaction) => void;
   onDelete?: () => void;
+}
+
+interface RealizedTrade {
+  realization_id: number;
+  ticker: string;
+  sale_date: string;
+  quantity: number;
+  average_cost: number;
+  total_cost: number;
+  sale_price: number;
+  total_proceeds: number;
+  realized_pnl: number;
+  entry_date: string;
+  position_currency: string;
+  fees: number;
+  notes: string | null;
 }
 
 export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
@@ -19,7 +32,7 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [activeSubTab, setActiveSubTab] = useState<'open' | 'closed'>('open');
   const [positions, setPositions] = useState<Position[]>([]);
-  const [closedLots, setClosedLots] = useState<TradeLot[]>([]);
+  const [closedLots, setClosedLots] = useState<RealizedTrade[]>([]);
   const [expandedTicker, setExpandedTicker] = useState<string | null>(null);
   const [tickerLots, setTickerLots] = useState<Record<string, TradeLot[]>>({});
   const [tickerTransactions, setTickerTransactions] = useState<Record<string, Transaction[]>>({});
@@ -115,8 +128,9 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
           const data = await getPositions(true); // Only active positions
           setPositions(data);
         } else {
-          const data = await getTradeLots(undefined, 'CLOSED');
-          setClosedLots(data);
+          const response = await fetch('/api/trades/realized-history');
+          const data = await response.json();
+          setClosedLots(data.history);
         }
       } catch (err) {
         console.error('Failed to fetch data:', err);
@@ -172,9 +186,10 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
       setTickerLots({});
       setTickerTransactions({});
     } else {
-      const data = await getTradeLots(undefined, 'CLOSED');
-      setClosedLots(data);
-    }
+      const response = await fetch('/api/trades/realized-history');
+      const data = await response.json();
+      setClosedLots(data.history);
+    }}
   };
 
   const getStrategyName = (strategyId: number | null) => {
@@ -209,11 +224,11 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
   return acc;
   }, { totalShares: 0, totalValue: 0, unrealizedPL: 0 });
 
-  // Calculate totals for closed lots
-  const closedTotals = closedLots.reduce((acc, lot) => {
-    acc.totalPL += lot.realized_pl || 0;
+  // Calculate totals for closed trades
+  const closedTotals = closedLots.reduce((acc, trade) => {
+    acc.totalPL += trade.realized_pnl || 0;
     acc.totalTrades += 1;
-    if ((lot.realized_pl || 0) > 0) acc.winningTrades += 1;
+    if ((trade.realized_pnl || 0) > 0) acc.winningTrades += 1;
     return acc;
   }, { totalPL: 0, totalTrades: 0, winningTrades: 0 });
 
@@ -597,54 +612,48 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
                       <tr className="border-b border-white/10 bg-white/5">
                         <th className="text-left text-blue-300 p-4">Ticker</th>
                         <th className="text-left text-blue-300 p-4">Entry Date</th>
-                        <th className="text-left text-blue-300 p-4">Exit Date</th>
-                        <th className="text-right text-blue-300 p-4">Qty</th>
-                        <th className="text-right text-blue-300 p-4">Entry Price</th>
-                        <th className="text-right text-blue-300 p-4">Exit Price</th>
-                        <th className="text-right text-blue-300 p-4">P/L</th>
-                        <th className="text-right text-blue-300 p-4">P/L %</th>
-                        <th className="text-center text-blue-300 p-4">Hold Days</th>
-                        <th className="text-center text-blue-300 p-4">Strategy</th>
-                        <th className="text-center text-blue-300 p-4">Status</th>
+                        <th className="text-left text-blue-300 p-4">Sale Date</th>
+                        <th className="text-right text-blue-300 p-4">Quantity</th>
+                        <th className="text-right text-blue-300 p-4">Avg Cost</th>
+                        <th className="text-right text-blue-300 p-4">Sale Price</th>
+                        <th className="text-right text-blue-300 p-4">Total Cost</th>
+                        <th className="text-right text-blue-300 p-4">Proceeds</th>
+                        <th className="text-right text-blue-300 p-4">Fees</th>
+                        <th className="text-right text-blue-300 p-4">Realized P/L</th>
+                        <th className="text-left text-blue-300 p-4">Notes</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {paginatedLots.map((lot) => (
-                        <tr key={lot.lot_id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                          <td className="p-4 text-white font-semibold">{lot.ticker}</td>
+                      {paginatedLots.map((trade) => (
+                        <tr key={trade.realization_id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                          <td className="p-4 text-white font-semibold">{trade.ticker}</td>
                           <td className="p-4 text-white">
-                            {new Date(lot.entry_date).toLocaleDateString()}
+                            {new Date(trade.entry_date).toLocaleDateString('en-US', { 
+                              year: 'numeric', 
+                              month: 'short', 
+                              day: 'numeric' 
+                            })}
                           </td>
                           <td className="p-4 text-white">
-                            {lot.exit_date ? new Date(lot.exit_date).toLocaleDateString() : '-'}
+                            {new Date(trade.sale_date).toLocaleDateString('en-US', { 
+                              year: 'numeric', 
+                              month: 'short', 
+                              day: 'numeric' 
+                            })}
                           </td>
-                          <td className="p-4 text-right text-white">{lot.quantity}</td>
-                          <td className="p-4 text-right text-white">${lot.entry_price.toFixed(2)}</td>
-                          <td className="p-4 text-right text-white">
-                            {lot.exit_price ? `$${lot.exit_price.toFixed(2)}` : '-'}
-                          </td>
-                          <td className={`p-4 text-right font-bold ${
-                            (lot.realized_pl || 0) >= 0 ? 'text-green-400' : 'text-rose-400'
+                          <td className="p-4 text-right text-white">{trade.quantity.toFixed(2)}</td>
+                          <td className="p-4 text-right text-white">${trade.average_cost.toFixed(2)}</td>
+                          <td className="p-4 text-right text-white">${trade.sale_price.toFixed(2)}</td>
+                          <td className="p-4 text-right text-white">${trade.total_cost.toFixed(2)}</td>
+                          <td className="p-4 text-right text-white">${trade.total_proceeds.toFixed(2)}</td>
+                          <td className="p-4 text-right text-white">${trade.fees.toFixed(2)}</td>
+                          <td className={`p-4 text-right font-bold text-lg ${
+                            trade.realized_pnl >= 0 ? 'text-green-400' : 'text-red-400'
                           }`}>
-                            {lot.realized_pl ? `$${lot.realized_pl.toFixed(2)}` : '-'}
+                            ${trade.realized_pnl.toFixed(2)}
                           </td>
-                          <td className={`p-4 text-right font-bold ${
-                            (lot.realized_pl_percent || 0) >= 0 ? 'text-green-400' : 'text-rose-400'
-                          }`}>
-                            {lot.realized_pl_percent ? `${lot.realized_pl_percent.toFixed(2)}%` : '-'}
-                          </td>
-                          <td className="p-4 text-center text-white">
-                            {lot.trade_hold_days || '-'}
-                          </td>
-                          <td className="p-4 text-center">
-                            <span className="px-2 py-1 bg-purple-500/20 text-purple-300 rounded text-xs">
-                              {getStrategyName(lot.trade_strategy)}
-                            </span>
-                          </td>
-                          <td className="p-4 text-center">
-                            <span className={`px-2 py-1 border rounded text-xs ${getStatusBadge(lot.lot_status)}`}>
-                              {lot.lot_status}
-                            </span>
+                          <td className="p-4 text-white text-xs truncate max-w-[150px]">
+                            {trade.notes || '-'}
                           </td>
                         </tr>
                       ))}

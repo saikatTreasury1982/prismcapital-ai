@@ -16,6 +16,38 @@ export default function LauncherPage() {
     }
   }, [status]);
 
+// Redirect to login if not authenticated
+useEffect(() => {
+  if (status === 'unauthenticated') {
+    window.location.href = '/';
+  }
+}, [status]);
+
+// Add this NEW useEffect for handling window close
+useEffect(() => {
+  if (!session?.user?.id) return;
+
+  const userId = session.user.id; // Store in variable to avoid undefined issues
+
+  const handleWindowClose = () => {
+    // Use sendBeacon for reliable logout on window close
+    // It works even after the page has started unloading
+    const data = JSON.stringify({ userId });
+    navigator.sendBeacon('/api/auth/logout', data);
+    
+    // Also clear NextAuth session
+    signOut({ redirect: false });
+  };
+
+  // Listen for window close/refresh
+  window.addEventListener('beforeunload', handleWindowClose);
+
+  // Cleanup
+  return () => {
+    window.removeEventListener('beforeunload', handleWindowClose);
+  };
+}, [session?.user?.id, signOut]);
+
   // Show loading while checking session
   if (status === 'loading') {
     return (

@@ -6,7 +6,24 @@ const { authSessions } = schema;
 
 export async function POST(request: Request) {
   try {
-    const { userId } = await request.json();
+    // Handle both regular fetch and sendBeacon formats
+    let userId;
+    
+    const contentType = request.headers.get('content-type');
+    
+    if (contentType?.includes('application/json')) {
+      const body = await request.json();
+      userId = body.userId;
+    } else {
+      // sendBeacon sends as text/plain by default
+      const body = await request.text();
+      try {
+        const parsed = JSON.parse(body);
+        userId = parsed.userId;
+      } catch {
+        userId = body; // If not JSON, treat as plain userId
+      }
+    }
 
     if (!userId) {
       return NextResponse.json({ error: 'userId required' }, { status: 400 });

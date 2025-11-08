@@ -2,20 +2,32 @@
 
 import { useState, useEffect } from 'react';
 import { List } from 'lucide-react';
-import { Transaction } from '../../lib/types/transaction';
-import { getTransactions } from '../../services/transactionServiceClient';
-import { TransactionDetailModal } from './TransactionDetailModal';
 
 interface ByTickerViewProps {
-  onEdit?: (transaction: Transaction) => void;
+  onEdit?: () => void;
   onDelete?: () => void;
 }
 
+interface RealizedTrade {
+  realization_id: number;
+  ticker: string;
+  sale_date: string;
+  quantity: number;
+  average_cost: number;
+  total_cost: number;
+  sale_price: number;
+  total_proceeds: number;
+  realized_pnl: number;
+  entry_date: string;
+  position_currency: string;
+  fees: number;
+  notes: string | null;
+}
+
 export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
+  const [trades, setTrades] = useState<RealizedTrade[]>([]);
+  const [filteredTrades, setFilteredTrades] = useState<RealizedTrade[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 20;
 
@@ -24,83 +36,79 @@ export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
   const [uniqueTickers, setUniqueTickers] = useState<string[]>([]);
 
   useEffect(() => {
-    const fetchTransactions = async () => {
+    const fetchTrades = async () => {
       try {
-        const data = await getTransactions();
-        setTransactions(data);
-        setFilteredTransactions(data);
+        const response = await fetch('/api/trades/realized-history');
+        const data = await response.json();
+        setTrades(data.history);
+        setFilteredTrades(data.history);
 
         // Extract unique tickers
-        const tickers = Array.from(new Set(data.map(t => t.ticker))).sort();
-        setUniqueTickers(tickers);
+        const tickers = Array.from(new Set(data.history.map((t: RealizedTrade) => t.ticker))) as string[];
+        setUniqueTickers(tickers.sort());
       } catch (err) {
-        console.error('Failed to fetch transactions:', err);
+        console.error('Failed to fetch trades:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTransactions();
+    fetchTrades();
   }, []);
 
   // Apply ticker filter
   useEffect(() => {
-    let filtered = [...transactions];
+    let filtered = [...trades];
 
     if (selectedTicker !== 'all') {
       filtered = filtered.filter(t => t.ticker === selectedTicker);
     }
 
-    setFilteredTransactions(filtered);
-    setCurrentPage(1); // Reset to first page when filter changes
-  }, [selectedTicker, transactions]);
+    setFilteredTrades(filtered);
+    setCurrentPage(1);
+  }, [selectedTicker, trades]);
 
-  const totalPages = Math.ceil(filteredTransactions.length / pageSize);
-  const paginatedTransactions = filteredTransactions.slice(
+  const totalPages = Math.ceil(filteredTrades.length / pageSize);
+  const paginatedTrades = filteredTrades.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
 
-  // Calculate summary stats for filtered transactions
-  const stats = filteredTransactions.reduce((acc, t) => {
-    acc.totalTransactions += 1;
-    acc.totalValue += t.trade_value;
+  // Calculate summary stats
+  const stats = filteredTrades.reduce((acc, t) => {
+    acc.totalTrades += 1;
+    acc.totalProceeds += t.total_proceeds;
+    acc.totalCost += t.total_cost;
+    acc.totalPnL += t.realized_pnl;
     acc.totalFees += t.fees;
-    if (t.transaction_type_id === 1) {
-      acc.buyCount += 1;
-      acc.buyValue += t.trade_value;
+    acc.totalQuantity += t.quantity;
+    
+    if (t.realized_pnl >= 0) {
+      acc.profitCount += 1;
+      acc.totalProfit += t.realized_pnl;
     } else {
-      acc.sellCount += 1;
-      acc.sellValue += t.trade_value;
+      acc.lossCount += 1;
+      acc.totalLoss += Math.abs(t.realized_pnl);
     }
+    
     return acc;
   }, {
-    totalTransactions: 0,
-    totalValue: 0,
+    totalTrades: 0,
+    totalProceeds: 0,
+    totalCost: 0,
+    totalPnL: 0,
     totalFees: 0,
-    buyCount: 0,
-    buyValue: 0,
-    sellCount: 0,
-    sellValue: 0
+    totalQuantity: 0,
+    profitCount: 0,
+    totalProfit: 0,
+    lossCount: 0,
+    totalLoss: 0,
   });
-
-  const handleDeleteComplete = async () => {
-    if (onDelete) {
-      onDelete();
-    }
-    // Refresh transactions
-    const data = await getTransactions();
-    setTransactions(data);
-    
-    // Update unique tickers
-    const tickers = Array.from(new Set(data.map(t => t.ticker))).sort();
-    setUniqueTickers(tickers);
-  };
 
   if (loading) {
     return (
       <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20">
-        <p className="text-blue-200 text-center">Loading transactions...</p>
+        <p className="text-blue-200 text-center">Loading closed trades...</p>
       </div>
     );
   }
@@ -130,7 +138,6 @@ export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
           </select>
         </div>
 
-        {/* Clear Filter */}
         {selectedTicker !== 'all' && (
           <button
             onClick={() => setSelectedTicker('all')}
@@ -142,20 +149,27 @@ export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div className="backdrop-blur-xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-2xl p-6 border border-blue-400/20">
-          <p className="text-blue-300 text-sm mb-1">Total Transactions</p>
-          <p className="text-white text-3xl font-bold">{stats.totalTransactions}</p>
+          <p className="text-blue-300 text-sm mb-1">Closed Trades</p>
+          <p className="text-white text-3xl font-bold">{stats.totalTrades}</p>
+          <p className="text-blue-200 text-xs mt-1">{stats.totalQuantity.toFixed(2)} shares</p>
         </div>
         <div className="backdrop-blur-xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-2xl p-6 border border-green-400/20">
-          <p className="text-green-300 text-sm mb-1">Buy Transactions</p>
-          <p className="text-white text-2xl font-bold">{stats.buyCount}</p>
-          <p className="text-green-200 text-sm">${stats.buyValue.toFixed(2)}</p>
+          <p className="text-green-300 text-sm mb-1">Profitable Trades</p>
+          <p className="text-white text-2xl font-bold">{stats.profitCount}</p>
+          <p className="text-green-200 text-xs mt-1">+${stats.totalProfit.toFixed(2)}</p>
         </div>
         <div className="backdrop-blur-xl bg-gradient-to-br from-rose-500/10 to-red-500/10 rounded-2xl p-6 border border-rose-400/20">
-          <p className="text-rose-300 text-sm mb-1">Sell Transactions</p>
-          <p className="text-white text-2xl font-bold">{stats.sellCount}</p>
-          <p className="text-rose-200 text-sm">${stats.sellValue.toFixed(2)}</p>
+          <p className="text-rose-300 text-sm mb-1">Loss Trades</p>
+          <p className="text-white text-2xl font-bold">{stats.lossCount}</p>
+          <p className="text-rose-200 text-xs mt-1">-${stats.totalLoss.toFixed(2)}</p>
+        </div>
+        <div className="backdrop-blur-xl bg-gradient-to-br from-amber-500/10 to-yellow-500/10 rounded-2xl p-6 border border-amber-400/20">
+          <p className="text-amber-300 text-sm mb-1">Total P/L</p>
+          <p className={`text-3xl font-bold ${stats.totalPnL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+            ${stats.totalPnL.toFixed(2)}
+          </p>
         </div>
         <div className="backdrop-blur-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-2xl p-6 border border-purple-400/20">
           <p className="text-purple-300 text-sm mb-1">Total Fees</p>
@@ -163,13 +177,11 @@ export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
         </div>
       </div>
 
-      {/* Transactions Table */}
+      {/* Trades Table */}
       <div className="backdrop-blur-xl bg-white/10 rounded-3xl border border-white/20 overflow-hidden">
-        {paginatedTransactions.length === 0 ? (
+        {paginatedTrades.length === 0 ? (
           <div className="p-8 text-center">
-            <p className="text-blue-200">
-              No transactions found for the selected ticker.
-            </p>
+            <p className="text-blue-200">No closed trades found for the selected ticker.</p>
           </div>
         ) : (
           <>
@@ -177,53 +189,42 @@ export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/10 bg-white/5">
-                    <th className="text-left text-blue-300 p-4">Date</th>
+                    <th className="text-left text-blue-300 p-4">Sale Date</th>
                     <th className="text-left text-blue-300 p-4">Ticker</th>
-                    <th className="text-center text-blue-300 p-4">Type</th>
                     <th className="text-right text-blue-300 p-4">Quantity</th>
-                    <th className="text-right text-blue-300 p-4">Price</th>
+                    <th className="text-right text-blue-300 p-4">Avg Cost</th>
+                    <th className="text-right text-blue-300 p-4">Sale Price</th>
+                    <th className="text-right text-blue-300 p-4">Total Cost</th>
+                    <th className="text-right text-blue-300 p-4">Proceeds</th>
                     <th className="text-right text-blue-300 p-4">Fees</th>
-                    <th className="text-right text-blue-300 p-4">Trade Value</th>
+                    <th className="text-right text-blue-300 p-4">Realized P/L</th>
                     <th className="text-left text-blue-300 p-4">Notes</th>
-                    <th className="text-center text-blue-300 p-4">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {paginatedTransactions.map((transaction) => (
-                    <tr key={transaction.transaction_id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                  {paginatedTrades.map((trade) => (
+                    <tr key={trade.realization_id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                       <td className="p-4 text-white">
-                        {new Date(transaction.transaction_date).toLocaleDateString('en-US', { 
+                        {new Date(trade.sale_date).toLocaleDateString('en-US', { 
                           year: 'numeric', 
                           month: 'short', 
                           day: 'numeric' 
                         })}
                       </td>
-                      <td className="p-4 text-white font-semibold">{transaction.ticker}</td>
-                      <td className="p-4 text-center">
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          transaction.transaction_type_id === 1 
-                            ? 'bg-green-500/20 text-green-300' 
-                            : 'bg-rose-500/20 text-rose-300'
-                        }`}>
-                          {transaction.transaction_type_id === 1 ? 'BUY' : 'SELL'}
+                      <td className="p-4 text-white font-semibold">{trade.ticker}</td>
+                      <td className="p-4 text-right text-white">{trade.quantity.toFixed(2)}</td>
+                      <td className="p-4 text-right text-white">${trade.average_cost.toFixed(2)}</td>
+                      <td className="p-4 text-right text-white">${trade.sale_price.toFixed(2)}</td>
+                      <td className="p-4 text-right text-white">${trade.total_cost.toFixed(2)}</td>
+                      <td className="p-4 text-right text-white">${trade.total_proceeds.toFixed(2)}</td>
+                      <td className="p-4 text-right text-white">${trade.fees.toFixed(2)}</td>
+                      <td className="p-4 text-right">
+                        <span className={`font-bold text-lg ${trade.realized_pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          ${trade.realized_pnl.toFixed(2)}
                         </span>
                       </td>
-                      <td className="p-4 text-right text-white">{transaction.quantity.toLocaleString()}</td>
-                      <td className="p-4 text-right text-white">${transaction.price.toFixed(2)}</td>
-                      <td className="p-4 text-right text-white">${transaction.fees.toFixed(2)}</td>
-                      <td className="p-4 text-right text-white font-semibold">
-                        ${transaction.trade_value?.toFixed(2) || (transaction.quantity * transaction.price).toFixed(2)}
-                      </td>
                       <td className="p-4 text-white text-xs truncate max-w-[150px]">
-                        {transaction.notes || '-'}
-                      </td>
-                      <td className="p-4 text-center">
-                        <button
-                          onClick={() => setSelectedTransaction(transaction)}
-                          className="text-blue-400 hover:text-blue-300 text-xs underline cursor-pointer"
-                        >
-                          View
-                        </button>
+                        {trade.notes || '-'}
                       </td>
                     </tr>
                   ))}
@@ -235,7 +236,7 @@ export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
             {totalPages > 1 && (
               <div className="p-4 border-t border-white/10 flex items-center justify-between">
                 <p className="text-blue-200 text-sm">
-                  Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, filteredTransactions.length)} of {filteredTransactions.length} transactions
+                  Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, filteredTrades.length)} of {filteredTrades.length} trades
                 </p>
                 <div className="flex gap-2">
                   <button
@@ -261,19 +262,6 @@ export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
           </>
         )}
       </div>
-
-      {/* Transaction Detail Modal */}
-      <TransactionDetailModal
-        transaction={selectedTransaction}
-        onClose={() => setSelectedTransaction(null)}
-        onEdit={(transaction) => {
-          if (onEdit) {
-            onEdit(transaction);
-          }
-          setSelectedTransaction(null);
-        }}
-        onDelete={handleDeleteComplete}
-      />
     </div>
   );
 }

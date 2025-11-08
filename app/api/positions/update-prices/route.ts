@@ -3,36 +3,11 @@ import { db, schema } from '@/app/lib/db';
 import { eq, and } from 'drizzle-orm';
 import { auth } from '@/app/lib/auth';
 
-const { positions, systemApiKeys } = schema;
+const { positions } = schema;
 
-interface AlphaVantageQuote {
-  'Global Quote': {
-    '05. price': string;
-  };
-}
-
-async function getAlphaVantageApiKey(): Promise<string> {
-  const data = await db
-    .select()
-    .from(systemApiKeys)
-    .where(
-      and(
-        eq(systemApiKeys.service_id, 1),
-        eq(systemApiKeys.is_active, 1)
-      )
-    )
-    .limit(1);
-
-  if (!data || data.length === 0 || !data[0].api_key) {
-    throw new Error('AlphaVantage API key not found');
-  }
-  
-  return data[0].api_key;
-}
-
-async function fetchCurrentPrice(ticker: string, apiKey: string): Promise<number | null> {
+async function fetchCurrentPrice(ticker: string): Promise<number | null> {
   try {
-    const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${ticker}&apikey=${apiKey}`;
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=1d`;
     const response = await fetch(url);
     
     if (!response.ok) {
@@ -40,10 +15,13 @@ async function fetchCurrentPrice(ticker: string, apiKey: string): Promise<number
       return null;
     }
     
-    const data: AlphaVantageQuote = await response.json();
+    const data = await response.json();
     
-    if (data['Global Quote'] && data['Global Quote']['05. price']) {
-      return parseFloat(data['Global Quote']['05. price']);
+    // Get the current price from Yahoo Finance
+    const quote = data?.chart?.result?.[0]?.meta?.regularMarketPrice;
+    
+    if (quote) {
+      return parseFloat(quote);
     }
     
     return null;
@@ -80,41 +58,36 @@ export async function POST(request: Request) {
       });
     }
 
-    // Get API key
-    const apiKey = await getAlphaVantageApiKey();
-
-    // Fetch prices for all tickers (with delay to respect rate limits)
+    // Fetch prices for all tickers with minimal delay
     const updates: Array<{ ticker: string; price: number | null; success: boolean }> = [];
     
     for (const position of activePositions) {
-        // Check if request was aborted (user navigated away)
-        try {
-            // Wait 12 seconds between calls
-            if (updates.length > 0) {
-            await new Promise(resolve => setTimeout(resolve, 12000));
-            }
-
-            const price = await fetchCurrentPrice(position.ticker, apiKey);
-      
-            if (price !== null) {
-                // Update position with new price
-                await db
-                .update(positions)
-                .set({ 
-                    current_market_price: price,
-                    updated_at: new Date().toISOString()
-                })
-                .where(eq(positions.position_id, position.position_id));
-
-                updates.push({ ticker: position.ticker, price, success: true });
-            } else {
-                updates.push({ ticker: position.ticker, price: null, success: false });
-            }
-        } catch (error) {
-            // If request aborted, stop processing
-            console.log('Request aborted, stopping price updates');
-            break;
+      try {
+        // Small delay to be respectful (500ms instead of 12 seconds!)
+        if (updates.length > 0) {
+          await new Promise(resolve => setTimeout(resolve, 500));
         }
+
+        const price = await fetchCurrentPrice(position.ticker);
+  
+        if (price !== null) {
+          // Update position with new price
+          await db
+            .update(positions)
+            .set({ 
+              current_market_price: price,
+              updated_at: new Date().toISOString()
+            })
+            .where(eq(positions.position_id, position.position_id));
+
+          updates.push({ ticker: position.ticker, price, success: true });
+        } else {
+          updates.push({ ticker: position.ticker, price: null, success: false });
+        }
+      } catch (error) {
+        console.log('Error updating price, continuing with next ticker');
+        updates.push({ ticker: position.ticker, price: null, success: false });
+      }
     }
 
     const successCount = updates.filter(u => u.success).length;
