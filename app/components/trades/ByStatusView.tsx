@@ -1,9 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Tag, RefreshCw } from 'lucide-react';
 import { Position, Transaction } from '../../lib/types/transaction';
 import { getPositions } from '../../services/positionServiceClient';
 import { getTransactions } from '../../services/transactionServiceClient';
+import { TransactionDetailModal } from './TransactionDetailModal';
+import { AssignAttributesModal } from './AssignAttributesModal';
 
 
 interface ByStatusViewProps {
@@ -34,7 +37,6 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
   const [positions, setPositions] = useState<Position[]>([]);
   const [closedLots, setClosedLots] = useState<RealizedTrade[]>([]);
   const [expandedTicker, setExpandedTicker] = useState<string | null>(null);
-  const [tickerLots, setTickerLots] = useState<Record<string, TradeLot[]>>({});
   const [tickerTransactions, setTickerTransactions] = useState<Record<string, Transaction[]>>({});
   const [loading, setLoading] = useState(true);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
@@ -183,13 +185,12 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
       const data = await getPositions(true);
       setPositions(data);
       // Clear cached data for refresh
-      setTickerLots({});
       setTickerTransactions({});
     } else {
       const response = await fetch('/api/trades/realized-history');
       const data = await response.json();
       setClosedLots(data.history);
-    }}
+    }
   };
 
   const getStrategyName = (strategyId: number | null) => {

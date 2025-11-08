@@ -97,23 +97,23 @@ export default function LoginPage() {
         });
 
         const { verified } = await verifyResponse.json();
-        if (verified) {
-          // Create NextAuth session
-          const result = await signIn('passkey', { 
-            userId,
-            redirect: false,
-          });
-          
-          if (result?.ok) {
-            window.location.href = '/launcher';
-            return;
-          } else {
-            throw new Error('Failed to create session');
-          }
+        if (!verified) {
+          throw new Error('Passkey verification failed');
+        }
+
+        // Create NextAuth session
+        const result = await signIn('passkey', { 
+          userId,
+          redirect: false,
+        });
+        
+        if (result?.ok) {
+          window.location.href = '/launcher';
+          return;
+        } else {
+          throw new Error('Failed to create session');
         }
       }
-
-      throw new Error('Authentication failed');
     } catch (error: any) {
       console.error('Passkey failed:', error);
 
