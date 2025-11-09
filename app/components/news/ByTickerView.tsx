@@ -5,7 +5,7 @@ import { deleteNews } from '../../services/newsServiceClient';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { NewsSummaryByTicker, NewsListItem } from '../../lib/types/newsViews';
 import { NewsDetailModal } from './NewsDetailModal';
-import { CURRENT_USER_ID } from '../../lib/auth';
+import { useSession } from 'next-auth/react';
 
 interface ByTickerViewProps {
   onEdit?: (news: NewsListItem) => void;
@@ -13,6 +13,7 @@ interface ByTickerViewProps {
 }
 
 export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
+  const { data: session } = useSession();
   const [summaries, setSummaries] = useState<NewsSummaryByTicker[]>([]);
   const [expandedTicker, setExpandedTicker] = useState<string | null>(null);
   const [tickerNews, setTickerNews] = useState<Record<string, NewsListItem[]>>({});
@@ -25,14 +26,14 @@ export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
   useEffect(() => {
     const fetchSummaries = async () => {
       try {
-        const res = await fetch(`/api/news-by-ticker?userId=${CURRENT_USER_ID}`);
+        const res = await fetch(`/api/news-by-ticker?userId=${session?.user?.id}`);
         const result = await res.json();
         setSummaries(result.data);
 
         // Check position for each ticker
         const positions: Record<string, boolean> = {};
         for (const summary of result.data) {
-          const res = await fetch(`/api/hasOpenPosition?ticker=${encodeURIComponent(summary.ticker)}&userId=${CURRENT_USER_ID}`);
+          const res = await fetch(`/api/hasOpenPosition?ticker=${encodeURIComponent(summary.ticker)}&userId=${session?.user?.id}`);
           const posData = await res.json();
           positions[summary.ticker] = posData.hasPosition;
         }
@@ -58,7 +59,7 @@ export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
     if (!tickerNews[ticker]) {
       try {
         const page = currentPage[ticker] || 1;
-        const res = await fetch(`/api/news-by-ticker?userId=${CURRENT_USER_ID}&ticker=${encodeURIComponent(ticker)}&page=${page}&pageSize=5`);
+        const res = await fetch(`/api/news-by-ticker?userId=${session?.user?.id}&ticker=${encodeURIComponent(ticker)}&page=${page}&pageSize=5`);
         const result = await res.json();
         const { data, total } = result;
 
@@ -73,7 +74,7 @@ export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
 
   const handlePageChange = async (ticker: string, newPage: number) => {
     try {
-      const res = await fetch(`/api/news-by-ticker?userId=${CURRENT_USER_ID}&ticker=${encodeURIComponent(ticker)}&page=${newPage}&pageSize=5`);
+      const res = await fetch(`/api/news-by-ticker?userId=${session?.user?.id}&ticker=${encodeURIComponent(ticker)}&page=${newPage}&pageSize=5`);
       const result = await res.json();
       const { data } = result;
       

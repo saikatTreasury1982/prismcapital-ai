@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Sparkles } from 'lucide-react';
 import { PositionForDividend, Dividend } from '../../lib/types/dividend';
 import { createDividend, updateDividend } from '../../services/dividendServiceClient';
-import { CURRENT_USER_ID } from '../../lib/auth';
+import { useSession } from 'next-auth/react';
 
 interface DividendEntryFormProps {
   positions: PositionForDividend[];
@@ -68,6 +68,7 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
     Currency: 'USD'
   });
 
+  const { data: session } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isAutoFilling, setIsAutoFilling] = useState(false);
@@ -217,7 +218,7 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
         });
       } else {
         // CREATE MODE: Check for duplicates first
-        const checkRes = await fetch(`/api/dividends-by-ticker?userId=${CURRENT_USER_ID}&ticker=${encodeURIComponent(formData.ticker)}`);
+        const checkRes = await fetch(`/api/dividends-by-ticker?userId=${session?.user?.id}&ticker=${encodeURIComponent(formData.ticker)}`);
         const checkResult = await checkRes.json();
         
         if (checkResult.data && checkResult.data.length > 0) {
@@ -228,9 +229,12 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
             return;
           }
         }
-
+        
         // Create new dividend
-        await createDividend(CURRENT_USER_ID, {
+        if (!session?.user?.id) {
+          throw new Error('Not authenticated');
+        }
+        await createDividend(session.user.id, {
           ticker: formData.ticker.toUpperCase(),
           ex_dividend_date: formData.ex_dividend_date,
           payment_date: formData.payment_date || undefined,

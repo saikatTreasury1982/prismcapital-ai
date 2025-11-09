@@ -5,7 +5,7 @@ import { deleteNews } from '../../services/newsServiceClient';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { NewsSummaryByType, NewsListItem } from '../../lib/types/newsViews';
 import { NewsDetailModal } from './NewsDetailModal';
-import { CURRENT_USER_ID } from '../../lib/auth';
+import { useSession } from 'next-auth/react';
 
 interface ByCategoryViewProps {
   onEdit?: (news: NewsListItem) => void;
@@ -13,6 +13,7 @@ interface ByCategoryViewProps {
 }
 
 export function ByCategoryView({ onEdit, onDelete }: ByCategoryViewProps) {
+  const { data: session } = useSession();
   const [summaries, setSummaries] = useState<NewsSummaryByType[]>([]);
   const [expandedType, setExpandedType] = useState<string | null>(null);
   const [typeNews, setTypeNews] = useState<Record<string, NewsListItem[]>>({});
@@ -35,7 +36,7 @@ export function ByCategoryView({ onEdit, onDelete }: ByCategoryViewProps) {
   useEffect(() => {
     const fetchSummaries = async () => {
       try {
-        const res = await fetch(`/api/news-by-type?userId=${CURRENT_USER_ID}`);
+        const res = await fetch(`/api/news-by-type?userId=${session?.user?.id}`);
         const result = await res.json();
         const data = result.data;
         setSummaries(data);
@@ -60,7 +61,7 @@ export function ByCategoryView({ onEdit, onDelete }: ByCategoryViewProps) {
     if (!typeNews[typeName]) {
       try {
         const page = currentPage[typeName] || 1;
-        const res = await fetch(`/api/news-by-type?userId=${CURRENT_USER_ID}&typeName=${encodeURIComponent(typeName)}&page=${page}&pageSize=5`);
+        const res = await fetch(`/api/news-by-type?userId=${session?.user?.id}&typeName=${encodeURIComponent(typeName)}&page=${page}&pageSize=5`);
         const result = await res.json();
         const { data, total } = result;
         setTypeNews(prev => ({ ...prev, [typeName]: data }));
@@ -71,7 +72,7 @@ export function ByCategoryView({ onEdit, onDelete }: ByCategoryViewProps) {
         const positions: Record<string, boolean> = {};
         const uniqueTickers = [...new Set(data.map((n: NewsListItem) => n.ticker))];
         for (const ticker of uniqueTickers) {
-          const res = await fetch(`/api/hasOpenPosition?ticker=${encodeURIComponent(ticker as string)}&userId=${CURRENT_USER_ID}`);
+          const res = await fetch(`/api/hasOpenPosition?ticker=${encodeURIComponent(ticker as string)}&userId=${session?.user?.id}`);
           const posData = await res.json();
           positions[ticker as string] = posData.hasPosition;
         }
@@ -84,7 +85,7 @@ export function ByCategoryView({ onEdit, onDelete }: ByCategoryViewProps) {
 
   const handlePageChange = async (typeName: string, newPage: number) => {
     try {
-      const res = await fetch(`/api/news-by-type?userId=${CURRENT_USER_ID}&typeName=${encodeURIComponent(typeName)}&page=${newPage}&pageSize=5`);
+      const res = await fetch(`/api/news-by-type?userId=${session?.user?.id}&typeName=${encodeURIComponent(typeName)}&page=${newPage}&pageSize=5`);
       const result = await res.json();
       const { data } = result;
       setTypeNews(prev => ({ ...prev, [typeName]: data }));
@@ -95,7 +96,7 @@ export function ByCategoryView({ onEdit, onDelete }: ByCategoryViewProps) {
       const uniqueTickers = [...new Set(data.map((n: NewsListItem) => n.ticker))];
       for (const ticker of uniqueTickers) {
         if (!(ticker as string in hasPosition)) {
-          const res = await fetch(`/api/hasOpenPosition?ticker=${encodeURIComponent(ticker as string)}&userId=${CURRENT_USER_ID}`);
+          const res = await fetch(`/api/hasOpenPosition?ticker=${encodeURIComponent(ticker as string)}&userId=${session?.user?.id}`);
           const posData = await res.json();
           positions[ticker as string] = posData.hasPosition;
         }

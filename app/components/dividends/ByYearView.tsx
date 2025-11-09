@@ -5,7 +5,7 @@ import { deleteDividend } from '../../services/dividendServiceClient';
 import { ChevronDown, ChevronUp, TrendingUp, TrendingDown } from 'lucide-react';
 import { DividendSummaryByYear, Dividend } from '../../lib/types/dividend';
 import { DividendDetailModal } from './DividendDetailModal';
-import { CURRENT_USER_ID } from '../../lib/auth';
+import { useSession } from 'next-auth/react';
 
 interface ByYearViewProps {
   onEdit?: (dividend: Dividend) => void;
@@ -13,6 +13,7 @@ interface ByYearViewProps {
 }
 
 export function ByYearView({ onEdit, onDelete }: ByYearViewProps) {
+  const { data: session } = useSession();
   const [summaries, setSummaries] = useState<DividendSummaryByYear[]>([]);
   const [expandedYear, setExpandedYear] = useState<number | null>(null);
   const [yearDividends, setYearDividends] = useState<Record<number, Dividend[]>>({});
@@ -24,7 +25,7 @@ export function ByYearView({ onEdit, onDelete }: ByYearViewProps) {
   useEffect(() => {
     const fetchSummaries = async () => {
       try {
-        const res = await fetch(`/api/dividends-by-year?userId=${CURRENT_USER_ID}`);
+        const res = await fetch(`/api/dividends-by-year?userId=${session?.user?.id}`);
         const result = await res.json();
         setSummaries(result.data);
       } catch (error) {
@@ -61,7 +62,7 @@ export function ByYearView({ onEdit, onDelete }: ByYearViewProps) {
     if (!yearDividends[year]) {
       try {
         const page = currentPage[year] || 1;
-        const res = await fetch(`/api/dividends-by-year?userId=${CURRENT_USER_ID}&year=${year}&page=${page}&pageSize=5`);
+        const res = await fetch(`/api/dividends-by-year?userId=${session?.user?.id}&year=${year}&page=${page}&pageSize=5`);
         const result = await res.json();
         const { data, total } = result;
         setYearDividends(prev => ({ ...prev, [year]: data }));
@@ -75,7 +76,7 @@ export function ByYearView({ onEdit, onDelete }: ByYearViewProps) {
 
   const handlePageChange = async (year: number, newPage: number) => {
     try {
-      const res = await fetch(`/api/dividends-by-year?userId=${CURRENT_USER_ID}&year=${year}&page=${newPage}&pageSize=5`);
+      const res = await fetch(`/api/dividends-by-year?userId=${session?.user?.id}&year=${year}&page=${newPage}&pageSize=5`);
       const result = await res.json();
       const { data } = result;
       setYearDividends(prev => ({ ...prev, [year]: data }));

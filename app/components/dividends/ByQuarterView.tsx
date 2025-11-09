@@ -5,7 +5,7 @@ import { deleteDividend } from '../../services/dividendServiceClient';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { DividendSummaryByQuarter, Dividend } from '../../lib/types/dividend';
 import { DividendDetailModal } from './DividendDetailModal';
-import { CURRENT_USER_ID } from '../../lib/auth';
+import { useSession } from 'next-auth/react';
 
 interface ByQuarterViewProps {
   onEdit?: (dividend: Dividend) => void;
@@ -13,6 +13,7 @@ interface ByQuarterViewProps {
 }
 
 export function ByQuarterView({ onEdit, onDelete }: ByQuarterViewProps) {
+  const { data: session } = useSession();
   const [summaries, setSummaries] = useState<DividendSummaryByQuarter[]>([]);
   const [expandedQuarter, setExpandedQuarter] = useState<string | null>(null);
   const [quarterDividends, setQuarterDividends] = useState<Record<string, Dividend[]>>({});
@@ -24,7 +25,7 @@ export function ByQuarterView({ onEdit, onDelete }: ByQuarterViewProps) {
   useEffect(() => {
     const fetchSummaries = async () => {
       try {
-        const res = await fetch(`/api/dividends-by-quarter?userId=${CURRENT_USER_ID}`);
+        const res = await fetch(`/api/dividends-by-quarter?userId=${session?.user?.id}`);
         const result = await res.json();
         setSummaries(result.data);
       } catch (error) {
@@ -52,7 +53,7 @@ export function ByQuarterView({ onEdit, onDelete }: ByQuarterViewProps) {
     if (!quarterDividends[key]) {
       try {
         const page = currentPage[key] || 1;
-        const res = await fetch(`/api/dividends-by-quarter?userId=${CURRENT_USER_ID}&year=${year}&quarter=${quarter}&page=${page}&pageSize=5`);
+        const res = await fetch(`/api/dividends-by-quarter?userId=${session?.user?.id}&year=${year}&quarter=${quarter}&page=${page}&pageSize=5`);
         const result = await res.json();
         const { data, total } = result;
         setQuarterDividends(prev => ({ ...prev, [key]: data }));
@@ -68,7 +69,7 @@ export function ByQuarterView({ onEdit, onDelete }: ByQuarterViewProps) {
     const key = getQuarterKey(year, quarter);
     
     try {
-      const res = await fetch(`/api/dividends-by-quarter?userId=${CURRENT_USER_ID}&year=${year}&quarter=${quarter}&page=${newPage}&pageSize=5`);
+      const res = await fetch(`/api/dividends-by-quarter?userId=${session?.user?.id}&year=${year}&quarter=${quarter}&page=${newPage}&pageSize=5`);
       const result = await res.json();
       const { data } = result;
       setQuarterDividends(prev => ({ ...prev, [key]: data }));

@@ -6,7 +6,7 @@ import { Plus } from 'lucide-react';
 import { NewsType } from '../../lib/types/news';
 import { NewsListItem } from '../../lib/types/newsViews';
 import { createNews, updateNews } from '../../services/newsServiceClient';
-import { CURRENT_USER_ID } from '../../lib/auth';
+import { useSession } from 'next-auth/react';
 
 interface NewsEntryFormProps {
   newsTypes: NewsType[];
@@ -16,7 +16,7 @@ interface NewsEntryFormProps {
 }
 
 export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit }: NewsEntryFormProps) {
-
+  const { data: session } = useSession();
   const [hasPosition, setHasPosition] = useState<boolean | null>(null);
   const [tickerError, setTickerError] = useState<string | null>(null);
   const [isLoadingTicker, setIsLoadingTicker] = useState(false);
@@ -81,7 +81,10 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
       });
       } else {
         // Create new news
-        await createNews(CURRENT_USER_ID, {
+        if (!session?.user?.id) {
+          throw new Error('Not authenticated');
+        }
+        await createNews(session.user.id, {
           ticker: formData.ticker.toUpperCase(),
           exchange_id: formData.exchange_id,
           company_name: formData.company_name || undefined,
@@ -177,7 +180,7 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
 
       try {
         // Step 1: Check positions table first
-        const posRes = await fetch(`/api/hasOpenPosition?ticker=${encodeURIComponent(debouncedTicker)}&userId=${CURRENT_USER_ID}`);
+        const posRes = await fetch(`/api/hasOpenPosition?ticker=${encodeURIComponent(debouncedTicker)}&userId=${session?.user?.id}`);
         const posData = await posRes.json();
         
         setHasPosition(posData.hasPosition);

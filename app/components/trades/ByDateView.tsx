@@ -56,10 +56,9 @@ export function ByDateView() {
 
   // Filter states
   const [filters, setFilters] = useState({
-    entryDateFrom: '',
-    entryDateTo: '',
-    exitDateFrom: '',
-    exitDateTo: ''
+    dateType: 'entry', // 'entry' or 'exit'
+    dateFrom: '',
+    dateTo: ''
   });
 
   useEffect(() => {
@@ -73,7 +72,7 @@ export function ByDateView() {
         // Fetch open positions
         const positionsResponse = await fetch('/api/positions');
         const positionsResult = await positionsResponse.json();
-        const positionsData = Array.isArray(positionsResult) ? positionsResult : (positionsResult.positions || []);
+        const positionsData = positionsResult.data || [];
         setOpenPositions(positionsData);
 
         // Combine both datasets
@@ -127,30 +126,35 @@ export function ByDateView() {
 
   // Apply filters
   useEffect(() => {
-    console.log('Combined Data:', combinedData);
-    console.log('Filters:', filters);
-    console.log('First item entryDate:', combinedData[0]?.entryDate);  
-
     let filtered = [...combinedData];
 
-    // Filter by Entry Date Range
-    if (filters.entryDateFrom) {
-      filtered = filtered.filter(item => item.entryDate >= filters.entryDateFrom);
-    }
-    if (filters.entryDateTo) {
-      filtered = filtered.filter(item => item.entryDate <= filters.entryDateTo);
-    }
+    const { dateType, dateFrom, dateTo } = filters;
 
-    // Filter by Exit Date Range (only applies to closed trades)
-    if (filters.exitDateFrom) {
-      filtered = filtered.filter(item => 
-        !item.isClosed || (item.exitDate && item.exitDate >= filters.exitDateFrom)
-      );
-    }
-    if (filters.exitDateTo) {
-      filtered = filtered.filter(item => 
-        !item.isClosed || (item.exitDate && item.exitDate <= filters.exitDateTo)
-      );
+    if (dateFrom) {
+      if (dateTo) {
+        // Date range: use >= and <=
+        if (dateType === 'entry') {
+          filtered = filtered.filter(item => 
+            item.entryDate >= dateFrom && item.entryDate <= dateTo
+          );
+        } else {
+          // Exit date filter only applies to closed trades
+          filtered = filtered.filter(item => 
+            item.isClosed && item.exitDate && 
+            item.exitDate >= dateFrom && item.exitDate <= dateTo
+          );
+        }
+      } else {
+        // Single date: use exact match (=)
+        if (dateType === 'entry') {
+          filtered = filtered.filter(item => item.entryDate === dateFrom);
+        } else {
+          // Exit date filter only applies to closed trades
+          filtered = filtered.filter(item => 
+            item.isClosed && item.exitDate === dateFrom
+          );
+        }
+      }
     }
 
     setFilteredData(filtered);
@@ -214,65 +218,80 @@ export function ByDateView() {
       <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-6 border border-white/20">
         <div className="flex items-center gap-3 mb-4">
           <Calendar className="w-5 h-5 text-blue-300" />
-          <h3 className="text-lg font-bold text-white">Filter Transactions</h3>
+          <h3 className="text-lg font-bold text-white">Filter Trades</h3>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {/* Entry Date From */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+          {/* Date Type Toggle */}
           <div>
-            <label className="text-blue-200 text-sm mb-2 block font-medium">Entry Date From</label>
+            <label className="text-blue-200 text-sm mb-2 block font-medium">Filter By</label>
+            <div className="inline-flex rounded-xl bg-white/5 border border-white/10 p-1">
+              <button
+                type="button"
+                onClick={() => setFilters({ ...filters, dateType: 'entry', dateFrom: '', dateTo: '' })}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  filters.dateType === 'entry'
+                    ? 'bg-blue-600 text-white shadow-lg'
+                    : 'text-blue-200 hover:text-white'
+                }`}
+              >
+                Entry Date
+              </button>
+              <button
+                type="button"
+                onClick={() => setFilters({ ...filters, dateType: 'exit', dateFrom: '', dateTo: '' })}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  filters.dateType === 'exit'
+                    ? 'bg-blue-600 text-white shadow-lg'
+                    : 'text-blue-200 hover:text-white'
+                }`}
+              >
+                Exit Date
+              </button>
+            </div>
+          </div>
+
+          {/* From Date */}
+          <div>
+            <label className="text-blue-200 text-sm mb-2 block font-medium">Date From</label>
             <input
               type="date"
-              value={filters.entryDateFrom}
-              onChange={(e) => setFilters({ ...filters, entryDateFrom: e.target.value })}
+              value={filters.dateFrom}
+              onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
               className="w-full funding-input rounded-xl px-4 py-3"
               suppressHydrationWarning
             />
           </div>
 
-          {/* Entry Date To */}
+          {/* To Date */}
           <div>
-            <label className="text-blue-200 text-sm mb-2 block font-medium">Entry Date To</label>
+            <label className="text-blue-200 text-sm mb-2 block font-medium">Date To (Optional)</label>
             <input
               type="date"
-              value={filters.entryDateTo}
-              onChange={(e) => setFilters({ ...filters, entryDateTo: e.target.value })}
+              value={filters.dateTo}
+              onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
               className="w-full funding-input rounded-xl px-4 py-3"
+              suppressHydrationWarning
+              disabled={!filters.dateFrom}
             />
           </div>
 
-          {/* Exit Date From */}
+          {/* Clear Button */}
           <div>
-            <label className="text-blue-200 text-sm mb-2 block font-medium">Exit Date From</label>
-            <input
-              type="date"
-              value={filters.exitDateFrom}
-              onChange={(e) => setFilters({ ...filters, exitDateFrom: e.target.value })}
-              className="w-full funding-input rounded-xl px-4 py-3"
-            />
-          </div>
-
-          {/* Exit Date To */}
-          <div>
-            <label className="text-blue-200 text-sm mb-2 block font-medium">Exit Date To</label>
-            <input
-              type="date"
-              value={filters.exitDateTo}
-              onChange={(e) => setFilters({ ...filters, exitDateTo: e.target.value })}
-              className="w-full funding-input rounded-xl px-4 py-3"
-            />
+            {(filters.dateFrom || filters.dateTo) && (
+              <button
+                onClick={() => setFilters({ dateType: 'entry', dateFrom: '', dateTo: '' })}
+                className="w-full px-4 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-medium transition-colors"
+              >
+                Clear
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Clear Filters */}
-        {(filters.entryDateFrom || filters.entryDateTo || filters.exitDateFrom || filters.exitDateTo) && (
-          <button
-            onClick={() => setFilters({ entryDateFrom: '', entryDateTo: '', exitDateFrom: '', exitDateTo: '' })}
-            className="mt-4 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-sm transition-colors"
-          >
-            Clear Filters
-          </button>
-        )}
+        <p className="text-blue-300 text-xs mt-3">
+          💡 Leave "Date To" empty for exact date match, or fill both for date range
+        </p>
       </div>
 
       {/* Summary Stats */}
