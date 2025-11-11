@@ -61,7 +61,7 @@ export default function LoginPage() {
           });
           
           if (result?.ok) {
-            window.location.href = '/launcher';
+            window.location.href = '/dashboard';
             return;
           } else {
             throw new Error('Failed to create session');
@@ -108,7 +108,7 @@ export default function LoginPage() {
         });
         
         if (result?.ok) {
-          window.location.href = '/launcher';
+          window.location.href = '/dashboard';
           return;
         } else {
           throw new Error('Failed to create session');
@@ -150,103 +150,136 @@ export default function LoginPage() {
         phone,
         code,
         redirect: true,
-        callbackUrl: '/launcher',
+        callbackUrl: '/dashboard',
       });
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
-      <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 sm:p-12 border border-white/20 max-w-md w-full shadow-2xl">
-        <h1 className="text-3xl font-bold text-white mb-2 text-center">Welcome</h1>
-        <p className="text-blue-200 text-center mb-8">Sign in to your account</p>
-
-        {!showOTP ? (
-          <div className="space-y-4">
-            <div>
-              <input
-                type="text"
-                placeholder="User ID or Email"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
-                suppressHydrationWarning={true}
-              />
-            </div>
-
-            <button
-              onClick={handlePasskey}
-              disabled={loading || !identifier.trim()}
-              className="w-full bg-gradient-to-r from-blue-500 to-emerald-600 text-white py-4 rounded-2xl font-semibold flex items-center justify-center gap-3 hover:from-blue-600 hover:to-blue-700 hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Fingerprint className="w-6 h-6" />
-              {loading ? 'Authenticating...' : 'Sign in with Passkey'}
-            </button>
-
-            <button
-              onClick={() => setShowOTP(true)}
-              disabled={!identifier.trim()}
-              className="w-full bg-gradient-to-r from-blue-500 to-emerald-600 text-white py-4 rounded-2xl font-semibold flex items-center justify-center gap-3 hover:from-blue-600 hover:to-blue-700 hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Smartphone className="w-6 h-6" />
-              Use SMS Code Instead
-            </button>
+  return (  
+    <div className="min-h-screen">
+      {/* Navigation */}
+      <nav className="container mx-auto px-4 sm:px-6 py-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg"></div>
+            <span className="text-xl sm:text-2xl font-bold text-white">Prism Capital</span>
           </div>
-          ) : (
-          <div className="space-y-4">
-            <div>
-              <input
-                type="tel"
-                placeholder="Phone Number"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
-              />
-            </div>
+        </div>
+      </nav>
 
-            {!code && (
+      {/* Hero Section */}
+      <div className="container mx-auto px-4 sm:px-6 flex items-center min-h-[calc(100vh-100px)]">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          
+          {/* LEFT SIDE - Hero Text */}
+          <div>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-4 sm:mb-6 leading-tight">
+              Smart Portfolio Tracking for
+              <span className="block bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
+                Trades and Investments
+              </span>
+            </h1>
+            
+            <p className="text-base sm:text-xl text-gray-300">
+              Created by vibe coding with Claude.
+            </p>
+          </div>
+
+          {/* RIGHT SIDE - Login Card */}
+          <div className="flex justify-center lg:justify-end">  
+        <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 sm:p-12 border border-white/20 max-w-md w-full shadow-2xl">
+          <h1 className="text-3xl font-bold text-white mb-2 text-center">Welcome</h1>
+          <p className="text-blue-200 text-center mb-8">Sign in to your account</p>
+
+          {!showOTP ? (
+            <div className="space-y-4">
+              <div>
+                <input
+                  type="text"
+                  placeholder="User ID or Email"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
+                  suppressHydrationWarning={true}
+                />
+              </div>
+
               <button
-                onClick={handleSendOTP}
-                disabled={loading || !phone}
-                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent text-white py-3 rounded-2xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed enabled:hover:from-blue-600 enabled:hover:to-blue-700 enabled:hover:shadow-xl"
+                onClick={handlePasskey}
+                disabled={loading || !identifier.trim()}
+                className="w-full bg-gradient-to-r from-blue-500 to-emerald-600 text-white py-4 rounded-2xl font-semibold flex items-center justify-center gap-3 hover:from-blue-600 hover:to-blue-700 hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Sending...' : 'Send Code'}
+                <Fingerprint className="w-6 h-6" />
+                {loading ? 'Authenticating...' : 'Sign in with Passkey'}
               </button>
-            )}
 
-            {code !== '' && (
-              <>
-                <div>
-                  <input
-                    type="text"
-                    placeholder="6-Digit Code"
-                    value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                    maxLength={6}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 text-center text-2xl tracking-widest"
-                  />
-                </div>
+              <button
+                onClick={() => setShowOTP(true)}
+                disabled={!identifier.trim()}
+                className="w-full bg-gradient-to-r from-blue-500 to-emerald-600 text-white py-4 rounded-2xl font-semibold flex items-center justify-center gap-3 hover:from-blue-600 hover:to-blue-700 hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Smartphone className="w-6 h-6" />
+                Use SMS Code Instead
+              </button>
+            </div>
+            ) : (
+            <div className="space-y-4">
+              <div>
+                <input
+                  type="tel"
+                  placeholder="Phone Number"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
+                />
+              </div>
 
+              {!code && (
                 <button
-                  onClick={handleVerifyOTP}
-                  disabled={loading || code.length !== 6}
-                  className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-2xl font-semibold hover:from-blue-600 hover:to-blue-700 hover:shadow-xl transition-all disabled:opacity-50"
+                  onClick={handleSendOTP}
+                  disabled={loading || !phone}
+                  className="w-full bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent text-white py-3 rounded-2xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed enabled:hover:from-blue-600 enabled:hover:to-blue-700 enabled:hover:shadow-xl"
                 >
-                  {loading ? 'Verifying...' : 'Verify & Sign In'}
+                  {loading ? 'Sending...' : 'Send Code'}
                 </button>
-              </>
-            )}
+              )}
 
-            <button
-              onClick={() => setShowOTP(false)}
-              className="w-full text-blue-300 text-sm hover:text-white transition-colors"
-            >
-              ← Back to Passkey
-            </button>
+              {code !== '' && (
+                <>
+                  <div>
+                    <input
+                      type="text"
+                      placeholder="6-Digit Code"
+                      value={code}
+                      onChange={(e) => setCode(e.target.value)}
+                      maxLength={6}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 text-center text-2xl tracking-widest"
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleVerifyOTP}
+                    disabled={loading || code.length !== 6}
+                    className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-2xl font-semibold hover:from-blue-600 hover:to-blue-700 hover:shadow-xl transition-all disabled:opacity-50"
+                  >
+                    {loading ? 'Verifying...' : 'Verify & Sign In'}
+                  </button>
+                </>
+              )}
+
+              <button
+                onClick={() => setShowOTP(false)}
+                className="w-full text-blue-300 text-sm hover:text-white transition-colors"
+              >
+                ← Back to Passkey
+              </button>
+            </div>
+          )}
+  </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
