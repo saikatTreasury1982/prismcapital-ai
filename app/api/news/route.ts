@@ -8,16 +8,21 @@ const { news } = schema;
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const newsId = searchParams.get('news_id');
+    const newsIdStr = searchParams.get('newsId');
 
-    if (!newsId) {
+    if (!newsIdStr) {
       return NextResponse.json({ error: 'newsId required' }, { status: 400 });
+    }
+
+    const newsId = parseInt(newsIdStr);
+    if (isNaN(newsId)) {
+      return NextResponse.json({ error: 'Invalid newsId' }, { status: 400 });
     }
 
     const data = await db
       .select()
       .from(news)
-      .where(eq(news.news_id, newsId))
+      .where(eq(news.news_id, newsId))  // Now using integer
       .limit(1);
 
     if (!data || data.length === 0) {
@@ -40,12 +45,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'userId and newsData required' }, { status: 400 });
     }
 
-    const newsId = `news_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
+    // Remove news_id generation - let database auto-increment
     const data = await db
       .insert(news)
       .values({
-        news_id: newsId,
+        // news_id is removed - database will auto-generate it
         user_id: userId,
         ticker: newsData.ticker,
         exchange_id: newsData.exchange_id,
@@ -71,10 +75,15 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
-    const { newsId, newsData } = body;
+    const { newsId: newsIdStr, newsData } = body;
 
-    if (!newsId || !newsData) {
+    if (!newsIdStr || !newsData) {
       return NextResponse.json({ error: 'newsId and newsData required' }, { status: 400 });
+    }
+
+    const newsId = parseInt(newsIdStr);
+    if (isNaN(newsId)) {
+      return NextResponse.json({ error: 'Invalid newsId' }, { status: 400 });
     }
 
     const data = await db
@@ -92,7 +101,7 @@ export async function PATCH(request: Request) {
         news_url: newsData.news_url || null,
         tags: Array.isArray(newsData.tags) ? newsData.tags.join(',') : newsData.tags || null,
       })
-      .where(eq(news.news_id, newsId))
+      .where(eq(news.news_id, newsId))  // Now using integer
       .returning();
 
     if (!data || data.length === 0) {
@@ -109,15 +118,20 @@ export async function PATCH(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const newsId = searchParams.get('newsId');
+    const newsIdStr = searchParams.get('newsId');
 
-    if (!newsId) {
+    if (!newsIdStr) {
       return NextResponse.json({ error: 'newsId required' }, { status: 400 });
+    }
+
+    const newsId = parseInt(newsIdStr);
+    if (isNaN(newsId)) {
+      return NextResponse.json({ error: 'Invalid newsId' }, { status: 400 });
     }
 
     await db
       .delete(news)
-      .where(eq(news.news_id, newsId));
+      .where(eq(news.news_id, newsId));  // Now using integer
 
     return NextResponse.json({ success: true });
   } catch (e: any) {

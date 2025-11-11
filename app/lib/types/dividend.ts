@@ -31,8 +31,10 @@ export interface DividendSummaryByTicker {
   total_dividend_payments: number;
   total_dividends_received: number;
   avg_dividend_per_share: number;
-  latest_dividend_date: string;
-  earliest_dividend_date: string;
+  latest_ex_dividend_date: string;
+  latest_payment_date: string;
+  earliest_ex_dividend_date: string;
+  earliest_payment_date: string;
 }
 
 export interface DividendSummaryByQuarter {
@@ -44,6 +46,8 @@ export interface DividendSummaryByQuarter {
   total_dividends_received: number;
   quarter_start_date: string;
   quarter_end_date: string;
+  earliest_payment_date: string;
+  latest_payment_date: string;
 }
 
 export interface DividendSummaryByYear {
@@ -52,6 +56,10 @@ export interface DividendSummaryByYear {
   stocks_paid_dividends: number;
   total_dividend_payments: number;
   total_dividends_received: number;
+  earliest_ex_dividend_date: string;
+  latest_ex_dividend_date: string;
+  earliest_payment_date: string;
+  latest_payment_date: string;
 }
 
 export interface PositionForDividend {

@@ -143,7 +143,21 @@ export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
                   Avg: ${summary.avg_dividend_per_share.toFixed(4)}/share
                 </div>
                 <div className="text-blue-200 text-xs">
-                  Latest: {new Date(summary.latest_dividend_date).toLocaleDateString()}
+                  Ex-Div: {new Date(summary.latest_ex_dividend_date).toLocaleDateString('en-GB', { 
+                    day: '2-digit', 
+                    month: 'short', 
+                    year: 'numeric' 
+                  })}
+                </div>
+                <div className="text-blue-200 text-xs">
+                  Payment: {summary.latest_payment_date 
+                    ? new Date(summary.latest_payment_date).toLocaleDateString('en-GB', { 
+                        day: '2-digit', 
+                        month: 'short', 
+                        year: 'numeric' 
+                      })
+                    : 'Not set'
+                  }
                 </div>
               </div>
             </button>
@@ -158,14 +172,27 @@ export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
                       className="w-full p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-colors text-left"
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-blue-300 text-sm">
-                          {dividend.payment_date 
-                            ? new Date(dividend.payment_date).toLocaleDateString()
-                            : 'Not set'
-                          }
-                        </span>
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-blue-300 text-xs">
+                            Ex: {new Date(dividend.ex_dividend_date).toLocaleDateString('en-GB', { 
+                              day: '2-digit', 
+                              month: 'short', 
+                              year: 'numeric' 
+                            })}
+                          </span>
+                          <span className="text-blue-200 text-xs">
+                            Pay: {dividend.payment_date 
+                              ? new Date(dividend.payment_date).toLocaleDateString('en-GB', { 
+                                  day: '2-digit', 
+                                  month: 'short', 
+                                  year: 'numeric' 
+                                })
+                              : 'Not set'
+                            }
+                          </span>
+                        </div>
                         <span className="text-emerald-300 font-bold">
-                          ${dividend.total_dividend_amount.toFixed(2)}
+                          ${(dividend.dividend_per_share * dividend.shares_owned).toFixed(2)}
                         </span>
                       </div>
                       <div className="text-white text-sm">

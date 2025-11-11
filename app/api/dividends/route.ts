@@ -8,10 +8,15 @@ const { dividends } = schema;
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const dividendId = searchParams.get('dividendId');
+    const dividendIdStr = searchParams.get('dividendId');
 
-    if (!dividendId) {
+    if (!dividendIdStr) {
       return NextResponse.json({ error: 'dividendId required' }, { status: 400 });
+    }
+
+    const dividendId = parseInt(dividendIdStr);
+    if (isNaN(dividendId)) {
+      return NextResponse.json({ error: 'Invalid dividendId' }, { status: 400 });
     }
 
     const data = await db
@@ -40,13 +45,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'userId and dividendData required' }, { status: 400 });
     }
 
-    const dividendId = `div_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
     const data = await db
       .insert(dividends)
       .values({
-        dividend_id: dividendId,  // ← map variable to snake_case key
-        user_id: userId,          // ← map variable to snake_case key
+        user_id: userId,
         ticker: dividendData.ticker,
         ex_dividend_date: dividendData.ex_dividend_date,
         payment_date: dividendData.payment_date || null,
@@ -68,10 +70,15 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
-    const { dividendId, dividendData } = body;
+    const { dividendId: dividendIdStr, dividendData } = body;
 
-    if (!dividendId || !dividendData) {
+    if (!dividendIdStr || !dividendData) {
       return NextResponse.json({ error: 'dividendId and dividendData required' }, { status: 400 });
+    }
+
+    const dividendId = parseInt(dividendIdStr);
+    if (isNaN(dividendId)) {
+      return NextResponse.json({ error: 'Invalid dividendId' }, { status: 400 });
     }
 
     const data = await db
@@ -103,10 +110,15 @@ export async function PATCH(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const dividendId = searchParams.get('dividendId');
+    const dividendIdStr = searchParams.get('dividendId');
 
-    if (!dividendId) {
+    if (!dividendIdStr) {
       return NextResponse.json({ error: 'dividendId required' }, { status: 400 });
+    }
+
+    const dividendId = parseInt(dividendIdStr);
+    if (isNaN(dividendId)) {
+      return NextResponse.json({ error: 'Invalid dividendId' }, { status: 400 });
     }
 
     await db

@@ -114,7 +114,15 @@ export function ByQuarterView({ onEdit, onDelete }: ByQuarterViewProps) {
                   <div className="flex-1">
                     <h3 className="text-xl font-bold text-white">Q{summary.quarter} {summary.year}</h3>
                     <p className="text-blue-200 text-xs">
-                      {new Date(summary.quarter_start_date).toLocaleDateString()} - {new Date(summary.quarter_end_date).toLocaleDateString()}
+                      {new Date(summary.quarter_start_date).toLocaleDateString('en-GB', { 
+                        day: '2-digit', 
+                        month: 'short', 
+                        year: 'numeric' 
+                      })} - {new Date(summary.quarter_end_date).toLocaleDateString('en-GB', { 
+                        day: '2-digit', 
+                        month: 'short', 
+                        year: 'numeric' 
+                      })}
                     </p>
                   </div>
                   {expandedQuarter === key ? (
@@ -149,12 +157,16 @@ export function ByQuarterView({ onEdit, onDelete }: ByQuarterViewProps) {
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-white font-bold">{dividend.ticker}</span>
                           <span className="text-emerald-300 font-bold">
-                            ${dividend.total_dividend_amount.toFixed(2)}
+                            ${(dividend.dividend_per_share * dividend.shares_owned).toFixed(2)}
                           </span>
                         </div>
                         <div className="text-blue-300 text-sm">
                           {dividend.payment_date 
-                            ? new Date(dividend.payment_date).toLocaleDateString()
+                            ? new Date(dividend.payment_date).toLocaleDateString('en-GB', { 
+                                day: '2-digit', 
+                                month: 'short', 
+                                year: 'numeric' 
+                              })
                             : 'Not set'
                           }
                         </div>

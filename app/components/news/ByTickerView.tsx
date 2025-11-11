@@ -24,6 +24,11 @@ export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
   const [hasPosition, setHasPosition] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
+    if (!session?.user?.id) {
+      setLoading(false);
+      return;
+    }
+    
     const fetchSummaries = async () => {
       try {
         const res = await fetch(`/api/news-by-ticker?userId=${session?.user?.id}`);
@@ -46,7 +51,7 @@ export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
     };
 
     fetchSummaries();
-  }, []);
+  }, [session?.user?.id]);
 
   const handleTickerClick = async (ticker: string) => {
     if (expandedTicker === ticker) {
@@ -169,9 +174,9 @@ export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
             {expandedTicker === summary.ticker && tickerNews[summary.ticker] && (
               <div className="border-t border-white/20 p-4 bg-white/5">
                 <div className="space-y-3">
-                  {tickerNews[summary.ticker].map((news) => (
-                    <button
-                      key={news.news_id}
+                  {tickerNews[summary.ticker].map((news, index) => (
+                  <button
+                    key={`${summary.ticker}-${news.news_id}-${index}`}
                       onClick={() => setSelectedNews(news)}
                       className="w-full p-4 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-colors text-left"
                     >
@@ -180,7 +185,11 @@ export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-blue-300 text-sm">
-                              {new Date(news.news_date).toLocaleDateString()}
+                              {new Date(news.news_date).toLocaleDateString('en-GB', { 
+                                day: '2-digit', 
+                                month: 'short', 
+                                year: 'numeric' 
+                              })}
                             </span>
                             <span className="px-2 py-0.5 bg-blue-500/20 text-blue-200 rounded text-xs">
                               {news.news_type.type_name}

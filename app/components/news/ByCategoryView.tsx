@@ -34,6 +34,11 @@ export function ByCategoryView({ onEdit, onDelete }: ByCategoryViewProps) {
   };
 
   useEffect(() => {
+    if (!session?.user?.id) {
+      setLoading(false);
+      return;
+    }
+    
     const fetchSummaries = async () => {
       try {
         const res = await fetch(`/api/news-by-type?userId=${session?.user?.id}`);
@@ -48,7 +53,7 @@ export function ByCategoryView({ onEdit, onDelete }: ByCategoryViewProps) {
     };
 
     fetchSummaries();
-  }, []);
+  }, [session?.user?.id]);
 
   const handleTypeClick = async (typeName: string) => {
     if (expandedType === typeName) {
@@ -64,19 +69,29 @@ export function ByCategoryView({ onEdit, onDelete }: ByCategoryViewProps) {
         const res = await fetch(`/api/news-by-type?userId=${session?.user?.id}&typeName=${encodeURIComponent(typeName)}&page=${page}&pageSize=5`);
         const result = await res.json();
         const { data, total } = result;
+        
+        // Get unique tickers
+        const uniqueTickers = [...new Set(data.map((n: NewsListItem) => n.ticker))];
+        
+        // Fetch ALL positions in PARALLEL before displaying news
+        const positionPromises = uniqueTickers.map(ticker =>
+          fetch(`/api/hasOpenPosition?ticker=${encodeURIComponent(ticker as string)}&userId=${session?.user?.id}`)
+            .then(res => res.json())
+            .then(posData => ({ ticker: ticker as string, hasPosition: posData.hasPosition }))
+        );
+        
+        const positionResults = await Promise.all(positionPromises);
+        const positions: Record<string, boolean> = {};
+        positionResults.forEach(({ ticker, hasPosition }) => {
+          positions[ticker] = hasPosition;
+        });
+        
+        // Now set everything together - news will display with correct positions
+        setHasPosition(prev => ({ ...prev, ...positions }));
         setTypeNews(prev => ({ ...prev, [typeName]: data }));
         setTotalPages(prev => ({ ...prev, [typeName]: Math.ceil(total / 5) }));
         setCurrentPage(prev => ({ ...prev, [typeName]: 1 }));
-
-        // Check positions for each ticker in the news
-        const positions: Record<string, boolean> = {};
-        const uniqueTickers = [...new Set(data.map((n: NewsListItem) => n.ticker))];
-        for (const ticker of uniqueTickers) {
-          const res = await fetch(`/api/hasOpenPosition?ticker=${encodeURIComponent(ticker as string)}&userId=${session?.user?.id}`);
-          const posData = await res.json();
-          positions[ticker as string] = posData.hasPosition;
-        }
-        setHasPosition(prev => ({ ...prev, ...positions }));
+        
       } catch (error) {
         console.error('Error fetching news for type:', error);
       }
@@ -187,7 +202,11 @@ export function ByCategoryView({ onEdit, onDelete }: ByCategoryViewProps) {
                               {hasPosition[news.ticker] ? 'Open' : 'No Position'}
                             </span>
                             <span className="text-blue-300 text-sm ml-auto">
-                              {new Date(news.news_date).toLocaleDateString()}
+                                {new Date(news.news_date).toLocaleDateString('en-GB', { 
+                                  day: '2-digit', 
+                                  month: 'short', 
+                                  year: 'numeric' 
+                                })}
                             </span>
                           </div>
                           <p className="text-white line-clamp-2">{news.news_description}</p>

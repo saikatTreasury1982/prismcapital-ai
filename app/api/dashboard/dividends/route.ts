@@ -12,35 +12,62 @@ export async function GET() {
 
     const userId = session.user.id;
     const currentYear = new Date().getFullYear();
+    const currentDate = new Date().toISOString().split('T')[0];
 
-    // Get summary by ticker with ticker names
-    const tickerSummary = await db.$client.execute({
+    // Get ALL-TIME summary by ticker - filtered by current date
+    const allTimeTickerSummary = await db.$client.execute({
       sql: `
         SELECT 
-          dst.*,
-          p.ticker_name
-        FROM dividend_summary_by_ticker dst
-        LEFT JOIN positions p ON dst.ticker = p.ticker AND dst.user_id = p.user_id
-        WHERE dst.user_id = ? 
-        ORDER BY dst.total_dividends_received DESC
+          d.ticker,
+          p.ticker_name,
+          COUNT(*) as total_dividend_payments,
+          ROUND(SUM(d.dividend_per_share * d.shares_owned), 4) as total_dividends_received,
+          ROUND(AVG(d.dividend_per_share), 4) as avg_dividend_per_share,
+          MAX(d.payment_date) as latest_payment_date
+        FROM dividends d
+        LEFT JOIN positions p ON d.ticker = p.ticker AND d.user_id = p.user_id
+        WHERE d.user_id = ? 
+          AND (d.payment_date IS NULL OR d.payment_date <= ?)
+        GROUP BY d.ticker, p.ticker_name
+        ORDER BY total_dividends_received DESC
       `,
-      args: [userId],
+      args: [userId, currentDate],
     });
 
-    // Get quarterly breakdown for current year
-    const quarterlyData = await db.$client.execute({
+    // Get YTD summary by ticker - filtered by current year and current date
+    const ytdTickerSummary = await db.$client.execute({
       sql: `
-        SELECT * FROM dividend_summary_by_quarter 
-        WHERE user_id = ? AND year = ?
-        ORDER BY quarter DESC
+        SELECT 
+          d.ticker,
+          p.ticker_name,
+          COUNT(*) as total_dividend_payments,
+          ROUND(SUM(d.dividend_per_share * d.shares_owned), 4) as total_dividends_received,
+          ROUND(AVG(d.dividend_per_share), 4) as avg_dividend_per_share,
+          MAX(d.payment_date) as latest_payment_date
+        FROM dividends d
+        LEFT JOIN positions p ON d.ticker = p.ticker AND d.user_id = p.user_id
+        WHERE d.user_id = ? 
+          AND CAST(strftime('%Y', d.ex_dividend_date) AS INTEGER) = ?
+          AND (d.payment_date IS NULL OR d.payment_date <= ?)
+        GROUP BY d.ticker, p.ticker_name
+        ORDER BY total_dividends_received DESC
       `,
-      args: [userId, currentYear],
+      args: [userId, currentYear, currentDate],
     });
 
     // Get year-to-date dividends
     const ytdResult = await db.$client.execute({
-      sql: `SELECT * FROM dividend_summary_by_year WHERE user_id = ? AND year = ?`,
-      args: [userId, currentYear],
+      sql: `
+        SELECT 
+          COUNT(DISTINCT ticker) as stocks_paid_dividends,
+          COUNT(*) as total_dividend_payments,
+          ROUND(SUM(dividend_per_share * shares_owned), 4) as total_dividends_received
+        FROM dividends
+        WHERE user_id = ? 
+          AND CAST(strftime('%Y', ex_dividend_date) AS INTEGER) = ?
+          AND (payment_date IS NULL OR payment_date <= ?)
+      `,
+      args: [userId, currentYear, currentDate],
     });
 
     // Get all-time total
@@ -48,44 +75,45 @@ export async function GET() {
       sql: `
         SELECT 
           COUNT(DISTINCT ticker) as total_stocks,
-          SUM(total_dividends_received) as total_dividends
-        FROM dividend_summary_by_ticker 
+          ROUND(SUM(dividend_per_share * shares_owned), 4) as total_dividends
+        FROM dividends
         WHERE user_id = ?
+          AND (payment_date IS NULL OR payment_date <= ?)
       `,
-      args: [userId],
+      args: [userId, currentDate],
     });
 
     const allTimeData = allTimeResult.rows[0];
     const ytdData = ytdResult.rows[0];
 
-    const tickerBreakdown = tickerSummary.rows.map(row => ({
+    const allTimeBreakdown = allTimeTickerSummary.rows.map(row => ({
       ticker: row.ticker,
       tickerName: row.ticker_name || row.ticker,
       totalPayments: Number(row.total_dividend_payments) || 0,
       totalReceived: Number(row.total_dividends_received) || 0,
       avgPerShare: Number(row.avg_dividend_per_share) || 0,
-      latestDate: row.latest_dividend_date,
+      latestDate: row.latest_payment_date || null,
     }));
 
-    const quarterlyBreakdown = quarterlyData.rows.map(row => ({
-      year: Number(row.year),
-      quarter: Number(row.quarter),
-      stocksPaid: Number(row.stocks_paid_dividends) || 0,
+    const ytdBreakdown = ytdTickerSummary.rows.map(row => ({
+      ticker: row.ticker,
+      tickerName: row.ticker_name || row.ticker,
       totalPayments: Number(row.total_dividend_payments) || 0,
       totalReceived: Number(row.total_dividends_received) || 0,
-      startDate: row.quarter_start_date,
-      endDate: row.quarter_end_date,
+      avgPerShare: Number(row.avg_dividend_per_share) || 0,
+      latestDate: row.latest_payment_date || null,
     }));
 
     return NextResponse.json({
       summary: {
         totalDividends: Number(allTimeData?.total_dividends) || 0,
+        totalStocks: Number(allTimeData?.total_stocks) || 0,
         ytdDividends: Number(ytdData?.total_dividends_received) || 0,
-        dividendPayingStocks: Number(allTimeData?.total_stocks) || 0,
+        ytdStocks: Number(ytdData?.stocks_paid_dividends) || 0,
         ytdPayments: Number(ytdData?.total_dividend_payments) || 0,
       },
-      breakdown: tickerBreakdown,
-      quarterly: quarterlyBreakdown,
+      allTimeBreakdown,
+      ytdBreakdown,
     });
   } catch (error: any) {
     console.error('Dashboard dividends error:', error);

@@ -9,20 +9,23 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Use Yahoo Finance search API
-    const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(ticker)}&quotesCount=1&newsCount=0`;
+    // Use the SAME Yahoo Finance endpoint that works in update-prices
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=1d`;
     const response = await fetch(url);
     
     if (!response.ok) {
-      throw new Error('Yahoo Finance API request failed');
+      return NextResponse.json({ 
+        name: null, 
+        error: 'Ticker not found' 
+      });
     }
 
     const data = await response.json();
     
-    // Get the first quote result
-    const quote = data?.quotes?.[0];
+    // Extract company name from chart metadata
+    const meta = data?.chart?.result?.[0]?.meta;
     
-    if (!quote) {
+    if (!meta) {
       return NextResponse.json({ 
         name: null, 
         error: 'Ticker not found' 
@@ -30,16 +33,16 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json({
-      name: quote.longname || quote.shortname || ticker,
-      symbol: quote.symbol || ticker,
-      exchange: quote.exchange || null,
-      type: quote.quoteType || null,
+      name: meta.longName || meta.shortName || ticker,
+      symbol: meta.symbol || ticker,
+      exchange: meta.exchangeName || null,
+      type: meta.instrumentType || null,
     });
 
   } catch (error: any) {
     console.error('Ticker lookup error:', error);
     return NextResponse.json(
-      { name: null, error: error.message || 'Failed to lookup ticker' },
+      { name: null, error: 'Failed to lookup ticker' },
       { status: 500 }
     );
   }

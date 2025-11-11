@@ -46,12 +46,13 @@ interface FundingData {
 interface DividendData {
   summary: {
     totalDividends: number;
+    totalStocks: number;
     ytdDividends: number;
-    dividendPayingStocks: number;
+    ytdStocks: number;
     ytdPayments: number;
   };
-  breakdown: any[];
-  quarterly: any[];
+  allTimeBreakdown: any[];
+  ytdBreakdown: any[];
 }
 
 export default function DashboardPage() {
@@ -294,8 +295,8 @@ export default function DashboardPage() {
         {dividendData && (
           <DividendCard
             summary={dividendData.summary}
-            breakdown={dividendData.breakdown}
-            quarterly={dividendData.quarterly}
+            allTimeBreakdown={dividendData.allTimeBreakdown}
+            ytdBreakdown={dividendData.ytdBreakdown}
           />
         )}
         

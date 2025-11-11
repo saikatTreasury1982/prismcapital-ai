@@ -32,38 +32,38 @@ export async function GET(request: Request) {
       }
 
       const data = await db
-        .select({
-          newsId: news.news_id,
-          userId: news.user_id,
-          ticker: news.ticker,
-          exchangeId: news.exchange_id,
-          companyName: news.company_name,
-          newsTypeId: news.news_type_id,
-          newsDescription: news.news_description,
-          newsDate: news.news_date,
-          alertDate: news.alert_date,
-          alertNotes: news.alert_notes,
-          newsSource: news.news_source,
-          newsUrl: news.news_url,
-          tags: news.tags,
-          createdAt: news.created_at,
-          updatedAt: news.updated_at,
-          news_type: {
-            type_code: newsTypes.type_code,
-            type_name: newsTypes.type_name,
-          },
-        })
-        .from(news)
-        .leftJoin(newsTypes, eq(news.news_type_id, newsTypes.news_type_id))
-        .where(
-          and(
-            eq(news.user_id, userId),
-            eq(news.news_type_id, newsTypeData[0].news_type_id)
-          )
+      .select({
+        news_id: news.news_id,
+        user_id: news.user_id,
+        ticker: news.ticker,
+        exchange_id: news.exchange_id,
+        company_name: news.company_name,
+        news_type_id: news.news_type_id,
+        news_description: news.news_description,
+        news_date: news.news_date,
+        alert_date: news.alert_date,
+        alert_notes: news.alert_notes,
+        news_source: news.news_source,
+        news_url: news.news_url,
+        tags: news.tags,
+        created_at: news.created_at,
+        updated_at: news.updated_at,
+        news_type: {
+          type_code: newsTypes.type_code,
+          type_name: newsTypes.type_name,
+        },
+      })
+      .from(news)
+      .leftJoin(newsTypes, eq(news.news_type_id, newsTypes.news_type_id))
+      .where(
+        and(
+          eq(news.user_id, userId),
+          eq(news.news_type_id, newsTypeData[0].news_type_id)
         )
-        .orderBy(desc(news.news_date))
-        .limit(pageSize)
-        .offset(offset);
+      )
+      .orderBy(desc(news.news_date))
+      .limit(pageSize)
+      .offset(offset);
 
       const countResult = await db
         .select({ count: sql<number>`count(*)` })
@@ -78,14 +78,14 @@ export async function GET(request: Request) {
       return NextResponse.json({ data, total: countResult[0]?.count || 0 });
     }
 
-    // Get summary by type (using view)
-    const data = await db.all(sql`
-      SELECT * FROM news_summary_by_type
-      WHERE user_id = ${userId}
-      ORDER BY total_news_items DESC
-    `);
+  // Get summary by type (using view)
+  const data = await db.all(sql`
+    SELECT * FROM news_summary_by_type
+    WHERE user_id = ${userId}
+    ORDER BY total_news_items DESC
+  `);
 
-    return NextResponse.json({ data });
+  return NextResponse.json({ data: data || [] });
   } catch (e: any) {
     console.error('Error fetching news by type:', e);
     return NextResponse.json({ error: e.message }, { status: 500 });

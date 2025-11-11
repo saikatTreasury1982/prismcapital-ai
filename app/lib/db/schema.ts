@@ -130,7 +130,7 @@ export const cashMovements = sqliteTable('cash_movements', {
 
 // DIVIDENDS
 export const dividends = sqliteTable('dividends', {
-  dividend_id: text('dividend_id').primaryKey(),
+  dividend_id: integer('dividend_id').primaryKey({ autoIncrement: true }),
   user_id: text('user_id').notNull().references(() => users.user_id),
   ticker: text('ticker').notNull(),
   ex_dividend_date: text('ex_dividend_date').notNull(),
@@ -154,7 +154,7 @@ export const newsTypes = sqliteTable('news_types', {
 });
 
 export const news = sqliteTable('news', {
-  news_id: text('news_id').primaryKey(),
+  news_id: integer('news_id').primaryKey({ autoIncrement: true }),
   user_id: text('user_id').notNull().references(() => users.user_id),
   ticker: text('ticker').notNull(),
   exchange_id: integer('exchange_id').references(() => exchanges.exchange_id),
