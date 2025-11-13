@@ -25,7 +25,7 @@ export async function GET(request: Request) {
       const data = await db
         .select()
         .from(transactions)
-        .where(eq(transactions.transaction_id, transactionId))
+        .where(eq(transactions.transaction_id, parseInt(transactionId)))
         .limit(1);
 
       if (!data || data.length === 0) {
@@ -83,7 +83,6 @@ export async function POST(request: Request) {
     const data = await db
       .insert(transactions)
       .values({
-        transaction_id: transactionId,
         user_id: userId,
         ticker: transactionData.ticker.toUpperCase(),
         exchange_id: transactionData.exchange_id,
@@ -118,7 +117,7 @@ export async function POST(request: Request) {
           quantity: transactionData.quantity,
           price: transactionData.price,
           transaction_date: transactionData.transaction_date,
-          strategy_id: 1, // Aggregated strategy
+          strategy_id: transactionData.strategy_id,
           transaction_currency: transactionData.transaction_currency || 'USD',
         });
       } else if (transactionData.transaction_type_id === 2) {
@@ -129,7 +128,7 @@ export async function POST(request: Request) {
           quantity: transactionData.quantity,
           price: transactionData.price,
           transaction_date: transactionData.transaction_date,
-          strategy_id: 1,
+          strategy_id: transactionData.strategy_id,
         });
       }
     }
@@ -185,7 +184,7 @@ export async function DELETE(request: Request) {
 
     await db
       .delete(transactions)
-      .where(eq(transactions.transaction_id, transactionId));
+      .where(eq(transactions.transaction_id, parseInt(transactionId)));
 
     return NextResponse.json({ success: true });
   } catch (e: any) {

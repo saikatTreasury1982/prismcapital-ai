@@ -13,12 +13,21 @@ interface TransactionEntryFormProps {
   onCancelEdit?: () => void;
 }
 
+interface Strategy {
+  strategy_id: number;
+  strategy_code: string;
+  strategy_name: string;
+  description: string;
+}
+
 export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEdit }: TransactionEntryFormProps) {
   const [exchanges, setExchanges] = useState<Exchange[]>([]);
+  const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [formData, setFormData] = useState({
     ticker: '',
     exchange_id: 1, // Default to NYSE
     transaction_type_id: 1, // Default to Buy
+    strategy_id: 1, // Default to strategy 1
     transaction_date: new Date().toISOString().split('T')[0],
     quantity: '',
     price: '',
@@ -48,6 +57,20 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
       }
     };
     fetchExchanges();
+  }, []);
+
+  // Fetch strategies on mount
+  useEffect(() => {
+    const fetchStrategies = async () => {
+      try {
+        const response = await fetch('/api/strategies');
+        const result = await response.json();
+        setStrategies(result.data);
+      } catch (err) {
+        console.error('Failed to fetch strategies:', err);
+      }
+    };
+    fetchStrategies();
   }, []);
 
   // Auto-calculate trade value
@@ -121,6 +144,7 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
         ticker: editingTransaction.ticker,
         exchange_id: editingTransaction.exchange_id,
         transaction_type_id: editingTransaction.transaction_type_id,
+        strategy_id: editingTransaction.strategy_id || 1, // Add this
         transaction_date: editingTransaction.transaction_date,
         quantity: editingTransaction.quantity.toString(),
         price: editingTransaction.price.toString(),
@@ -155,6 +179,7 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
           ticker: formData.ticker.toUpperCase(),
           exchange_id: formData.exchange_id,
           transaction_type_id: formData.transaction_type_id,
+          strategy_id: formData.strategy_id,
           transaction_date: formData.transaction_date,
           quantity: parseFloat(formData.quantity),
           price: parseFloat(formData.price),
@@ -169,6 +194,7 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
         ticker: '',
         exchange_id: 1,
         transaction_type_id: 1,
+        strategy_id: 1, 
         transaction_date: new Date().toISOString().split('T')[0],
         quantity: '',
         price: '',
@@ -297,6 +323,23 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
               </option>
             ))}
           </select>
+        </div>
+
+        {/* Strategy */}
+        <div>
+          <label className="text-blue-200 text-sm mb-2 block font-medium">Strategy *</label>
+            <select
+              value={formData.strategy_id}
+              onChange={(e) => setFormData({ ...formData, strategy_id: parseInt(e.target.value) })}
+              className={`w-full funding-input rounded-xl px-4 py-3 ${editingTransaction ? 'bg-white/5 cursor-not-allowed' : ''}`}
+              disabled={!!editingTransaction}
+            >
+              {strategies.map(strategy => (
+                <option key={strategy.strategy_id} value={strategy.strategy_id} className="bg-slate-800 text-white">
+                  {strategy.strategy_id} - {strategy.strategy_name}
+                </option>
+              ))}
+            </select>
         </div>
 
         {/* Transaction Type */}

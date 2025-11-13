@@ -5,7 +5,7 @@ import { eq, and } from 'drizzle-orm';
 const { positions } = schema;
 
 export interface Position {
-  position_id: string;
+  position_id: number;
   user_id: string;
   ticker: string;
   exchange_id: number;
@@ -50,6 +50,16 @@ export async function aggregateToPosition(transaction: {
       )
     )
     .limit(1);
+    
+    // Add these debug logs
+    console.log('Looking for position with:', {
+      user_id: transaction.user_id,
+      ticker: transaction.ticker,
+      exchange_id: transaction.exchange_id,
+      is_active: 1,
+      strategy_id: transaction.strategy_id
+    });
+    console.log('Found existing position?', existingPosition);
 
   if (existingPosition && existingPosition.length > 0) {
     const pos = existingPosition[0];
@@ -67,10 +77,8 @@ export async function aggregateToPosition(transaction: {
 
     return pos;
   } else {
-    const positionId = `pos_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-    await db.insert(positions).values({
-      position_id: positionId,
+    // Don't generate position_id - let database auto-generate
+    const result = await db.insert(positions).values({
       user_id: transaction.user_id,
       ticker: transaction.ticker,
       exchange_id: transaction.exchange_id,
@@ -81,9 +89,9 @@ export async function aggregateToPosition(transaction: {
       position_currency: transaction.transaction_currency,
       is_active: 1,
       realized_pnl: 0,
-    });
+    }).returning();
 
-    return { position_id: positionId };
+    return result[0];
   }
 }
 

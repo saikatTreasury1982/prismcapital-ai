@@ -79,7 +79,7 @@ export function DividendDetailModal({ dividend, onClose, onEdit, onDelete }: Div
           <div className="p-4 bg-emerald-500/10 border border-emerald-400/30 rounded-xl">
             <h3 className="text-sm font-semibold text-emerald-200 mb-2">Total Dividend Amount</h3>
             <p className="text-white text-3xl font-bold">
-              ${dividend.total_dividend_amount.toFixed(2)}
+              ${(dividend.total_dividend_amount || 0).toFixed(2)}
             </p>
           </div>
 
@@ -87,7 +87,7 @@ export function DividendDetailModal({ dividend, onClose, onEdit, onDelete }: Div
             <div>
               <h3 className="text-sm font-semibold text-blue-200 mb-2">Dividend Yield</h3>
               <p className="text-white">
-                {(dividend.dividend_yield * 100).toFixed(2)}%
+                {((dividend.dividend_yield * 100)||0).toFixed(2)}%
               </p>
             </div>
           )}

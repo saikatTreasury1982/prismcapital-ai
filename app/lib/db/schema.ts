@@ -216,7 +216,7 @@ export const tradeStrategies = sqliteTable('trade_strategies', {
 });
 
 export const positions = sqliteTable('positions', {
-  position_id: text('position_id').primaryKey(),
+  position_id: integer('position_id').primaryKey({ autoIncrement: true }),
   user_id: text('user_id').notNull().references(() => users.user_id),
   ticker: text('ticker').notNull(),
   exchange_id: integer('exchange_id').notNull().references(() => exchanges.exchange_id),
@@ -244,7 +244,7 @@ export const transactionTypes = sqliteTable('transaction_types', {
 });
 
 export const transactions = sqliteTable('transactions', {
-  transaction_id: text('transaction_id').primaryKey(),
+  transaction_id: integer('transaction_id').primaryKey({ autoIncrement: true }),
   user_id: text('user_id').notNull().references(() => users.user_id),
   ticker: text('ticker').notNull(),
   exchange_id: integer('exchange_id').notNull().references(() => exchanges.exchange_id),

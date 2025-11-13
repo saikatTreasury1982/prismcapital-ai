@@ -494,7 +494,7 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
                                         <td className="py-3 text-right text-white">{transaction.quantity}</td>
                                         <td className="py-3 text-right text-white">${transaction.price.toFixed(2)}</td>
                                         <td className="py-3 text-right text-white">${transaction.fees.toFixed(2)}</td>
-                                        <td className="py-3 text-right text-white">${transaction.trade_value.toFixed(2)}</td>
+                                        <td className="py-3 text-right text-white">${(transaction.trade_value ||0).toFixed(2)}</td>
                                         <td className="py-3 text-white text-sm truncate max-w-[150px]">
                                           {transaction.notes || '-'}
                                         </td>

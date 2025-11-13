@@ -5,6 +5,7 @@ export interface Transaction {
   ticker: string;
   exchange_id: number;
   transaction_type_id: number; // 1=Buy, 2=Sell
+  strategy_id?: number;
   transaction_date: string;
   quantity: number;
   price: number;
@@ -20,6 +21,7 @@ export interface CreateTransactionInput {
   ticker: string;
   exchange_id: number;
   transaction_type_id: number;
+  strategy_id: number;
   transaction_date: string;
   quantity: number;
   price: number;
