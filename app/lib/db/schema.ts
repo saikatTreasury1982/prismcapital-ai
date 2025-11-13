@@ -235,6 +235,20 @@ export const positions = sqliteTable('positions', {
   realized_pnl: real('realized_pnl').default(0),
 });
 
+export const realizedPnlHistory = sqliteTable('realized_pnl_history', {
+  history_id: integer('history_id').primaryKey({ autoIncrement: true }),
+  user_id: text('user_id').notNull().references(() => users.user_id),
+  ticker: text('ticker').notNull(),
+  exchange_id: integer('exchange_id').notNull().references(() => exchanges.exchange_id),
+  quantity_sold: real('quantity_sold').notNull(),
+  average_cost: real('average_cost').notNull(),
+  sale_price: real('sale_price').notNull(),
+  realized_pnl: real('realized_pnl').notNull(),
+  sale_date: text('sale_date').notNull(),
+  strategy_id: integer('strategy_id').references(() => tradeStrategies.strategy_id),
+  created_at: text('created_at').default(sql`(datetime('now'))`),
+});
+
 // TRANSACTIONS
 export const transactionTypes = sqliteTable('transaction_types', {
   type_id: integer('type_id').primaryKey({ autoIncrement: true }),
