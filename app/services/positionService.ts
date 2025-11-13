@@ -2,7 +2,7 @@
 import { db, schema } from '../lib/db';
 import { eq, and } from 'drizzle-orm';
 
-const { positions } = schema;
+const { positions, realizedPnlHistory } = schema;
 
 export interface Position {
   position_id: number;
@@ -50,16 +50,6 @@ export async function aggregateToPosition(transaction: {
       )
     )
     .limit(1);
-    
-    // Add these debug logs
-    console.log('Looking for position with:', {
-      user_id: transaction.user_id,
-      ticker: transaction.ticker,
-      exchange_id: transaction.exchange_id,
-      is_active: 1,
-      strategy_id: transaction.strategy_id
-    });
-    console.log('Found existing position?', existingPosition);
 
   if (existingPosition && existingPosition.length > 0) {
     const pos = existingPosition[0];
@@ -69,8 +59,8 @@ export async function aggregateToPosition(transaction: {
     await db
       .update(positions)
       .set({
-        total_shares: newTotalShares,
-        average_cost: newAverageCost,
+        total_shares: parseFloat(newTotalShares.toFixed(3)),
+        average_cost: parseFloat(newAverageCost.toFixed(3)),
         updated_at: new Date().toISOString(),
       })
       .where(eq(positions.position_id, pos.position_id));
@@ -137,13 +127,26 @@ export async function reducePosition(transaction: {
   const realizedPnlFromSale = saleProceeds - costBasis;
   const totalRealizedPnl = (pos.realized_pnl || 0) + realizedPnlFromSale;
 
+  // Insert into realized_pnl_history
+  await db.insert(realizedPnlHistory).values({
+    user_id: transaction.user_id,
+    ticker: transaction.ticker,
+    exchange_id: transaction.exchange_id,
+    quantity_sold: transaction.quantity,
+    average_cost: pos.average_cost,
+    sale_price: transaction.price,
+    realized_pnl: realizedPnlFromSale,
+    sale_date: transaction.transaction_date,
+    strategy_id: transaction.strategy_id,
+  });
+
   if (newTotalShares === 0) {
     await db
       .update(positions)
       .set({
         total_shares: 0,
         is_active: 0,
-        realized_pnl: totalRealizedPnl,
+        realized_pnl: parseFloat(totalRealizedPnl.toFixed(3)),
         updated_at: new Date().toISOString(),
       })
       .where(eq(positions.position_id, pos.position_id));
@@ -154,7 +157,7 @@ export async function reducePosition(transaction: {
       .update(positions)
       .set({
         total_shares: newTotalShares,
-        realized_pnl: totalRealizedPnl,
+        realized_pnl: parseFloat(totalRealizedPnl.toFixed(3)),
         updated_at: new Date().toISOString(),
       })
       .where(eq(positions.position_id, pos.position_id));
