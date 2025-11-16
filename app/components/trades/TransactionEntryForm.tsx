@@ -25,7 +25,7 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
   const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [formData, setFormData] = useState({
     ticker: '',
-    exchange_id: 1, // Default to NYSE
+    exchange_id: 'NYSE', // Default to NYSE
     transaction_type_id: 1, // Default to Buy
     strategy_id: 1, // Default to strategy 1
     transaction_date: new Date().toISOString().split('T')[0],
@@ -192,7 +192,7 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
       // Reset form
       setFormData({
         ticker: '',
-        exchange_id: 1,
+        exchange_id: 'NYSE',
         transaction_type_id: 1,
         strategy_id: 1, 
         transaction_date: new Date().toISOString().split('T')[0],
@@ -313,12 +313,12 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
           <label className="text-blue-200 text-sm mb-2 block font-medium">Exchange *</label>
           <select
             value={formData.exchange_id}
-            onChange={(e) => setFormData({ ...formData, exchange_id: parseInt(e.target.value) })}
+            onChange={(e) => setFormData({ ...formData, exchange_id: e.target.value })}
             className={`w-full funding-input rounded-xl px-4 py-3 ${editingTransaction ? 'bg-white/5 cursor-not-allowed' : ''}`}
             disabled={!!editingTransaction}
           >
             {exchanges.map(exchange => (
-              <option key={exchange.exchange_id} value={exchange.exchange_id} className="bg-slate-800 text-white">
+              <option key={exchange.exchange_code} value={exchange.exchange_code} className="bg-slate-800 text-white">
                 {exchange.exchange_code} - {exchange.exchange_name}
               </option>
             ))}

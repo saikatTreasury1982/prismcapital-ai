@@ -1,5 +1,5 @@
 export interface Dividend {
-  dividend_id: string;
+  dividend_id: number;
   user_id: string;
   ticker: string;
   ex_dividend_date: string;
@@ -63,12 +63,12 @@ export interface DividendSummaryByYear {
 }
 
 export interface PositionForDividend {
+  position_id: number;  // Change from string to number
   ticker: string;
-  ticker_name: string | null;
+  ticker_name?: string | null;
   total_shares: number;
   average_cost: number;
-  current_market_price: number | null;
-  position_id: string;
+  current_market_price?: number | null;
 }
 
 export interface AlphaVantageOverview {

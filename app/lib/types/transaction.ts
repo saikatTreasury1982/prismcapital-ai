@@ -3,7 +3,7 @@ export interface Transaction {
   transaction_id: string;
   user_id: string;
   ticker: string;
-  exchange_id: number;
+  exchange_id: string;
   transaction_type_id: number; // 1=Buy, 2=Sell
   strategy_id?: number;
   transaction_date: string;
@@ -19,7 +19,7 @@ export interface Transaction {
 
 export interface CreateTransactionInput {
   ticker: string;
-  exchange_id: number;
+  exchange_id: string;
   transaction_type_id: number;
   strategy_id: number;
   transaction_date: string;
@@ -40,7 +40,7 @@ export interface TradeLot {
   lot_id: string;
   user_id: string;
   ticker: string;
-  exchange_id: number;
+  exchange_id: string;
   entry_date: string;
   entry_price: number;
   quantity: number;
@@ -66,7 +66,7 @@ export interface Position {
   user_id: string;
   ticker: string;
   ticker_name?: string;
-  exchange_id: number;
+  exchange_id: string;
   total_shares: number;
   average_cost: number;
   current_market_price?: number;
@@ -84,7 +84,6 @@ export interface Position {
 
 // Exchange Type
 export interface Exchange {
-  exchange_id: number;
   exchange_code: string;
   exchange_name: string;
   country_code: string;

@@ -175,15 +175,15 @@ export default function LoginPage() {
           
           {/* LEFT SIDE - Hero Text */}
           <div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-4 sm:mb-6 leading-tight">
-              Smart Portfolio Tracking for
-              <span className="block bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
+            <h1 className="text-4xl sm:text-5xl md:text-5xl font-bold text-white mb-4 sm:mb-6 leading-tight">
+              Smart Portfolio Tracker
+              <span className="block bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent md:text-4xl">
                 Trades and Investments
               </span>
             </h1>
             
             <p className="text-base sm:text-xl text-gray-300">
-              Created by vibe coding with Claude.
+              application created by vibe coding with Claude.
             </p>
           </div>
 

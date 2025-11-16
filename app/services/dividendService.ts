@@ -1,5 +1,6 @@
 import { db, schema } from '../lib/db';
-import { eq, and, gte, lt, desc, asc } from 'drizzle-orm';
+import { eq, and, gte, lt, desc, asc, inArray } from 'drizzle-orm';
+
 import { 
   Dividend,
   DividendSummaryByTicker,
@@ -21,10 +22,23 @@ export async function getOpenPositionsForDividends(userId: string): Promise<Posi
       current_market_price: positions.current_market_price,
     })
     .from(positions)
+    .innerJoin(
+      schema.assetClassifications,
+      and(
+        eq(positions.user_id, schema.assetClassifications.user_id),
+        eq(positions.ticker, schema.assetClassifications.ticker),
+        eq(positions.exchange_id, schema.assetClassifications.exchange_id)
+      )
+    )
+    .innerJoin(
+      schema.assetClasses,
+      eq(schema.assetClassifications.class_id, schema.assetClasses.class_id)
+    )
     .where(
       and(
         eq(positions.user_id, userId),
-        eq(positions.is_active, 1)
+        eq(positions.is_active, 1),
+        inArray(schema.assetClasses.class_code, ['SHARES', 'ETF', 'FUND'])
       )
     )
     .orderBy(asc(positions.ticker));

@@ -32,7 +32,7 @@ export async function GET(request: Request) {
           p.position_currency
         FROM positions p
         JOIN asset_classifications ac ON p.ticker = ac.ticker AND p.user_id = ac.user_id
-        JOIN asset_types at ON ac.type_id = at.type_id
+        JOIN asset_types at ON ac.type_id = at.type_code
         WHERE p.user_id = ? AND p.is_active = 1 AND at.type_name = ?
         ORDER BY capital_invested DESC
       `,
