@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db, schema } from '@/app/lib/db';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql } from 'drizzle-orm';
 import { auth } from '@/app/lib/auth';
 
 const { positions } = schema;
@@ -40,10 +40,25 @@ export async function POST(request: Request) {
   try {
     const userId = session.user.id;
 
-    // Get all active positions
+    // STEP 1: Get all active positions WITH asset class info
     const activePositions = await db
-      .select()
+      .select({
+        position: positions,
+        assetClass: schema.assetClasses,
+      })
       .from(positions)
+      .leftJoin(
+        schema.assetClassifications,
+        and(
+          eq(positions.user_id, schema.assetClassifications.user_id),
+          eq(positions.ticker, schema.assetClassifications.ticker),
+          eq(positions.exchange_id, schema.assetClassifications.exchange_id)
+        )
+      )
+      .leftJoin(
+        schema.assetClasses,
+        eq(schema.assetClassifications.class_id, schema.assetClasses.class_code)
+      )
       .where(
         and(
           eq(positions.user_id, userId),
@@ -58,17 +73,25 @@ export async function POST(request: Request) {
       });
     }
 
-    // Fetch prices for all tickers with minimal delay
+    // STEP 2: Fetch prices with crypto ticker adjustment
     const updates: Array<{ ticker: string; price: number | null; success: boolean }> = [];
     
-    for (const position of activePositions) {
+    for (const row of activePositions) {
       try {
-        // Small delay to be respectful (500ms instead of 12 seconds!)
+        const position = row.position;
+        const assetClass = row.assetClass;
+        
+        // Small delay to be respectful
         if (updates.length > 0) {
           await new Promise(resolve => setTimeout(resolve, 500));
         }
 
-        const price = await fetchCurrentPrice(position.ticker);
+        // For crypto, append -{currency} to ticker (e.g., XRP-USD, BTC-EUR)
+        const tickerForAPI = assetClass?.class_code === 'CRYPTO' 
+          ? `${position.ticker}-${position.position_currency}`
+          : position.ticker;
+
+        const price = await fetchCurrentPrice(tickerForAPI);
   
         if (price !== null) {
           // Update position with new price
@@ -76,7 +99,7 @@ export async function POST(request: Request) {
             .update(positions)
             .set({ 
               current_market_price: price,
-              updated_at: new Date().toISOString()
+              updated_at: sql`datetime('now')`
             })
             .where(eq(positions.position_id, position.position_id));
 
@@ -86,7 +109,7 @@ export async function POST(request: Request) {
         }
       } catch (error) {
         console.log('Error updating price, continuing with next ticker');
-        updates.push({ ticker: position.ticker, price: null, success: false });
+        updates.push({ ticker: row.position.ticker, price: null, success: false });
       }
     }
 

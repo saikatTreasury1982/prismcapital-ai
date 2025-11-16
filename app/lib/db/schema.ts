@@ -75,18 +75,16 @@ export const exchanges = sqliteTable('exchanges', {
 
 // ASSETS
 export const assetClasses = sqliteTable('asset_classes', {
-  class_id: integer('class_id').primaryKey({ autoIncrement: true }),
-  class_code: text('class_code').notNull().unique(),
+  class_code: text('class_code').primaryKey(),
   class_name: text('class_name').notNull(),
   description: text('description'),
   created_at: text('created_at').default(sql`(datetime('now'))`),
 });
 
 export const assetTypes = sqliteTable('asset_types', {
-  type_id: integer('type_id').primaryKey({ autoIncrement: true }),
-  type_code: text('type_code').notNull().unique(),
+  type_code: text('type_code').primaryKey(),
   type_name: text('type_name').notNull(),
-  class_id: integer('class_id').references(() => assetClasses.class_id),
+  class_id: integer('class_id').references(() => assetClasses.class_code),
   description: text('description'),
   created_at: text('created_at').default(sql`(datetime('now'))`),
 });
@@ -95,9 +93,9 @@ export const assetClassifications = sqliteTable('asset_classifications', {
   classification_id: text('classification_id').primaryKey(),
   user_id: text('user_id').notNull().references(() => users.user_id),
   ticker: text('ticker').notNull(),
-  exchange_id: integer('exchange_id').notNull().references(() => exchanges.exchange_id),
-  class_id: integer('class_id').notNull().references(() => assetClasses.class_id),
-  type_id: integer('type_id').references(() => assetTypes.type_id),
+  exchange_id: text('exchange_id').notNull().references(() => exchanges.exchange_code),
+  class_id: text('class_id').notNull().references(() => assetClasses.class_code),
+  type_id: text('type_id').references(() => assetTypes.type_code),
   created_at: text('created_at').default(sql`(datetime('now'))`),
   updated_at: text('updated_at').default(sql`(datetime('now'))`),
 });
@@ -219,7 +217,7 @@ export const positions = sqliteTable('positions', {
   position_id: integer('position_id').primaryKey({ autoIncrement: true }),
   user_id: text('user_id').notNull().references(() => users.user_id),
   ticker: text('ticker').notNull(),
-  exchange_id: integer('exchange_id').notNull().references(() => exchanges.exchange_id),
+  exchange_id: text('exchange_id').notNull().references(() => exchanges.exchange_code),
   total_shares: real('total_shares').default(0),
   average_cost: real('average_cost').notNull(),
   current_market_price: real('current_market_price'),
@@ -261,7 +259,7 @@ export const transactions = sqliteTable('transactions', {
   transaction_id: integer('transaction_id').primaryKey({ autoIncrement: true }),
   user_id: text('user_id').notNull().references(() => users.user_id),
   ticker: text('ticker').notNull(),
-  exchange_id: integer('exchange_id').notNull().references(() => exchanges.exchange_id),
+  exchange_id: text('exchange_id').notNull().references(() => exchanges.exchange_code),
   transaction_type_id: integer('transaction_type_id').notNull().references(() => transactionTypes.type_id),
   transaction_date: text('transaction_date').notNull(),
   quantity: real('quantity').notNull(),
@@ -279,7 +277,7 @@ export const tradeLots = sqliteTable('trade_lots', {
   lot_id: text('lot_id').primaryKey(),
   user_id: text('user_id').notNull().references(() => users.user_id),
   ticker: text('ticker').notNull(),
-  exchange_id: integer('exchange_id').notNull().references(() => exchanges.exchange_id),
+  exchange_id: text('exchange_id').notNull().references(() => exchanges.exchange_code),
   entry_date: text('entry_date').notNull(),
   entry_price: real('entry_price').notNull(),
   quantity: real('quantity').notNull(),

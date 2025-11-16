@@ -32,7 +32,7 @@ export async function getOpenPositionsForDividends(userId: string): Promise<Posi
     )
     .innerJoin(
       schema.assetClasses,
-      eq(schema.assetClassifications.class_id, schema.assetClasses.class_id)
+      eq(schema.assetClassifications.class_id, schema.assetClasses.class_code)
     )
     .where(
       and(

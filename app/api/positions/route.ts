@@ -43,7 +43,7 @@ export async function GET(request: Request) {
       )
       .leftJoin(
         schema.assetClasses,
-        eq(schema.assetClassifications.class_id, schema.assetClasses.class_id)
+        eq(schema.assetClassifications.class_id, schema.assetClasses.class_code)
       )
       .where(and(...conditions))
       .orderBy(asc(positions.ticker));
