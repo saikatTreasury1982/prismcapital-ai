@@ -247,6 +247,26 @@ export const realizedPnlHistory = sqliteTable('realized_pnl_history', {
   created_at: text('created_at').default(sql`(datetime('now'))`),
 });
 
+export const tradeAnalyses = sqliteTable('trade_analyses', {
+  analysis_id: integer('analysis_id').primaryKey({ autoIncrement: true }),
+  user_id: text('user_id').notNull().references(() => users.user_id),
+  ticker: text('ticker').notNull(),
+  exchange_code: text('exchange_code'),
+  entry_price: real('entry_price').notNull(),
+  position_size: real('position_size').notNull(),
+  stop_loss: real('stop_loss').notNull(),
+  take_profit: real('take_profit').notNull(),
+  shares_to_buy: real('shares_to_buy'),
+  risk_percentage: real('risk_percentage'),
+  reward_percentage: real('reward_percentage'),
+  risk_reward_ratio: real('risk_reward_ratio'),
+  is_flagged: integer('is_flagged').default(0),
+  status: text('status').default('ANALYZING'),
+  notes: text('notes'),
+  created_at: text('created_at').default(sql`(datetime('now'))`),
+  updated_at: text('updated_at').default(sql`(datetime('now'))`),
+});
+
 // TRANSACTIONS
 export const transactionTypes = sqliteTable('transaction_types', {
   type_id: integer('type_id').primaryKey({ autoIncrement: true }),
