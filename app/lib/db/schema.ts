@@ -271,6 +271,24 @@ export const tradeAnalyses = sqliteTable('trade_analyses', {
   updated_at: text('updated_at').default(sql`(datetime('now'))`),
 });
 
+export const positionActionPlans = sqliteTable('position_action_plans', {
+  plan_id: integer('plan_id').primaryKey({ autoIncrement: true }),
+  user_id: text('user_id').notNull().references(() => users.user_id),
+  position_id: integer('position_id').notNull().references(() => positions.position_id),
+  action_type: text('action_type').notNull(),
+  sell_percentage: real('sell_percentage'),
+  sell_shares: real('sell_shares'),
+  expected_proceeds: real('expected_proceeds'),
+  reinvest_ticker: text('reinvest_ticker'),
+  reinvest_amount: real('reinvest_amount'),
+  withdraw_amount: real('withdraw_amount'),
+  withdraw_currency: text('withdraw_currency'),
+  notes: text('notes'),
+  status: text('status').default('DRAFT'),
+  created_at: text('created_at').default(sql`(datetime('now'))`),
+  updated_at: text('updated_at').default(sql`(datetime('now'))`),
+});
+
 // TRANSACTIONS
 export const transactionTypes = sqliteTable('transaction_types', {
   type_id: integer('type_id').primaryKey({ autoIncrement: true }),
@@ -402,3 +420,19 @@ export const newsSummaryByTicker = sqliteView('news_summary_by_ticker', {}).as(s
 export const newsSummaryByType = sqliteView('news_summary_by_type', {}).as(sqlTemplate`SELECT * FROM news_summary_by_type`);
 export const earningsNews = sqliteView('earnings_news', {}).as(sqlTemplate`SELECT * FROM earnings_news`);
 export const generalNews = sqliteView('general_news', {}).as(sqlTemplate`SELECT * FROM general_news`);
+
+export const schema = {
+  users,
+  exchanges,
+  transactionTypes,
+  transactions,
+  positions,
+  dividends,
+  cashMovements,
+  realizedPnlHistory,
+  tradeStrategies,
+  assetClassifications,
+  assetClasses,
+  tradeAnalyses,
+  positionActionPlans, // Make sure this is here!
+};

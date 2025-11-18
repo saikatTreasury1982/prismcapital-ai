@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Target, LineChart } from 'lucide-react';
 import { TradeAnalyzer } from '@/app/components/trading-plan/TradeAnalyzer';
+import { PositionActions } from '@/app/components/trading-plan/PositionActions';
 
 export default function TradingPlanPage() {
   const [activeTab, setActiveTab] = useState<'actions' | 'analyzer'>('analyzer');
@@ -43,12 +44,7 @@ export default function TradingPlanPage() {
       </div>
 
       {/* Tab Content */}
-      {activeTab === 'actions' && (
-        <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20">
-          <p className="text-blue-200 text-center">Position Actions - Coming Soon</p>
-        </div>
-      )}
-
+      {activeTab === 'actions' && <PositionActions />}
       {activeTab === 'analyzer' && <TradeAnalyzer />}
     </div>
   );
