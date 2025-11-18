@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
-import { Transaction, Exchange, CreateTransactionInput } from '../../lib/types/transaction';
+import { Transaction, CreateTransactionInput } from '../../lib/types/transaction';
 import { createTransaction, updateTransaction } from '../../services/transactionServiceClient';
-import { getExchanges } from '../../services/exchangeServiceClient';
 import { useDebounce } from '../../lib/hooks/useDebounce';
 
 interface TransactionEntryFormProps {
@@ -21,11 +20,9 @@ interface Strategy {
 }
 
 export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEdit }: TransactionEntryFormProps) {
-  const [exchanges, setExchanges] = useState<Exchange[]>([]);
   const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [formData, setFormData] = useState({
     ticker: '',
-    exchange_id: 'NYSE', // Default to NYSE
     transaction_type_id: 1, // Default to Buy
     strategy_id: 1, // Default to strategy 1
     transaction_date: new Date().toISOString().split('T')[0],
@@ -45,19 +42,6 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
   const [companyName, setCompanyName] = useState<string>('');
 
   const debouncedTicker = useDebounce(formData.ticker, 500);
-
-  // Fetch exchanges on mount
-  useEffect(() => {
-    const fetchExchanges = async () => {
-      try {
-        const data = await getExchanges();
-        setExchanges(data);
-      } catch (err) {
-        console.error('Failed to fetch exchanges:', err);
-      }
-    };
-    fetchExchanges();
-  }, []);
 
   // Fetch strategies on mount
   useEffect(() => {
@@ -142,9 +126,8 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
     if (editingTransaction) {
       setFormData({
         ticker: editingTransaction.ticker,
-        exchange_id: editingTransaction.exchange_id,
         transaction_type_id: editingTransaction.transaction_type_id,
-        strategy_id: editingTransaction.strategy_id || 1, // Add this
+        strategy_id: 1, // Default strategy
         transaction_date: editingTransaction.transaction_date,
         quantity: editingTransaction.quantity.toString(),
         price: editingTransaction.price.toString(),
@@ -169,7 +152,7 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
     try {
       if (editingTransaction) {
         // Update existing transaction (only fees and notes)
-        await updateTransaction(editingTransaction.transaction_id, {
+        await updateTransaction(editingTransaction.transaction_id.toString(), {
           fees: parseFloat(formData.fees),
           notes: formData.notes || undefined
         });
@@ -177,7 +160,6 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
         // Create new transaction
         await createTransaction({
           ticker: formData.ticker.toUpperCase(),
-          exchange_id: formData.exchange_id,
           transaction_type_id: formData.transaction_type_id,
           strategy_id: formData.strategy_id,
           transaction_date: formData.transaction_date,
@@ -192,9 +174,8 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
       // Reset form
       setFormData({
         ticker: '',
-        exchange_id: 'NYSE',
         transaction_type_id: 1,
-        strategy_id: 1, 
+        strategy_id: 1,
         transaction_date: new Date().toISOString().split('T')[0],
         quantity: '',
         price: '',
@@ -308,38 +289,21 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
           />
         </div>
 
-        {/* Exchange */}
-        <div>
-          <label className="text-blue-200 text-sm mb-2 block font-medium">Exchange *</label>
-          <select
-            value={formData.exchange_id}
-            onChange={(e) => setFormData({ ...formData, exchange_id: e.target.value })}
-            className={`w-full funding-input rounded-xl px-4 py-3 ${editingTransaction ? 'bg-white/5 cursor-not-allowed' : ''}`}
-            disabled={!!editingTransaction}
-          >
-            {exchanges.map(exchange => (
-              <option key={exchange.exchange_code} value={exchange.exchange_code} className="bg-slate-800 text-white">
-                {exchange.exchange_code} - {exchange.exchange_name}
-              </option>
-            ))}
-          </select>
-        </div>
-
         {/* Strategy */}
         <div>
           <label className="text-blue-200 text-sm mb-2 block font-medium">Strategy *</label>
-            <select
-              value={formData.strategy_id}
-              onChange={(e) => setFormData({ ...formData, strategy_id: parseInt(e.target.value) })}
-              className={`w-full funding-input rounded-xl px-4 py-3 ${editingTransaction ? 'bg-white/5 cursor-not-allowed' : ''}`}
-              disabled={!!editingTransaction}
-            >
-              {strategies.map(strategy => (
-                <option key={strategy.strategy_id} value={strategy.strategy_id} className="bg-slate-800 text-white">
-                  {strategy.strategy_id} - {strategy.strategy_name}
-                </option>
-              ))}
-            </select>
+          <select
+            value={formData.strategy_id}
+            onChange={(e) => setFormData({ ...formData, strategy_id: parseInt(e.target.value) })}
+            className={`w-full funding-input rounded-xl px-4 py-3 ${editingTransaction ? 'bg-white/5 cursor-not-allowed' : ''}`}
+            disabled={!!editingTransaction}
+          >
+            {strategies.map(strategy => (
+              <option key={strategy.strategy_id} value={strategy.strategy_id} className="bg-slate-800 text-white">
+                {strategy.strategy_id} - {strategy.strategy_name}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Transaction Type */}

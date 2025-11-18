@@ -51,8 +51,7 @@ export async function POST(request: Request) {
         schema.assetClassifications,
         and(
           eq(positions.user_id, schema.assetClassifications.user_id),
-          eq(positions.ticker, schema.assetClassifications.ticker),
-          eq(positions.exchange_id, schema.assetClassifications.exchange_id)
+          eq(positions.ticker, schema.assetClassifications.ticker)
         )
       )
       .leftJoin(

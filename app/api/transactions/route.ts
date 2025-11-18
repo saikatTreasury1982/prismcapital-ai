@@ -77,65 +77,68 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'transactionData required' }, { status: 400 });
     }
 
-    // Generate a unique transaction ID (you can use UUID library or any other method)
-    const transactionId = `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-    const data = await db
-      .insert(transactions)
-      .values({
-        user_id: userId,
-        ticker: transactionData.ticker.toUpperCase(),
-        exchange_id: transactionData.exchange_id,
-        transaction_type_id: transactionData.transaction_type_id,
-        transaction_date: transactionData.transaction_date,
-        quantity: transactionData.quantity,
-        price: transactionData.price,
-        fees: transactionData.fees || 0,
-        transaction_currency: transactionData.transaction_currency || 'USD',
-        notes: transactionData.notes || null,
-      })
-      .returning();
-
-    // Update position based on user's PnL strategy
+    // Get user's PnL strategy first (outside transaction)
     const userPrefs = await db
       .select()
       .from(schema.userPreferences)
       .where(eq(schema.userPreferences.user_id, userId))
       .limit(1);
 
-    if (userPrefs && userPrefs.length > 0 && userPrefs[0].pnl_strategy_id === 1) {
-      // Aggregated strategy - update positions table
-      const { aggregateToPosition, reducePosition } = await import('@/app/services/positionService');
-      
-      // Determine transaction type (BUY or SELL)
-      // Assuming transaction_type_id: 1 = BUY, 2 = SELL (adjust based on your DB)
-      if (transactionData.transaction_type_id === 1) {
-        await aggregateToPosition({
+    // Wrap everything in a database transaction
+    const result = await db.transaction(async (tx) => {
+      // 1. Insert transaction (NO exchange_id)
+      const data = await tx
+        .insert(transactions)
+        .values({
           user_id: userId,
           ticker: transactionData.ticker.toUpperCase(),
-          exchange_id: transactionData.exchange_id,
+          transaction_type_id: transactionData.transaction_type_id,
+          transaction_date: transactionData.transaction_date,
           quantity: transactionData.quantity,
           price: transactionData.price,
-          transaction_date: transactionData.transaction_date,
-          strategy_id: transactionData.strategy_id,
+          fees: transactionData.fees || 0,
           transaction_currency: transactionData.transaction_currency || 'USD',
-        });
-      } else if (transactionData.transaction_type_id === 2) {
-        await reducePosition({
-          user_id: userId,
-          ticker: transactionData.ticker.toUpperCase(),
-          exchange_id: transactionData.exchange_id,
-          quantity: transactionData.quantity,
-          price: transactionData.price,
-          transaction_date: transactionData.transaction_date,
-          strategy_id: transactionData.strategy_id,
-        });
-      }
-    }
+          notes: transactionData.notes || null,
+          trade_value: transactionData.quantity * transactionData.price,
+        })
+        .returning();
 
-    return NextResponse.json({ data: data[0] });
+      const transaction = data[0];
+
+      // 2. Update position based on user's PnL strategy
+      if (userPrefs && userPrefs.length > 0 && userPrefs[0].pnl_strategy_id === 1) {
+        const { aggregateToPositionTx, reducePositionTx } = await import('@/app/services/positionService');
+        
+        if (transactionData.transaction_type_id === 1) {
+          // BUY (NO exchange_id)
+          await aggregateToPositionTx(tx, {
+            user_id: userId,
+            ticker: transactionData.ticker.toUpperCase(),
+            quantity: transactionData.quantity,
+            price: transactionData.price,
+            transaction_date: transactionData.transaction_date,
+            strategy_id: transactionData.strategy_id,
+            transaction_currency: transactionData.transaction_currency || 'USD',
+          });
+        } else if (transactionData.transaction_type_id === 2) {
+          // SELL (NO exchange_id)
+          await reducePositionTx(tx, {
+            user_id: userId,
+            ticker: transactionData.ticker.toUpperCase(),
+            quantity: transactionData.quantity,
+            price: transactionData.price,
+            transaction_date: transactionData.transaction_date,
+            strategy_id: transactionData.strategy_id,
+          });
+        }
+      }
+
+      return transaction;
+    });
+
+    return NextResponse.json({ data: result });
   } catch (e: any) {
-    console.error('Unexpected error:', e);
+    console.error('Transaction failed and rolled back:', e);
     return NextResponse.json({ error: e.message || 'Failed to create transaction' }, { status: 500 });
   }
 }
@@ -158,7 +161,7 @@ export async function PATCH(request: Request) {
     const data = await db
       .update(transactions)
       .set(updateData)
-      .where(eq(transactions.transaction_id, transactionId))
+      .where(eq(transactions.transaction_id, parseInt(transactionId)))
       .returning();
 
     if (!data || data.length === 0) {

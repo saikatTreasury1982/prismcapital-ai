@@ -213,8 +213,8 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
   const openTotals = positions.reduce((acc, pos) => {
   // Case-insensitive check for stocks
   const isStock = 
-  pos.asset_class_code?.toUpperCase() === 'STOCK' || 
-  pos.asset_class?.toLowerCase().includes('stock');
+  pos.asset_class_code?.toUpperCase() === 'SHARES' || 
+  pos.asset_class?.toLowerCase().includes('shares');
   
   if (isStock) {
     acc.totalShares += pos.total_shares;

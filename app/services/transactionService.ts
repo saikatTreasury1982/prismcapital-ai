@@ -1,16 +1,10 @@
-
 import { db, schema } from '../lib/db';
 import { eq, and, gte, lte, desc } from 'drizzle-orm';
-import { getAssetClassification } from './assetClassificationService';
-import { aggregateToPosition, reducePosition } from './positionService';
-// import { createTradeLot, closeTradeLot, getOldestOpenLot } from './tradeLotService'; // NOT USED - Strategy 1 (aggregate) only
 
-const { transactions, exchanges, transactionTypes, tradeStrategies } = schema;
-
+const { transactions, transactionTypes, tradeStrategies } = schema;
 
 export interface TransactionInput {
   ticker: string;
-  exchange_id: number;
   transaction_type_id: number; // 1 = BUY, 2 = SELL
   transaction_date: string;
   quantity: number;
@@ -18,111 +12,24 @@ export interface TransactionInput {
   fees?: number;
   notes?: string;
   transaction_currency?: string;
+  strategy_id?: number;
 }
 
 export interface Transaction {
   transaction_id: string;
   user_id: string;
   ticker: string;
-  exchange_id: number;
   transaction_type_id: number;
   transaction_date: string;
   quantity: number;
   price: number;
-  total_value: number;
+  trade_value: number;
   fees: number;
   notes?: string;
   trade_lot_id?: string;
-  strategy_id?: number;
   transaction_currency: string;
   created_at: string;
   updated_at: string;
-}
-
-/**
- * Main function to record a transaction
- * Automatically routes to position or trade lot based on asset classification
- */
-export async function recordTransaction(
-  userId: string,
-  txnData: TransactionInput
-): Promise<{ transaction: Transaction; message: string }> {
-  // 1. Get asset classification for this ticker
-  const classificationResult = await getAssetClassification(
-    txnData.ticker,
-    txnData.exchange_id,
-    userId
-  );
-
-  if (!classificationResult) {
-    throw new Error(
-      `No asset classification found for ${txnData.ticker}. Please classify this asset first in Settings.`
-    );
-  }
-
-  const { classification, strategyCode } = classificationResult;
-
-  // 2. Insert the transaction
-  const transactionId = `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  
-  const transactionData = await db
-    .insert(transactions)
-    .values({
-      transaction_id: transactionId,
-      user_id: userId,
-      ticker: txnData.ticker,
-      exchange_id: txnData.exchange_id,
-      transaction_type_id: txnData.transaction_type_id,
-      transaction_date: txnData.transaction_date,
-      quantity: txnData.quantity,
-      price: txnData.price,
-      trade_value: txnData.quantity * txnData.price,
-      fees: txnData.fees || 0,
-      notes: txnData.notes || null,
-      transaction_currency: txnData.transaction_currency || 'USD'
-    })
-    .returning();
-
-  const transaction = transactionData[0];
-  let message = '';
-
-  // 3. Route based on transaction type (AGGREGATED STRATEGY ONLY)
-  if (strategyCode === 'LONG_TERM' || strategyCode === 'AGGREGATED') {
-    if (txnData.transaction_type_id === 1) {
-      // BUY - Aggregate to position
-      await aggregateToPosition({
-        user_id: userId,
-        ticker: txnData.ticker,
-        exchange_id: txnData.exchange_id,
-        quantity: txnData.quantity,
-        price: txnData.price,
-        transaction_date: txnData.transaction_date,
-        strategy_id: classification.type_id,
-        transaction_currency: txnData.transaction_currency || 'USD'
-      });
-      message = `Buy transaction recorded and added to position for ${txnData.ticker}`;
-    } else if (txnData.transaction_type_id === 2) {
-      // SELL - Reduce position
-      await reducePosition({
-        user_id: userId,
-        ticker: txnData.ticker,
-        exchange_id: txnData.exchange_id,
-        quantity: txnData.quantity,
-        price: txnData.price,
-        transaction_date: txnData.transaction_date,
-        strategy_id: classification.type_id
-      });
-      message = `Sell transaction recorded and position reduced for ${txnData.ticker}`;
-    }
-  } else {
-    // Trade lot strategies not implemented yet
-    message = `Transaction recorded for ${txnData.ticker} (lot-based tracking not yet implemented)`;
-  }
-
-  return {
-    transaction: transaction as any,
-    message
-  };
 }
 
 /**
@@ -159,19 +66,16 @@ export async function getTransactions(
   const data = await db
     .select({
       transaction: transactions,
-      exchange: exchanges,
       transactionType: transactionTypes,
       strategy: tradeStrategies,
     })
     .from(transactions)
-    .leftJoin(exchanges, eq(transactions.exchange_id, exchanges.exchange_id))
     .leftJoin(transactionTypes, eq(transactions.transaction_type_id, transactionTypes.type_id))
     .where(and(...conditions))
     .orderBy(desc(transactions.transaction_date));
 
   return data.map(d => ({
     ...d.transaction,
-    exchanges: d.exchange,
     transaction_types: d.transactionType,
     trade_strategies: d.strategy,
   }));
@@ -184,16 +88,14 @@ export async function getTransactionById(transactionId: string, userId: string) 
   const data = await db
     .select({
       transaction: transactions,
-      exchange: exchanges,
       transactionType: transactionTypes,
       strategy: tradeStrategies,
     })
     .from(transactions)
-    .leftJoin(exchanges, eq(transactions.exchange_id, exchanges.exchange_id))
     .leftJoin(transactionTypes, eq(transactions.transaction_type_id, transactionTypes.type_id))
     .where(
       and(
-        eq(transactions.transaction_id, transactionId),
+        eq(transactions.transaction_id, parseInt(transactionId)), // ✅ Parse to number
         eq(transactions.user_id, userId)
       )
     )
@@ -205,15 +107,14 @@ export async function getTransactionById(transactionId: string, userId: string) 
 
   return {
     ...data[0].transaction,
-    exchanges: data[0].exchange,
     transaction_types: data[0].transactionType,
     trade_strategies: data[0].strategy,
   };
 }
 
 /**
- * Delete a transaction (soft delete by marking as inactive or hard delete)
- * WARNING: This should also clean up associated positions/lots
+ * Delete a transaction
+ * WARNING: This should also reverse position changes before deleting
  */
 export async function deleteTransaction(transactionId: string, userId: string) {
   // TODO: Add logic to reverse position changes before deleting
@@ -222,7 +123,7 @@ export async function deleteTransaction(transactionId: string, userId: string) {
     .delete(transactions)
     .where(
       and(
-        eq(transactions.transaction_id, transactionId),
+        eq(transactions.transaction_id, parseInt(transactionId)), // ✅ Parse to number
         eq(transactions.user_id, userId)
       )
     );

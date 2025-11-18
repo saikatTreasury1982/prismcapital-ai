@@ -1,4 +1,3 @@
-
 import { db, schema } from '../lib/db';
 import { eq, and } from 'drizzle-orm';
 
@@ -8,7 +7,6 @@ export interface Position {
   position_id: number;
   user_id: string;
   ticker: string;
-  exchange_id: number;
   total_shares: number;
   average_cost: number;
   current_market_price?: number;
@@ -23,28 +21,26 @@ export interface Position {
 }
 
 /**
- * Update or create position (for LONG_TERM strategy)
- * Aggregates shares and calculates weighted average cost
+ * Transaction-aware version: Update or create position (for LONG_TERM strategy)
+ * Used inside db.transaction() wrapper
  */
-export async function aggregateToPosition(transaction: {
+export async function aggregateToPositionTx(tx: any, transaction: {
   user_id: string;
   ticker: string;
-  exchange_id: number;
   quantity: number;
   price: number;
   transaction_date: string;
   strategy_id: number;
   transaction_currency: string;
 }) {
-  // Check for existing active position
-  const existingPosition = await db
+  // Check for existing active position (using only user_id + ticker)
+  const existingPosition = await tx
     .select()
     .from(positions)
     .where(
       and(
         eq(positions.user_id, transaction.user_id),
         eq(positions.ticker, transaction.ticker),
-        eq(positions.exchange_id, transaction.exchange_id),
         eq(positions.is_active, 1),
         eq(positions.strategy_id, transaction.strategy_id)
       )
@@ -56,7 +52,7 @@ export async function aggregateToPosition(transaction: {
     const newTotalShares = (pos.total_shares || 0) + transaction.quantity;
     const newAverageCost = ((pos.average_cost || 0) * (pos.total_shares || 0) + transaction.price * transaction.quantity) / newTotalShares;
 
-    await db
+    await tx
       .update(positions)
       .set({
         total_shares: parseFloat(newTotalShares.toFixed(3)),
@@ -67,11 +63,9 @@ export async function aggregateToPosition(transaction: {
 
     return pos;
   } else {
-    // Don't generate position_id - let database auto-generate
-    const result = await db.insert(positions).values({
+    const result = await tx.insert(positions).values({
       user_id: transaction.user_id,
       ticker: transaction.ticker,
-      exchange_id: transaction.exchange_id,
       total_shares: transaction.quantity,
       average_cost: transaction.price,
       strategy_id: transaction.strategy_id,
@@ -86,25 +80,24 @@ export async function aggregateToPosition(transaction: {
 }
 
 /**
- * Reduce position when selling from LONG_TERM holdings
+ * Transaction-aware version: Reduce position when selling
+ * Used inside db.transaction() wrapper
  */
-export async function reducePosition(transaction: {
+export async function reducePositionTx(tx: any, transaction: {
   user_id: string;
   ticker: string;
-  exchange_id: number;
   quantity: number;
   price: number;
   transaction_date: string;
   strategy_id: number;
 }) {
-  const existingPosition = await db
+  const existingPosition = await tx
     .select()
     .from(positions)
     .where(
       and(
         eq(positions.user_id, transaction.user_id),
         eq(positions.ticker, transaction.ticker),
-        eq(positions.exchange_id, transaction.exchange_id),
         eq(positions.is_active, 1),
         eq(positions.strategy_id, transaction.strategy_id)
       )
@@ -127,21 +120,26 @@ export async function reducePosition(transaction: {
   const realizedPnlFromSale = saleProceeds - costBasis;
   const totalRealizedPnl = (pos.realized_pnl || 0) + realizedPnlFromSale;
 
-  // Insert into realized_pnl_history
-  await db.insert(realizedPnlHistory).values({
+  // Insert into realized_pnl_history with correct schema
+  await tx.insert(realizedPnlHistory).values({
     user_id: transaction.user_id,
+    position_id: pos.position_id,
     ticker: transaction.ticker,
-    exchange_id: transaction.exchange_id,
-    quantity_sold: transaction.quantity,
-    average_cost: pos.average_cost,
-    sale_price: transaction.price,
-    realized_pnl: realizedPnlFromSale,
     sale_date: transaction.transaction_date,
-    strategy_id: transaction.strategy_id,
+    quantity: parseFloat(transaction.quantity.toFixed(3)),
+    average_cost: parseFloat(pos.average_cost.toFixed(3)),
+    total_cost: parseFloat(costBasis.toFixed(3)),
+    sale_price: parseFloat(transaction.price.toFixed(3)),
+    total_proceeds: parseFloat(saleProceeds.toFixed(3)),
+    realized_pnl: parseFloat(realizedPnlFromSale.toFixed(3)),
+    entry_date: pos.opened_date || null,
+    position_currency: pos.position_currency || 'USD',
+    fees: 0,
+    notes: null,
   });
 
   if (newTotalShares === 0) {
-    await db
+    await tx
       .update(positions)
       .set({
         total_shares: 0,
@@ -153,7 +151,7 @@ export async function reducePosition(transaction: {
 
     return pos;
   } else {
-    await db
+    await tx
       .update(positions)
       .set({
         total_shares: newTotalShares,
@@ -164,4 +162,35 @@ export async function reducePosition(transaction: {
 
     return pos;
   }
+}
+
+/**
+ * Legacy non-transaction version: Update or create position
+ * Kept for backward compatibility with existing code
+ */
+export async function aggregateToPosition(transaction: {
+  user_id: string;
+  ticker: string;
+  quantity: number;
+  price: number;
+  transaction_date: string;
+  strategy_id: number;
+  transaction_currency: string;
+}) {
+  return await aggregateToPositionTx(db, transaction);
+}
+
+/**
+ * Legacy non-transaction version: Reduce position
+ * Kept for backward compatibility with existing code
+ */
+export async function reducePosition(transaction: {
+  user_id: string;
+  ticker: string;
+  quantity: number;
+  price: number;
+  transaction_date: string;
+  strategy_id: number;
+}) {
+  return await reducePositionTx(db, transaction);
 }
