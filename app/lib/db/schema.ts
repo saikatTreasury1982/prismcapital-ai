@@ -110,7 +110,7 @@ export const cashMovementDirections = sqliteTable('cash_movement_directions', {
 });
 
 export const cashMovements = sqliteTable('cash_movements', {
-  cash_movement_id: text('cash_movement_id').primaryKey(),
+  cash_movement_id: integer('cash_movement_id').primaryKey({ autoIncrement: true }),
   user_id: text('user_id').notNull().references(() => users.user_id),
   home_currency_code: text('home_currency_code').notNull(),
   home_currency_value: real('home_currency_value').notNull(),
@@ -312,31 +312,6 @@ export const transactions = sqliteTable('transactions', {
   trade_lot_id: text('trade_lot_id'),
   transaction_currency: text('transaction_currency').default('USD'),
   trade_value: real('trade_value'),
-});
-
-export const tradeLots = sqliteTable('trade_lots', {
-  lot_id: text('lot_id').primaryKey(),
-  user_id: text('user_id').notNull().references(() => users.user_id),
-  ticker: text('ticker').notNull(),
-  exchange_id: text('exchange_id').notNull().references(() => exchanges.exchange_code),
-  entry_date: text('entry_date').notNull(),
-  entry_price: real('entry_price').notNull(),
-  quantity: real('quantity').notNull(),
-  entry_fees: real('entry_fees').default(0),
-  entry_transaction_id: text('entry_transaction_id').references(() => transactions.transaction_id),
-  exit_date: text('exit_date'),
-  exit_price: real('exit_price'),
-  exit_fees: real('exit_fees').default(0),
-  exit_transaction_id: text('exit_transaction_id').references(() => transactions.transaction_id),
-  lot_status: text('lot_status').default('OPEN'),
-  notes: text('notes'),
-  created_at: text('created_at').default(sql`(datetime('now'))`),
-  updated_at: text('updated_at').default(sql`(datetime('now'))`),
-  trade_currency: text('trade_currency').default('USD'),
-  realized_pl: real('realized_pl'),
-  trade_hold_days: integer('trade_hold_days'),
-  trade_strategy: integer('trade_strategy').references(() => tradeStrategies.strategy_id),
-  realized_pl_percent: real('realized_pl_percent'),
 });
 
 // WATCHLIST

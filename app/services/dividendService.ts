@@ -26,8 +26,7 @@ export async function getOpenPositionsForDividends(userId: string): Promise<Posi
       schema.assetClassifications,
       and(
         eq(positions.user_id, schema.assetClassifications.user_id),
-        eq(positions.ticker, schema.assetClassifications.ticker),
-        eq(positions.exchange_id, schema.assetClassifications.exchange_id)
+        eq(positions.ticker, schema.assetClassifications.ticker)
       )
     )
     .innerJoin(
@@ -47,33 +46,33 @@ export async function getOpenPositionsForDividends(userId: string): Promise<Posi
 }
 
 export async function getDividendSummaryByTicker(userId: string): Promise<DividendSummaryByTicker[]> {
-  const data = await db
-    .select()
-    .from(dividendSummaryByTicker)
-    .where(eq(dividendSummaryByTicker.user_id, userId))
-    .orderBy(desc(dividendSummaryByTicker.total_dividends_received));
+  const data = await db.select().from(dividendSummaryByTicker).all();
+  const filtered = data
+    .filter((row: any) => row.user_id === userId)
+    .sort((a: any, b: any) => b.total_dividends_received - a.total_dividends_received);
   
-  return data as any;
+  return filtered as any;
 }
 
 export async function getDividendSummaryByQuarter(userId: string): Promise<DividendSummaryByQuarter[]> {
-  const data = await db
-    .select()
-    .from(dividendSummaryByQuarter)
-    .where(eq(dividendSummaryByQuarter.user_id, userId))
-    .orderBy(desc(dividendSummaryByQuarter.year), desc(dividendSummaryByQuarter.quarter));
+  const data = await db.select().from(dividendSummaryByQuarter).all();
+  const filtered = data
+    .filter((row: any) => row.user_id === userId)
+    .sort((a: any, b: any) => {
+      if (b.year !== a.year) return b.year - a.year;
+      return b.quarter - a.quarter;
+    });
   
-  return data as any;
+  return filtered as any;
 }
 
 export async function getDividendSummaryByYear(userId: string): Promise<DividendSummaryByYear[]> {
-  const data = await db
-    .select()
-    .from(dividendSummaryByYear)
-    .where(eq(dividendSummaryByYear.user_id, userId))
-    .orderBy(desc(dividendSummaryByYear.year));
+  const data = await db.select().from(dividendSummaryByYear).all();
+  const filtered = data
+    .filter((row: any) => row.user_id === userId)
+    .sort((a: any, b: any) => b.year - a.year);
   
-  return data as any;
+  return filtered as any;
 }
 
 export async function getDividendsByTicker(

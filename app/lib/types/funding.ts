@@ -1,5 +1,4 @@
 export interface CashMovement {
-  cash_movement_id: string;
   user_id: string;
   home_currency_code: string;
   home_currency_value: number;

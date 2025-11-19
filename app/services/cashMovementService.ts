@@ -58,13 +58,10 @@ export async function getCashMovements(userId: string): Promise<CashMovementWith
 }
 
 export async function getCashBalanceSummary(userId: string): Promise<CashBalanceSummary> {
-  const data = await db
-    .select()
-    .from(cashBalanceSummary)
-    .where(eq(cashBalanceSummary.user_id, userId))
-    .limit(1);
+  const data = await db.select().from(cashBalanceSummary).all();
+  const filtered = data.filter((row: any) => row.user_id === userId);
 
-  if (!data || data.length === 0) {
+  if (!filtered || filtered.length === 0) {
     const currencies = await getUserCurrencies(userId);
     return {
       user_id: userId,
@@ -96,13 +93,10 @@ export async function createCashMovement(
   
   // Calculate trading currency value
   const trading_currency_value = input.home_currency_value * input.spot_rate;
-  
-  const movementId = `cm_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  
+
   const data = await db
     .insert(cashMovements)
     .values({
-      cash_movement_id: movementId,
       user_id: userId,
       home_currency_code: currencies.home_currency,
       home_currency_value: input.home_currency_value,
