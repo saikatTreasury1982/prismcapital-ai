@@ -9,7 +9,7 @@ export async function GET(request: Request) {
     const data = await db
       .select()
       .from(exchanges)
-      .orderBy(asc(exchanges.exchange_name));
+      .orderBy(asc(exchanges.exchange_code));
 
     return NextResponse.json({ data });
   } catch (e: any) {

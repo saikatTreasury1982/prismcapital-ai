@@ -65,8 +65,7 @@ export const systemApiKeys = sqliteTable('system_api_keys', {
 
 // EXCHANGES
 export const exchanges = sqliteTable('exchanges', {
-  exchange_id: integer('exchange_id').primaryKey({ autoIncrement: true }),
-  exchange_code: text('exchange_code').notNull().unique(),
+  exchange_code: text('exchange_code').primaryKey(),
   exchange_name: text('exchange_name').notNull(),
   country_code: text('country_code').references(() => countries.country_code),
   created_at: text('created_at').default(sql`(datetime('now'))`),
@@ -155,7 +154,7 @@ export const news = sqliteTable('news', {
   news_id: integer('news_id').primaryKey({ autoIncrement: true }),
   user_id: text('user_id').notNull().references(() => users.user_id),
   ticker: text('ticker').notNull(),
-  exchange_id: integer('exchange_id').references(() => exchanges.exchange_id),
+  exchange_id: integer('exchange_id').references(() => exchanges.exchange_code),
   company_name: text('company_name'),
   news_type_id: integer('news_type_id').notNull().references(() => newsTypes.news_type_id),
   news_description: text('news_description').notNull(),
@@ -178,28 +177,6 @@ export const planningScenarios = sqliteTable('planning_scenarios', {
   created_date: text('created_date'),
   is_active: integer('is_active').default(1),
   cloned_from_scenario_id: text('cloned_from_scenario_id'),
-  created_at: text('created_at').default(sql`(datetime('now'))`),
-  updated_at: text('updated_at').default(sql`(datetime('now'))`),
-});
-
-export const planningActions = sqliteTable('planning_actions', {
-  action_id: text('action_id').primaryKey(),
-  scenario_id: text('scenario_id').notNull().references(() => planningScenarios.scenario_id),
-  user_id: text('user_id').notNull().references(() => users.user_id),
-  ticker: text('ticker').notNull(),
-  exchange_id: integer('exchange_id').notNull().references(() => exchanges.exchange_id),
-  action_type: text('action_type'),
-  capital_allocated: real('capital_allocated'),
-  buy_price: real('buy_price'),
-  buy_quantity: real('buy_quantity'),
-  sell_quantity: real('sell_quantity'),
-  sell_price: real('sell_price'),
-  stop_loss: real('stop_loss'),
-  take_profit: real('take_profit'),
-  withdraw_funds: integer('withdraw_funds').default(0),
-  notes: text('notes'),
-  rationale: text('rationale'),
-  action_order: integer('action_order').default(1),
   created_at: text('created_at').default(sql`(datetime('now'))`),
   updated_at: text('updated_at').default(sql`(datetime('now'))`),
 });
@@ -255,11 +232,11 @@ export const tradeAnalyses = sqliteTable('trade_analyses', {
   analysis_id: integer('analysis_id').primaryKey({ autoIncrement: true }),
   user_id: text('user_id').notNull().references(() => users.user_id),
   ticker: text('ticker').notNull(),
-  exchange_code: text('exchange_code'),
+  exchange_code: text('exchange_code').references(() => exchanges.exchange_code),
   entry_price: real('entry_price').notNull(),
   position_size: real('position_size').notNull(),
-  stop_loss: real('stop_loss').notNull(),
-  take_profit: real('take_profit').notNull(),
+  stop_loss: real('stop_loss'),
+  take_profit: real('take_profit'),
   shares_to_buy: real('shares_to_buy'),
   risk_percentage: real('risk_percentage'),
   reward_percentage: real('reward_percentage'),
@@ -312,17 +289,6 @@ export const transactions = sqliteTable('transactions', {
   trade_lot_id: text('trade_lot_id'),
   transaction_currency: text('transaction_currency').default('USD'),
   trade_value: real('trade_value'),
-});
-
-// WATCHLIST
-export const watchlist = sqliteTable('watchlist', {
-  watchlist_id: text('watchlist_id').primaryKey(),
-  user_id: text('user_id').references(() => users.user_id),
-  ticker: text('ticker'),
-  exchange_id: integer('exchange_id').references(() => exchanges.exchange_id),
-  target_buy_price: real('target_buy_price'),
-  notes: text('notes'),
-  added_date: text('added_date'),
 });
 
 // AUDIT LOG

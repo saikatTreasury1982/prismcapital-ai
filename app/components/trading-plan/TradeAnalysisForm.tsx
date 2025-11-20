@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { TradeAnalysis, CreateTradeAnalysisInput } from '@/app/lib/types/tradeAnalysis';
+import { TradeAnalysis } from '@/app/lib/types/tradeAnalysis';
 import { createTradeAnalysis, updateTradeAnalysis } from '@/app/services/tradeAnalysisServiceClient';
 
 interface TradeAnalysisFormProps {
@@ -14,6 +14,7 @@ interface TradeAnalysisFormProps {
 export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: TradeAnalysisFormProps) {
   const [formData, setFormData] = useState({
     ticker: '',
+    exchange_code: '',
     entry_price: '',
     position_size: '',
     stop_loss: '',
@@ -23,26 +24,42 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [exchanges, setExchanges] = useState<Array<{ exchange_code: string; exchange_name: string }>>([]);
 
   // Pre-fill form when editing
   useEffect(() => {
     if (editingAnalysis) {
       setFormData({
         ticker: editingAnalysis.ticker,
+        exchange_code: editingAnalysis.exchange_code || '',
         entry_price: editingAnalysis.entry_price.toString(),
         position_size: editingAnalysis.position_size.toString(),
-        stop_loss: editingAnalysis.stop_loss.toString(),
-        take_profit: editingAnalysis.take_profit.toString(),
+        stop_loss: editingAnalysis.stop_loss?.toString() || '',
+        take_profit: editingAnalysis.take_profit?.toString() || '',
         notes: editingAnalysis.notes || '',
       });
     }
   }, [editingAnalysis]);
 
+  useEffect(() => {
+    const fetchExchanges = async () => {
+      try {
+        const response = await fetch('/api/exchanges');
+        const result = await response.json();
+        console.log('Fetched exchanges:', result.data); // ✅ ADD THIS
+        setExchanges(result.data || []);
+      } catch (err) {
+        console.error('Failed to fetch exchanges:', err);
+      }
+    };
+    fetchExchanges();
+  }, []);
+
   // Calculate metrics progressively
   const calculateMetrics = () => {
     const entry = parseFloat(formData.entry_price);
-    const stopLoss = parseFloat(formData.stop_loss);
-    const takeProfit = parseFloat(formData.take_profit);
+    const stopLoss = formData.stop_loss ? parseFloat(formData.stop_loss) : null;
+    const takeProfit = formData.take_profit ? parseFloat(formData.take_profit) : null;
     const positionSize = parseFloat(formData.position_size);
 
     const metrics: any = {
@@ -60,14 +77,14 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
     }
 
     // Calculate risk if entry, position size, and stop loss available
-    if (!isNaN(entry) && !isNaN(positionSize) && !isNaN(stopLoss) && entry > 0) {
+    if (!isNaN(entry) && !isNaN(positionSize) && stopLoss !== null && !isNaN(stopLoss) && entry > 0) {
       const shares = positionSize / entry;
       metrics.riskAmount = ((entry - stopLoss) * shares).toFixed(2);
       metrics.riskPercentage = (((entry - stopLoss) / entry) * 100).toFixed(2);
     }
 
     // Calculate reward if entry, position size, and take profit available
-    if (!isNaN(entry) && !isNaN(positionSize) && !isNaN(takeProfit) && entry > 0) {
+    if (!isNaN(entry) && !isNaN(positionSize) && takeProfit !== null && !isNaN(takeProfit) && entry > 0) {
       const shares = positionSize / entry;
       metrics.rewardAmount = ((takeProfit - entry) * shares).toFixed(2);
       metrics.rewardPercentage = (((takeProfit - entry) / entry) * 100).toFixed(2);
@@ -84,23 +101,24 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
   const metrics = calculateMetrics();
 
   const handleSubmit = async () => {
-    // Validation
-    if (!formData.ticker || !formData.entry_price || !formData.position_size || 
-        !formData.stop_loss || !formData.take_profit) {
-      setError('All fields except notes are required');
+    // Validation - only ticker, entry_price, and position_size are required
+    if (!formData.ticker || !formData.entry_price || !formData.position_size) {
+      setError('Ticker, Entry Price, and Position Size are required');
       return;
     }
 
     const entry = parseFloat(formData.entry_price);
-    const stopLoss = parseFloat(formData.stop_loss);
-    const takeProfit = parseFloat(formData.take_profit);
+    const stopLoss = formData.stop_loss ? parseFloat(formData.stop_loss) : null;
+    const takeProfit = formData.take_profit ? parseFloat(formData.take_profit) : null;
 
-    if (stopLoss >= entry) {
+    // Validate stop loss if provided
+    if (stopLoss !== null && stopLoss >= entry) {
       setError('Stop loss must be below entry price');
       return;
     }
 
-    if (takeProfit <= entry) {
+    // Validate take profit if provided
+    if (takeProfit !== null && takeProfit <= entry) {
       setError('Take profit must be above entry price');
       return;
     }
@@ -112,20 +130,22 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
       if (editingAnalysis) {
         // Update existing
         await updateTradeAnalysis(editingAnalysis.analysis_id, {
+          exchange_code: formData.exchange_code,
           entry_price: parseFloat(formData.entry_price),
           position_size: parseFloat(formData.position_size),
-          stop_loss: parseFloat(formData.stop_loss),
-          take_profit: parseFloat(formData.take_profit),
+          stop_loss: formData.stop_loss ? parseFloat(formData.stop_loss) : undefined,
+          take_profit: formData.take_profit ? parseFloat(formData.take_profit) : undefined,
           notes: formData.notes || undefined,
         });
       } else {
         // Create new
         await createTradeAnalysis({
           ticker: formData.ticker.toUpperCase(),
+          exchange_code: formData.exchange_code,
           entry_price: parseFloat(formData.entry_price),
           position_size: parseFloat(formData.position_size),
-          stop_loss: parseFloat(formData.stop_loss),
-          take_profit: parseFloat(formData.take_profit),
+          stop_loss: formData.stop_loss ? parseFloat(formData.stop_loss) : undefined,
+          take_profit: formData.take_profit ? parseFloat(formData.take_profit) : undefined,
           notes: formData.notes || undefined,
         });
       }
@@ -161,7 +181,7 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         {/* Ticker */}
-        <div className="md:col-span-2">
+        <div>
           <label className="text-blue-200 text-sm mb-2 block font-medium">Ticker *</label>
           <input
             type="text"
@@ -172,6 +192,22 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
             disabled={!!editingAnalysis}
             required
           />
+        </div>
+
+        {/* Exchange */}
+        <div>
+          <label className="text-blue-200 text-sm mb-2 block font-medium">Exchange</label>
+          <select
+            value={formData.exchange_code}
+            onChange={(e) => setFormData({ ...formData, exchange_code: e.target.value })}
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
+          >
+            {exchanges.map((exchange: { exchange_code: string; exchange_name: string }) => (
+              <option key={exchange.exchange_code} value={exchange.exchange_code} className="bg-slate-800 text-white">
+                {exchange.exchange_code} - {exchange.exchange_name}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Entry Price */}
@@ -204,29 +240,27 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
 
         {/* Stop Loss */}
         <div>
-          <label className="text-rose-200 text-sm mb-2 block font-medium">Stop Loss *</label>
+          <label className="text-rose-200 text-sm mb-2 block font-medium">Stop Loss</label>
           <input
             type="number"
             step="0.01"
             value={formData.stop_loss}
             onChange={(e) => setFormData({ ...formData, stop_loss: e.target.value })}
             placeholder="145.00"
-            className="w-full bg-white/5 border border-rose-400/30 rounded-xl px-4 py-3 text-white placeholder-rose-300/50 focus:outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-400/20"
-            required
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
           />
         </div>
 
         {/* Take Profit */}
         <div>
-          <label className="text-green-200 text-sm mb-2 block font-medium">Take Profit *</label>
+          <label className="text-green-200 text-sm mb-2 block font-medium">Take Profit</label>
           <input
             type="number"
             step="0.01"
             value={formData.take_profit}
             onChange={(e) => setFormData({ ...formData, take_profit: e.target.value })}
             placeholder="165.00"
-            className="w-full bg-white/5 border border-green-400/30 rounded-xl px-4 py-3 text-white placeholder-green-300/50 focus:outline-none focus:border-green-400 focus:ring-2 focus:ring-green-400/20"
-            required
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
           />
         </div>
 

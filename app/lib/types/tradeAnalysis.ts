@@ -5,8 +5,8 @@ export interface TradeAnalysis {
   exchange_code: string | null;
   entry_price: number;
   position_size: number;
-  stop_loss: number;
-  take_profit: number;
+  stop_loss: number | null;
+  take_profit: number | null;
   shares_to_buy: number | null;
   risk_percentage: number | null;
   reward_percentage: number | null;
@@ -23,12 +23,13 @@ export interface CreateTradeAnalysisInput {
   exchange_code?: string;
   entry_price: number;
   position_size: number;
-  stop_loss: number;
-  take_profit: number;
+  stop_loss?: number;
+  take_profit?: number;
   notes?: string;
 }
 
 export interface UpdateTradeAnalysisInput {
+  exchange_code?: string;
   entry_price?: number;
   position_size?: number;
   stop_loss?: number;
