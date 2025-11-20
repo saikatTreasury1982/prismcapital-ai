@@ -29,7 +29,7 @@ export interface CreateTradeAnalysisInput {
 }
 
 export interface UpdateTradeAnalysisInput {
-  exchange_code?: string;
+  exchange_code?: string | null;
   entry_price?: number;
   position_size?: number;
   stop_loss?: number;

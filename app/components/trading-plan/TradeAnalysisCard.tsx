@@ -65,7 +65,12 @@ export function TradeAnalysisCard({ analysis, onEdit, onDelete, onUpdate }: Trad
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div>
-          <h3 className="text-2xl font-bold text-white mb-1">{analysis.ticker}</h3>
+          <div className="flex items-baseline gap-2 mb-1">
+            <h3 className="text-2xl font-bold text-white">{analysis.ticker}</h3>
+            {analysis.exchange_code && (
+              <span className="text-xs text-blue-300">{analysis.exchange_code}</span>
+            )}
+          </div>
           {analysis.status === 'ARCHIVED' && (
             <span className="text-xs px-2 py-1 bg-slate-500/20 text-slate-300 rounded-full">
               Archived
@@ -126,11 +131,11 @@ export function TradeAnalysisCard({ analysis, onEdit, onDelete, onUpdate }: Trad
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-white/5 rounded-xl p-3 border border-white/10">
             <p className="text-rose-200 text-xs mb-1">Stop Loss</p>
-            <p className="text-white text-lg font-bold">${analysis.stop_loss.toFixed(2)}</p>
+            <p className="text-white text-lg font-bold">${analysis.stop_loss?.toFixed(2)}</p>
           </div>
           <div className="bg-white/5 rounded-xl p-3 border border-white/10">
             <p className="text-green-200 text-xs mb-1">Take Profit</p>
-            <p className="text-white text-lg font-bold">${analysis.take_profit.toFixed(2)}</p>
+            <p className="text-white text-lg font-bold">${analysis.take_profit?.toFixed(2)}</p>
           </div>
         </div>
       </div>
@@ -166,7 +171,7 @@ export function TradeAnalysisCard({ analysis, onEdit, onDelete, onUpdate }: Trad
           <div className="flex items-center justify-between">
             <span className="text-white text-sm font-medium">Risk:Reward Ratio</span>
             <span className={`font-bold text-2xl ${getRRColor()}`}>
-              1:{analysis.risk_reward_ratio?.toFixed(2) || 0}
+              {analysis.risk_reward_ratio && analysis.risk_reward_ratio > 0 ? `1:${analysis.risk_reward_ratio.toFixed(2)}` : '-'}
             </span>
           </div>
         </div>

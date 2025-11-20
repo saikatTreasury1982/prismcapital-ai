@@ -36,7 +36,6 @@ export async function GET(request: Request) {
         news_id: news.news_id,
         user_id: news.user_id,
         ticker: news.ticker,
-        exchange_id: news.exchange_id,
         company_name: news.company_name,
         news_type_id: news.news_type_id,
         news_description: news.news_description,

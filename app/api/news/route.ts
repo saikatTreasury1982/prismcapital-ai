@@ -52,7 +52,6 @@ export async function POST(request: Request) {
         // news_id is removed - database will auto-generate it
         user_id: userId,
         ticker: newsData.ticker,
-        exchange_id: newsData.exchange_id,
         company_name: newsData.company_name || null,
         news_type_id: newsData.news_type_id,
         news_description: newsData.news_description,
@@ -90,7 +89,6 @@ export async function PATCH(request: Request) {
       .update(news)
       .set({
         ticker: newsData.ticker,
-        exchange_id: newsData.exchange_id,
         company_name: newsData.company_name || null,
         news_type_id: newsData.news_type_id,
         news_description: newsData.news_description,

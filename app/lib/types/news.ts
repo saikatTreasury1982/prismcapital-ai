@@ -8,7 +8,6 @@ export interface News {
   news_id: string;
   user_id: string;
   ticker: string;
-  exchange_id: number;
   company_name: string | null;
   news_type_id: number;
   news_description: string;

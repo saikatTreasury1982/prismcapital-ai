@@ -154,7 +154,6 @@ export const news = sqliteTable('news', {
   news_id: integer('news_id').primaryKey({ autoIncrement: true }),
   user_id: text('user_id').notNull().references(() => users.user_id),
   ticker: text('ticker').notNull(),
-  exchange_id: integer('exchange_id').references(() => exchanges.exchange_code),
   company_name: text('company_name'),
   news_type_id: integer('news_type_id').notNull().references(() => newsTypes.news_type_id),
   news_description: text('news_description').notNull(),

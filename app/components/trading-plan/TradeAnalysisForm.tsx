@@ -25,10 +25,11 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exchanges, setExchanges] = useState<Array<{ exchange_code: string; exchange_name: string }>>([]);
+  const [isLoadingExchanges, setIsLoadingExchanges] = useState(true);
 
   // Pre-fill form when editing
   useEffect(() => {
-    if (editingAnalysis) {
+    if (editingAnalysis && exchanges.length > 0) {
       setFormData({
         ticker: editingAnalysis.ticker,
         exchange_code: editingAnalysis.exchange_code || '',
@@ -39,14 +40,13 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
         notes: editingAnalysis.notes || '',
       });
     }
-  }, [editingAnalysis]);
+  }, [editingAnalysis, exchanges]);
 
   useEffect(() => {
     const fetchExchanges = async () => {
       try {
         const response = await fetch('/api/exchanges');
         const result = await response.json();
-        console.log('Fetched exchanges:', result.data); // ✅ ADD THIS
         setExchanges(result.data || []);
       } catch (err) {
         console.error('Failed to fetch exchanges:', err);
@@ -130,7 +130,7 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
       if (editingAnalysis) {
         // Update existing
         await updateTradeAnalysis(editingAnalysis.analysis_id, {
-          exchange_code: formData.exchange_code,
+          exchange_code: formData.exchange_code === '' ? null : formData.exchange_code,
           entry_price: parseFloat(formData.entry_price),
           position_size: parseFloat(formData.position_size),
           stop_loss: formData.stop_loss ? parseFloat(formData.stop_loss) : undefined,
@@ -198,15 +198,20 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
         <div>
           <label className="text-blue-200 text-sm mb-2 block font-medium">Exchange</label>
           <select
-            value={formData.exchange_code}
+            value={formData.exchange_code || ''}
             onChange={(e) => setFormData({ ...formData, exchange_code: e.target.value })}
             className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
           >
-            {exchanges.map((exchange: { exchange_code: string; exchange_name: string }) => (
-              <option key={exchange.exchange_code} value={exchange.exchange_code} className="bg-slate-800 text-white">
-                {exchange.exchange_code} - {exchange.exchange_name}
-              </option>
-            ))}
+            <option value="">-- Select an exchange --</option>
+            {exchanges.length > 0 ? (
+              exchanges.map((exchange) => (
+                <option key={exchange.exchange_code} value={exchange.exchange_code} className="bg-slate-800 text-white">
+                  {exchange.exchange_code} - {exchange.exchange_name}
+                </option>
+              ))
+            ) : (
+              <option disabled>Loading exchanges...</option>
+            )}
           </select>
         </div>
 

@@ -7,11 +7,27 @@ import { sql } from 'drizzle-orm';
 const { tradeAnalyses } = schema;
 
 // Helper function to calculate metrics
-function calculateMetrics(entry: number, stopLoss: number, takeProfit: number, positionSize: number) {
+function calculateMetrics(entry: number, stopLoss: number | null | undefined, takeProfit: number | null | undefined, positionSize: number) {
   const sharesToBuy = parseFloat((positionSize / entry).toFixed(4));
-  const riskPercentage = parseFloat((((entry - stopLoss) / entry) * 100).toFixed(2));
-  const rewardPercentage = parseFloat((((takeProfit - entry) / entry) * 100).toFixed(2));
-  const riskRewardRatio = riskPercentage !== 0 ? parseFloat((rewardPercentage / riskPercentage).toFixed(2)) : 0;
+  
+  let riskPercentage = null;
+  let rewardPercentage = null;
+  let riskRewardRatio = null;
+
+  // Only calculate risk if stopLoss is provided (check both null and undefined)
+  if (stopLoss !== null && stopLoss !== undefined && !isNaN(stopLoss)) {
+    riskPercentage = parseFloat((((entry - stopLoss) / entry) * 100).toFixed(2));
+  }
+
+  // Only calculate reward if takeProfit is provided (check both null and undefined)
+  if (takeProfit !== null && takeProfit !== undefined && !isNaN(takeProfit)) {
+    rewardPercentage = parseFloat((((takeProfit - entry) / entry) * 100).toFixed(2));
+  }
+
+  // Only calculate ratio if both metrics exist
+  if (riskPercentage !== null && rewardPercentage !== null && riskPercentage !== 0) {
+    riskRewardRatio = parseFloat((rewardPercentage / riskPercentage).toFixed(2));
+  }
 
   return {
     shares_to_buy: sharesToBuy,
@@ -138,6 +154,9 @@ export async function PATCH(request: Request) {
     };
 
     // Update only provided fields
+    if (analysisData.exchange_code !== undefined) {
+      updateData.exchange_code = analysisData.exchange_code === '' ? null : analysisData.exchange_code;
+    }
     if (analysisData.entry_price !== undefined) updateData.entry_price = analysisData.entry_price;
     if (analysisData.position_size !== undefined) updateData.position_size = analysisData.position_size;
     if (analysisData.stop_loss !== undefined) updateData.stop_loss = analysisData.stop_loss;
