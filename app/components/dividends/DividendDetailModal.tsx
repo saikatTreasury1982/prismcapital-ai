@@ -8,7 +8,7 @@ interface DividendDetailModalProps {
   dividend: Dividend | null;
   onClose: () => void;
   onEdit?: (dividend: Dividend) => void;
-  onDelete?: (dividendId: string) => void;
+  onDelete?: (dividendId: number) => void;
 }
 
 export function DividendDetailModal({ dividend, onClose, onEdit, onDelete }: DividendDetailModalProps) {

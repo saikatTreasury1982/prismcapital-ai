@@ -21,7 +21,7 @@ export async function createDividend(userId: string, input: CreateDividendInput)
   return result.data;
 }
 
-export async function updateDividend(dividendId: string, input: CreateDividendInput): Promise<Dividend> {
+export async function updateDividend(dividendId: number, input: CreateDividendInput): Promise<Dividend> {
   const response = await fetch('/api/dividends', {
     method: 'PATCH',
     headers: {
@@ -42,7 +42,7 @@ export async function updateDividend(dividendId: string, input: CreateDividendIn
   return result.data;
 }
 
-export async function deleteDividend(dividendId: string): Promise<void> {
+export async function deleteDividend(dividendId: number): Promise<void> {
   const response = await fetch(`/api/dividends?dividendId=${dividendId}`, {
     method: 'DELETE',
   });
