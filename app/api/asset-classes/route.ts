@@ -9,7 +9,7 @@ export async function GET(request: Request) {
     const data = await db
       .select()
       .from(assetClasses)
-      .orderBy(asc(assetClasses.class_name));
+      .orderBy(asc(assetClasses.class_code));
 
     return NextResponse.json({ data });
   } catch (e: any) {

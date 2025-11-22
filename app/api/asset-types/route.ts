@@ -6,15 +6,10 @@ const { assetTypes } = schema;
 
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const classId = searchParams.get('classId');
-
-    let query = db.select().from(assetTypes).orderBy(asc(assetTypes.type_name));
-
-    // Filter by class_id if provided
-    const data = classId
-      ? await query.where(eq(assetTypes.class_id, parseInt(classId)))
-      : await query;
+    const data = await db
+      .select()
+      .from(assetTypes)
+      .orderBy(asc(assetTypes.type_code));
 
     return NextResponse.json({ data });
   } catch (e: any) {

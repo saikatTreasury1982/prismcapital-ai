@@ -16,10 +16,9 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const userId = session.user.id;
     const ticker = searchParams.get('ticker');
-    const exchangeId = searchParams.get('exchangeId');
 
-    if (!ticker || !exchangeId) {
-      return NextResponse.json({ error: 'ticker and exchangeId required' }, { status: 400 });
+    if (!ticker) {
+      return NextResponse.json({ error: 'ticker required' }, { status: 400 });
     }
 
     const data = await db
@@ -28,8 +27,7 @@ export async function GET(request: Request) {
       .where(
         and(
           eq(assetClassifications.user_id, userId),
-          eq(assetClassifications.ticker, ticker),
-          eq(assetClassifications.exchange_id, parseInt(exchangeId))
+          eq(assetClassifications.ticker, ticker)
         )
       )
       .limit(1);

@@ -14,14 +14,15 @@ interface AssignAttributesModalProps {
 export function AssignAttributesModal({ position, onClose, onSuccess }: AssignAttributesModalProps) {
   const [assetClasses, setAssetClasses] = useState<AssetClass[]>([]);
   const [assetTypes, setAssetTypes] = useState<AssetType[]>([]);
-  const [allAssetTypes, setAllAssetTypes] = useState<AssetType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exchanges, setExchanges] = useState<Array<{ exchange_code: string; exchange_name: string }>>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
-    class_id: 0,
-    type_id: 0
+    exchange_id: '',
+    class_id: '',
+    type_id: ''
   });
 
   useEffect(() => {
@@ -32,37 +33,24 @@ export function AssignAttributesModal({ position, onClose, onSuccess }: AssignAt
       setError(null);
 
       try {
-        // Fetch asset classes and all asset types
-        const [classes, types] = await Promise.all([
+        const [classes, types, exchangesData] = await Promise.all([
           getAssetClasses(),
-          getAssetTypes()
+          getAssetTypes(),
+          fetch('/api/exchanges').then(r => r.json())
         ]);
 
         setAssetClasses(classes);
-        setAllAssetTypes(types);
+        setAssetTypes(types);
+        setExchanges(exchangesData.data || []);
 
-        // Fetch existing classification if any
-        const classification = await getAssetClassification( 
-          position.ticker, 
-          position.exchange_id
-        );
-
-        if (classification) {
-          setFormData({
-            class_id: classification.class_id,
-            type_id: classification.type_id || 0
-          });
-
-          // Filter types by selected class
-          const filteredTypes = types.filter(t => t.class_id === classification.class_id);
-          setAssetTypes(filteredTypes);
-        } else {
-          setFormData({ class_id: 0, type_id: 0 });
-          setAssetTypes([]);
-        }
+        setFormData({ 
+          exchange_id: '',
+          class_id: '', 
+          type_id: '' 
+        });
       } catch (err: any) {
         console.error('Failed to fetch data:', err);
-        setError(err.message || 'Failed to load asset classes');
+        setError(err.message || 'Failed to load options');
       } finally {
         setLoading(false);
       }
@@ -71,18 +59,32 @@ export function AssignAttributesModal({ position, onClose, onSuccess }: AssignAt
     fetchData();
   }, [position]);
 
-  const handleClassChange = (classId: number) => {
-    setFormData({ class_id: classId, type_id: 0 });
+  useEffect(() => {
+    if (!position) return;
 
-    // Filter asset types based on selected class
-    const filteredTypes = allAssetTypes.filter(t => t.class_id === classId);
-    setAssetTypes(filteredTypes);
-  };
+    const fetchAndFillClassification = async () => {
+      try {
+        const classification = await getAssetClassification(position.ticker);
+
+        if (classification) {
+          setFormData({
+            exchange_id: classification.exchange_id || '',
+            class_id: classification.class_id || '',
+            type_id: classification.type_id || ''
+          });
+        }
+      } catch (err: any) {
+        console.error('Failed to fetch classification:', err);
+      }
+    };
+
+    fetchAndFillClassification();
+  }, [position]);
 
   const handleSave = async () => {
     if (!position) return;
 
-    if (formData.class_id === 0) {
+    if (formData.class_id === '') {
       setError('Please select an Asset Class');
       return;
     }
@@ -93,9 +95,9 @@ export function AssignAttributesModal({ position, onClose, onSuccess }: AssignAt
     try {
       await saveAssetClassification({
         ticker: position.ticker,
-        exchange_id: position.exchange_id,
+        exchange_id: formData.exchange_id,
         class_id: formData.class_id,
-        type_id: formData.type_id !== 0 ? formData.type_id : null
+        type_id: formData.type_id
       });
 
       onSuccess();
@@ -149,6 +151,32 @@ export function AssignAttributesModal({ position, onClose, onSuccess }: AssignAt
               )}
 
               <div className="space-y-6">
+                {/* Exchange */}
+                <div>
+                  <label className="text-blue-200 text-sm mb-2 block font-medium">
+                    Exchange *
+                  </label>
+                  <select
+                    value={formData.exchange_id}
+                    onChange={(e) => setFormData({ ...formData, exchange_id: e.target.value })}
+                    className="w-full funding-input rounded-xl px-4 py-3"
+                    disabled={isSaving}
+                  >
+                    <option value="" className="bg-slate-800 text-white">
+                      Select Exchange
+                    </option>
+                    {exchanges.map(exchange => (
+                      <option 
+                        key={exchange.exchange_code}
+                        value={exchange.exchange_code}
+                        className="bg-slate-800 text-white"
+                      >
+                        {exchange.exchange_code} - {exchange.exchange_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 {/* Asset Class */}
                 <div>
                   <label className="text-blue-200 text-sm mb-2 block font-medium">
@@ -156,7 +184,7 @@ export function AssignAttributesModal({ position, onClose, onSuccess }: AssignAt
                   </label>
                   <select
                     value={formData.class_id}
-                    onChange={(e) => handleClassChange(parseInt(e.target.value))}
+                    onChange={(e) => setFormData({ ...formData, class_id: e.target.value })}
                     className="w-full funding-input rounded-xl px-4 py-3"
                     disabled={isSaving}
                   >
@@ -165,17 +193,17 @@ export function AssignAttributesModal({ position, onClose, onSuccess }: AssignAt
                     </option>
                     {assetClasses.map(assetClass => (
                       <option 
-                        key={assetClass.class_id} 
-                        value={assetClass.class_id}
+                        key={assetClass.class_code}
+                        value={assetClass.class_code}
                         className="bg-slate-800 text-white"
                       >
-                        {assetClass.class_name}
+                        {assetClass.class_code} - {assetClass.class_name}
                       </option>
                     ))}
                   </select>
-                  {assetClasses.find(c => c.class_id === formData.class_id)?.description && (
+                  {assetClasses.find(c => c.class_code === formData.class_id)?.description && (
                     <p className="text-blue-300 text-xs mt-1">
-                      {assetClasses.find(c => c.class_id === formData.class_id)?.description}
+                      {assetClasses.find(c => c.class_code === formData.class_id)?.description}
                     </p>
                   )}
                 </div>
@@ -183,34 +211,30 @@ export function AssignAttributesModal({ position, onClose, onSuccess }: AssignAt
                 {/* Asset Type */}
                 <div>
                   <label className="text-blue-200 text-sm mb-2 block font-medium">
-                    Asset Type
+                    Asset Type *
                   </label>
                   <select
                     value={formData.type_id}
-                    onChange={(e) => setFormData({ ...formData, type_id: parseInt(e.target.value) })}
+                    onChange={(e) => setFormData({ ...formData, type_id: e.target.value })}
                     className="w-full funding-input rounded-xl px-4 py-3"
-                    disabled={isSaving || formData.class_id === 0 || assetTypes.length === 0}
+                    disabled={isSaving}
                   >
-                    <option value={0} className="bg-slate-800 text-white">
-                      {formData.class_id === 0 
-                        ? 'Select Asset Class first' 
-                        : assetTypes.length === 0 
-                        ? 'No types available for this class'
-                        : 'Select Asset Type (Optional)'}
+                    <option value="" className="bg-slate-800 text-white">
+                      Select Asset Type
                     </option>
                     {assetTypes.map(assetType => (
                       <option 
-                        key={assetType.type_id} 
-                        value={assetType.type_id}
+                        key={assetType.type_code}
+                        value={assetType.type_code}
                         className="bg-slate-800 text-white"
                       >
-                        {assetType.type_name}
+                        {assetType.type_code} - {assetType.type_name}
                       </option>
                     ))}
                   </select>
-                  {assetTypes.find(t => t.type_id === formData.type_id)?.description && (
+                  {assetTypes.find(t => t.type_code === formData.type_id)?.description && (
                     <p className="text-blue-300 text-xs mt-1">
-                      {assetTypes.find(t => t.type_id === formData.type_id)?.description}
+                      {assetTypes.find(t => t.type_code === formData.type_id)?.description}
                     </p>
                   )}
                 </div>
@@ -227,7 +251,7 @@ export function AssignAttributesModal({ position, onClose, onSuccess }: AssignAt
                 </button>
                 <button
                   onClick={handleSave}
-                  disabled={isSaving || formData.class_id === 0}
+                  disabled={isSaving || formData.class_id === ''}
                   className="flex-1 bg-gradient-to-r from-emerald-400 to-teal-500 text-white py-3 rounded-xl font-bold text-lg hover:shadow-lg hover:shadow-emerald-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSaving ? 'Saving...' : 'Save Attributes'}

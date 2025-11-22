@@ -83,7 +83,6 @@ export const assetClasses = sqliteTable('asset_classes', {
 export const assetTypes = sqliteTable('asset_types', {
   type_code: text('type_code').primaryKey(),
   type_name: text('type_name').notNull(),
-  class_id: integer('class_id').references(() => assetClasses.class_code),
   description: text('description'),
   created_at: text('created_at').default(sql`(datetime('now'))`),
 });

@@ -2,9 +2,9 @@ import { AssetClass, AssetType, AssetClassification } from '../lib/types/transac
 
 export interface CreateAssetClassificationInput {
   ticker: string;
-  exchange_id: number;
-  class_id: number;
-  type_id?: number | null;
+  exchange_id: string;
+  class_id: string;
+  type_id?: string;
 }
 
 export async function getAssetClasses(): Promise<AssetClass[]> {
@@ -36,8 +36,8 @@ export async function getAssetTypes(classId?: number): Promise<AssetType[]> {
   return result.data;
 }
 
-export async function getAssetClassification(ticker: string, exchangeId: number ): Promise<AssetClassification | null> {
-  const response = await fetch(`/api/asset-classifications?ticker=${ticker}&exchangeId=${exchangeId}`);
+export async function getAssetClassification(ticker: string ): Promise<AssetClassification | null> {
+  const response = await fetch(`/api/asset-classifications?ticker=${ticker}`);
 
   if (!response.ok) {
     const error = await response.json();
