@@ -27,21 +27,19 @@ export async function GET(request: Request) {
     if (passkeys.length === 0) {
       // No passkey exists - user needs to register one
       return NextResponse.json({ 
-        error: 'No passkey found', 
+        error: 'No passkey found for this user', 
         needsRegistration: true 
       }, { status: 404 });
     }
 
-    // Passkey exists but may not be for this domain
-    const options = await generateAuthenticationOptions({
-      rpID,
-      allowCredentials: passkeys.map(p => ({
-        id: Buffer.from(p.credential_id, 'base64'),
-        type: 'public-key',
-      })),
-    });
-
-    return NextResponse.json(options);
+    // Passkeys exist, but they may be from a different domain
+    // Browser will reject credentials from different origins
+    // So we should prompt registration for THIS domain
+    return NextResponse.json({ 
+      error: 'Passkey exists but not for this domain',
+      needsRegistration: true,
+      existingPasskeysCount: passkeys.length
+    }, { status: 404 });
   } catch (e: any) {
     console.error('Auth options error:', e);
     return NextResponse.json({ error: e.message }, { status: 500 });
