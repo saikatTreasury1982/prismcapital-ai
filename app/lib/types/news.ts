@@ -5,7 +5,7 @@ export interface NewsType {
 }
 
 export interface News {
-  news_id: string;
+  news_id: number;
   user_id: string;
   ticker: string;
   company_name: string | null;

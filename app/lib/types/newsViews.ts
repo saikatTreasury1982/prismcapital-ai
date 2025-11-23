@@ -19,7 +19,7 @@ export interface NewsSummaryByType {
 }
 
 export interface NewsListItem {
-  news_id: string;
+  news_id: number;
   ticker: string;
   company_name: string | null;
   news_type_id: number;
