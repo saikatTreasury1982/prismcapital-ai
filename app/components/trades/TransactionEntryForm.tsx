@@ -152,7 +152,7 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
     try {
       if (editingTransaction) {
         // Update existing transaction (only fees and notes)
-        await updateTransaction(editingTransaction.transaction_id.toString(), {
+        await updateTransaction(editingTransaction.transaction_id, {
           fees: parseFloat(formData.fees),
           notes: formData.notes || undefined
         });
