@@ -8,9 +8,9 @@ export interface AssetClassification {
   classification_id: string;
   user_id: string;
   ticker: string;
-  exchange_id: number;
-  class_id: number;
-  type_id: number;
+  exchange_id: string;
+  class_id: string;
+  type_id: string;
   asset_types: {
     type_code: string;
     type_name: string;
@@ -32,12 +32,11 @@ export async function getAssetClassification(
       assetType: assetTypes,
     })
     .from(assetClassifications)
-    .innerJoin(assetTypes, eq(assetClassifications.type_id, assetTypes.type_id))
+    .innerJoin(assetTypes, eq(assetClassifications.type_id, assetTypes.type_code))
     .where(
       and(
         eq(assetClassifications.user_id, userId),
-        eq(assetClassifications.ticker, ticker),
-        eq(assetClassifications.exchange_id, exchangeId)
+        eq(assetClassifications.ticker, ticker)
       )
     )
     .limit(1);
