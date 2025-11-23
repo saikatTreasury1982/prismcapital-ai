@@ -25,9 +25,14 @@ export async function GET(request: Request) {
       .where(eq(authPasskeys.user_id, userId));
 
     if (passkeys.length === 0) {
-      return NextResponse.json({ error: 'No passkey found', needsRegistration: true }, { status: 404 });
+      // No passkey exists - user needs to register one
+      return NextResponse.json({ 
+        error: 'No passkey found', 
+        needsRegistration: true 
+      }, { status: 404 });
     }
 
+    // Passkey exists but may not be for this domain
     const options = await generateAuthenticationOptions({
       rpID,
       allowCredentials: passkeys.map(p => ({
