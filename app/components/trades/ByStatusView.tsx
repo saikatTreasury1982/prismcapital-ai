@@ -165,9 +165,9 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
         const position = positions.find(p => p.ticker === ticker);
         
         // Filter transactions to only include those on or after opened_date
-        const filteredTransactions = position 
-          ? allTransactions.filter(t => t.transaction_date >= position.opened_date)
-          : allTransactions;
+        const filteredTransactions = position && position.opened_date
+        ? allTransactions.filter(t => t.transaction_date >= position.opened_date!)
+        : allTransactions;
         
         setTickerTransactions(prev => ({ ...prev, [ticker]: filteredTransactions }));
       } catch (err) {
@@ -211,18 +211,10 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
 
   // Calculate totals for open positions (STOCKS ONLY)
   const openTotals = positions.reduce((acc, pos) => {
-  // Case-insensitive check for stocks
-  const isStock = 
-  pos.asset_class_code?.toUpperCase() === 'SHARES' || 
-  pos.asset_class?.toLowerCase().includes('shares');
-  
-  if (isStock) {
     acc.totalShares += pos.total_shares;
-  }
-  
-  acc.totalValue += pos.current_value || 0;
-  acc.unrealizedPL += pos.unrealized_pnl || 0;
-  return acc;
+    acc.totalValue += pos.current_value || 0;
+    acc.unrealizedPL += pos.unrealized_pnl || 0;
+    return acc;
   }, { totalShares: 0, totalValue: 0, unrealizedPL: 0 });
 
   // Calculate totals for closed trades
@@ -424,11 +416,11 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
                           <div>
                             <p className="text-blue-300">Opened</p>
                             <p className="text-white font-semibold">
-                              {new Date(position.opened_date).toLocaleDateString('en-US', { 
+                              {position.opened_date ? new Date(position.opened_date).toLocaleDateString('en-US', { 
                                 year: 'numeric', 
                                 month: 'short', 
                                 day: 'numeric' 
-                              })}
+                              }) : 'N/A'}
                             </p>
                           </div>
                         </div>
