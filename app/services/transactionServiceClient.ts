@@ -41,7 +41,7 @@ export async function getTransactions(ticker?: string): Promise<Transaction[]> {
   return result.data;
 }
 
-export async function getTransaction(transactionId: string): Promise<Transaction> {
+export async function getTransaction(transactionId: number): Promise<Transaction> {
   const response = await fetch(`/api/transactions?transactionId=${transactionId}`);
 
   if (!response.ok) {
@@ -53,7 +53,7 @@ export async function getTransaction(transactionId: string): Promise<Transaction
   return result.data;
 }
 
-export async function updateTransaction(transactionId: string, input: UpdateTransactionInput): Promise<Transaction> {
+export async function updateTransaction(transactionId: number, input: UpdateTransactionInput): Promise<Transaction> {
   const response = await fetch('/api/transactions', {
     method: 'PATCH',
     headers: {
@@ -74,7 +74,7 @@ export async function updateTransaction(transactionId: string, input: UpdateTran
   return result.data;
 }
 
-export async function deleteTransaction(transactionId: string): Promise<void> {
+export async function deleteTransaction(transactionId: number): Promise<void> {
   const response = await fetch(`/api/transactions?transactionId=${transactionId}`, {
     method: 'DELETE',
   });
