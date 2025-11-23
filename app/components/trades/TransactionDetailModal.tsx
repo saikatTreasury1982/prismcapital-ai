@@ -9,7 +9,7 @@ interface TransactionDetailModalProps {
   transaction: Transaction | null;
   onClose: () => void;
   onEdit?: (transaction: Transaction) => void;
-  onDelete?: (transactionId: string) => void;
+  onDelete?: (transactionId: number) => void;
 }
 
 export function TransactionDetailModal({ transaction, onClose, onEdit, onDelete }: TransactionDetailModalProps) {
@@ -82,12 +82,6 @@ export function TransactionDetailModal({ transaction, onClose, onEdit, onDelete 
             <div>
               <h3 className="text-sm font-semibold text-blue-200 mb-2">Currency</h3>
               <p className="text-white text-lg">{transaction.transaction_currency}</p>
-            </div>
-
-            {/* Exchange ID */}
-            <div>
-              <h3 className="text-sm font-semibold text-blue-200 mb-2">Exchange ID</h3>
-              <p className="text-white text-lg">{transaction.exchange_id}</p>
             </div>
           </div>
 
