@@ -3,11 +3,6 @@
 import { useState, useEffect } from 'react';
 import { List } from 'lucide-react';
 
-interface ByTickerViewProps {
-  onEdit?: () => void;
-  onDelete?: () => void;
-}
-
 interface RealizedTrade {
   realization_id: number;
   ticker: string;
@@ -24,7 +19,7 @@ interface RealizedTrade {
   notes: string | null;
 }
 
-export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
+export function ByTickerView() {
   const [trades, setTrades] = useState<RealizedTrade[]>([]);
   const [filteredTrades, setFilteredTrades] = useState<RealizedTrade[]>([]);
   const [loading, setLoading] = useState(true);

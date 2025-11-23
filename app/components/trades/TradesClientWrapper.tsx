@@ -115,8 +115,6 @@ export function TradesClientWrapper() {
         {activeTab === 'ticker' && (
           <ByTickerView 
             key={refreshKey}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
           />
         )}
 
@@ -129,8 +127,6 @@ export function TradesClientWrapper() {
         {activeTab === 'date' && (
           <ByDateView 
             key={refreshKey}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
           />
         )}
       </div>
