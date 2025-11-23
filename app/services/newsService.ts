@@ -1,5 +1,5 @@
 
-import { News, NewsWithDetails, CreateNewsInput, NewsType } from '../lib/types/news';
+import { NewsWithDetails, NewsType } from '../lib/types/news';
 import { NewsSummaryByTicker, NewsSummaryByType, NewsListItem } from '../lib/types/newsViews';
 import { db, schema } from '../lib/db';
 import { eq, ilike, desc, and } from 'drizzle-orm';
@@ -51,62 +51,41 @@ export async function getAllNews(userId: string): Promise<NewsWithDetails[]> {
 }
 
 export async function getEarningsNews(userId: string): Promise<NewsWithDetails[]> {
-  const data = await db
-    .select()
-    .from(earningsNews)
-    .where(eq(earningsNews.user_id, userId))
-    .orderBy(desc(earningsNews.news_date));
-  
-  return data as any;
+  const data = await db.select().from(earningsNews).all();
+  const filtered = data.filter((row: any) => row.user_id === userId);
+  return filtered as any;
 }
 
 export async function getGeneralNews(userId: string): Promise<NewsWithDetails[]> {
-  const data = await db
-    .select()
-    .from(generalNews)
-    .where(eq(generalNews.user_id, userId))
-    .orderBy(desc(generalNews.news_date));
-  
-  return data as any;
+  const data = await db.select().from(generalNews).all();
+  const filtered = data.filter((row: any) => row.user_id === userId);
+  return filtered as any;
 }
 
 export async function getNewsSummaryByTicker(userId: string): Promise<NewsSummaryByTicker[]> {
-  const data = await db
-    .select()
-    .from(newsSummaryByTicker)
-    .where(eq(newsSummaryByTicker.user_id, userId))
-    .orderBy(desc(newsSummaryByTicker.latest_news_date));
-  
-  return data as any;
+  const data = await db.select().from(newsSummaryByTicker).all();
+  const filtered = data.filter((row: any) => row.user_id === userId);
+  return filtered as any;
 }
 
 export async function getNewsSummaryByType(userId: string): Promise<NewsSummaryByType[]> {
-  const data = await db
-    .select()
-    .from(newsSummaryByType)
-    .where(eq(newsSummaryByType.user_id, userId));
-  
-  return data as any;
+  const data = await db.select().from(newsSummaryByType).all();
+  const filtered = data.filter((row: any) => row.user_id === userId);
+  return filtered as any;
 }
 
 export async function getNewsSummaryByTickerView(userId: string): Promise<NewsSummaryByTicker[]> {
-  const data = await db
-    .select()
-    .from(newsSummaryByTicker)
-    .where(eq(newsSummaryByTicker.user_id, userId))
-    .orderBy(desc(newsSummaryByTicker.latest_news_date));
-  
-  return data as any;
+  const data = await db.select().from(newsSummaryByTicker).all();
+  const filtered = data
+    .filter((row: any) => row.user_id === userId)
+    .sort((a: any, b: any) => new Date(b.latest_news_date).getTime() - new Date(a.latest_news_date).getTime());
+  return filtered as any;
 }
 
 export async function getNewsSummaryByTypeView(userId: string): Promise<NewsSummaryByType[]> {
-  const data = await db
-    .select()
-    .from(newsSummaryByType)
-    .where(eq(newsSummaryByType.user_id, userId))
-    .orderBy(desc(newsSummaryByType.total_news_items));
-  
-  return data as any;
+  const data = await db.select().from(newsSummaryByType).all();
+  const filtered = data.filter((row: any) => row.user_id === userId);
+  return filtered as any;
 }
 
 export async function getNewsByTicker(userId: string, ticker: string, page: number = 1, pageSize: number = 5) {
@@ -167,7 +146,7 @@ export async function getNewsByType(userId: string, typeName: string, page: numb
   return { data: filtered, total: filtered.length };
 }
 
-export async function getNewsById(newsId: string) {
+export async function getNewsById(newsId: number) {
   const data = await db
     .select({
       news: news,

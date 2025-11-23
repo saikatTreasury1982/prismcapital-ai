@@ -8,7 +8,7 @@ interface NewsDetailModalProps {
   news: NewsListItem | null;
   onClose: () => void;
   onEdit?: (news: NewsListItem) => void;
-  onDelete?: (newsId: string) => void;
+  onDelete?: (newsId: number) => void;
 }
 
 export function NewsDetailModal({ news, onClose, onEdit, onDelete }: NewsDetailModalProps) {
