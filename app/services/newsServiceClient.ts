@@ -30,7 +30,7 @@ export async function hasOpenPositionClient(ticker: string): Promise<boolean> {
   return Boolean(json.hasPosition);
 }
 
-export async function updateNews(newsId: string, input: CreateNewsInput): Promise<News> {
+export async function updateNews(newsId: number, input: CreateNewsInput): Promise<News> {
   const response = await fetch('/api/news', {
     method: 'PATCH',
     headers: {
@@ -51,7 +51,7 @@ export async function updateNews(newsId: string, input: CreateNewsInput): Promis
   return result.data;
 }
 
-export async function deleteNews(newsId: string): Promise<void> {
+export async function deleteNews(newsId: number): Promise<void> {
   const response = await fetch(`/api/news?newsId=${newsId}`, {
     method: 'DELETE',
   });
