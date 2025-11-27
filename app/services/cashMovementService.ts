@@ -86,7 +86,9 @@ export async function getCashBalanceSummary(userId: string): Promise<CashBalance
 
 export async function createCashMovement(
   userId: string, 
-  input: CreateCashMovementInput
+  input: CreateCashMovementInput,
+  homeCurrencyCode: string,
+  tradingCurrencyCode: string
 ): Promise<CashMovement> {
   // Get user currencies
   const currencies = await getUserCurrencies(userId);
@@ -98,20 +100,20 @@ export async function createCashMovement(
     .insert(cashMovements)
     .values({
       user_id: userId,
-      home_currency_code: currencies.home_currency,
+      home_currency_code: homeCurrencyCode,
       home_currency_value: input.home_currency_value,
-      trading_currency_code: currencies.trading_currency,
+      trading_currency_code: tradingCurrencyCode,
       trading_currency_value: trading_currency_value,
       spot_rate: input.spot_rate,
       direction_id: input.direction_id,
       transaction_date: input.transaction_date,
-      period_from: input.period_from || null,
-      period_to: input.period_to || null,
+      period_from: input.period_from,
+      period_to: input.period_to,
       notes: input.notes || null
     })
     .returning();
 
-  return data[0] as CashMovement;;
+  return data[0] as CashMovement;
 }
 
 export async function getPeriodStats(userId: string): Promise<PeriodStats[]> {
