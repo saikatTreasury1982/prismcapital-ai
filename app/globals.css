@@ -181,3 +181,19 @@ body {
 .animate-slide-in {
   animation: slide-in 0.3s ease-out;
 }
+
+/* Style select dropdowns */
+select {
+  color-scheme: dark;
+  background-color: rgb(30 58 137 / 0.5);
+  color: white;
+}
+
+select option {
+  background-color: rgb(15 23 42);
+  color: white;
+}
+
+select option:hover {
+  background-color: rgb(30 58 137);
+}

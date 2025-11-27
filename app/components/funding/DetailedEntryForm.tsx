@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 
 interface DetailedEntryFormProps {
@@ -10,9 +10,12 @@ interface DetailedEntryFormProps {
 }
 
 export function DetailedEntryForm({ homeCurrency, tradingCurrency, onSuccess }: DetailedEntryFormProps) {
+  const [currencies, setCurrencies] = useState<string[]>([]);
   const [formData, setFormData] = useState({
-    homeValue: '',
-    spotRate: '',
+    transactionAmount: '',
+    homeCurrency: homeCurrency || '',
+    exchangeCurrency: tradingCurrency || '',
+    exchangeRate: '',
     txnDate: new Date().toISOString().split('T')[0],
     direction: 1,
     periodFrom: '',
@@ -23,10 +26,35 @@ export function DetailedEntryForm({ homeCurrency, tradingCurrency, onSuccess }: 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    const fetchCurrencies = async () => {
+      try {
+        const response = await fetch('/api/currencies');
+        const result = await response.json();
+        setCurrencies(result.data || []);
+        
+        // Set default home currency if available
+        if (result.data && result.data.length > 0 && !formData.homeCurrency) {
+          setFormData(prev => ({...prev, homeCurrency: result.data[0]}));
+        }
+      } catch (error) {
+        console.error('Failed to fetch currencies:', error);
+      }
+    };
+    
+    fetchCurrencies();
+  }, []);
+
   const calculateTrading = () => {
-    const home = parseFloat(formData.homeValue) || 0;
-    const rate = parseFloat(formData.spotRate) || 0;
-    return (home * rate).toFixed(4);
+    const amount = parseFloat(formData.transactionAmount) || 0;
+    const rate = parseFloat(formData.exchangeRate) || 0;
+    
+    // If exchange rate is 0, use 1:1 conversion
+    if (rate === 0) {
+      return amount.toFixed(4);
+    }
+    
+    return (amount * rate).toFixed(4);
   };
 
   const handleSubmit = async () => {
@@ -34,20 +62,21 @@ export function DetailedEntryForm({ homeCurrency, tradingCurrency, onSuccess }: 
     setIsSubmitting(true);
 
     try {
-      // Call API route instead of service directly
       const response = await fetch('/api/funding/movement', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          home_currency_value: parseFloat(formData.homeValue),
-          spot_rate: parseFloat(formData.spotRate),
+          home_currency_value: parseFloat(formData.transactionAmount),
+          spot_rate: parseFloat(formData.exchangeRate),
           transaction_date: formData.txnDate,
           direction_id: formData.direction,
           period_from: formData.periodFrom,
           period_to: formData.periodTo,
           notes: formData.notes || undefined,
+          home_currency_code: formData.homeCurrency,
+          trading_currency_code: formData.exchangeCurrency,
         }),
       });
 
@@ -58,8 +87,10 @@ export function DetailedEntryForm({ homeCurrency, tradingCurrency, onSuccess }: 
 
       // Reset form
       setFormData({
-        homeValue: '',
-        spotRate: '',
+        transactionAmount: '',
+        homeCurrency: formData.homeCurrency,
+        exchangeCurrency: formData.exchangeCurrency,
+        exchangeRate: '',
         txnDate: new Date().toISOString().split('T')[0],
         direction: 1,
         periodFrom: '',
@@ -119,45 +150,84 @@ export function DetailedEntryForm({ homeCurrency, tradingCurrency, onSuccess }: 
           </div>
         </div>
 
-        {/* Amount and Spot Rate Row */}
+        {/* Transaction Amount and Home Currency Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Home Currency */}
           <div>
             <label className="text-blue-200 text-sm mb-2 block">
-              {homeCurrency} Amount <span className="text-rose-400">*</span>
+              Transaction Currency <span className="text-rose-400">*</span>
+            </label>
+            <select
+              required
+              value={formData.homeCurrency}
+              onChange={(e) => setFormData({...formData, homeCurrency: e.target.value})}
+              className="w-full funding-input rounded-xl px-4 py-3"
+            >
+              <option value="">Select currency</option>
+              {currencies.map(curr => (
+                <option key={curr} value={curr}>{curr}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Transaction Amount */}
+          <div>
+            <label className="text-blue-200 text-sm mb-2 block">
+              Amount <span className="text-rose-400">*</span>
             </label>
             <input
               type="number"
               step="0.01"
               required
-              value={formData.homeValue}
-              onChange={(e) => setFormData({...formData, homeValue: e.target.value})}
+              value={formData.transactionAmount}
+              onChange={(e) => setFormData({...formData, transactionAmount: e.target.value})}
               placeholder="1000.00"
               className="w-full funding-input rounded-xl px-4 py-3"
             />
           </div>
+        </div>
 
-          {/* Spot Rate */}
+        {/* Exchange Currency and Exchange Rate Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Exchange Currency */}
           <div>
             <label className="text-blue-200 text-sm mb-2 block">
-              Spot Rate <span className="text-rose-400">*</span>
+              Exchange Currency <span className="text-rose-400">*</span>
+            </label>
+            <select
+              required
+              value={formData.exchangeCurrency}
+              onChange={(e) => setFormData({...formData, exchangeCurrency: e.target.value})}
+              className="w-full funding-input rounded-xl px-4 py-3"
+            >
+              <option value="">Select currency</option>
+              {currencies.map(curr => (
+                <option key={curr} value={curr}>{curr}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Exchange Rate */}
+          <div>
+            <label className="text-blue-200 text-sm mb-2 block">
+              Exchange Rate <span className="text-rose-400">*</span>
             </label>
             <input
               type="number"
               step="0.000001"
               required
-              value={formData.spotRate}
-              onChange={(e) => setFormData({...formData, spotRate: e.target.value})}
+              value={formData.exchangeRate}
+              onChange={(e) => setFormData({...formData, exchangeRate: e.target.value})}
               placeholder="0.664000"
               className="w-full funding-input rounded-xl px-4 py-3"
             />
           </div>
         </div>
 
-        {/* Calculated Trading Currency */}
-        {formData.homeValue && formData.spotRate && (
+        {/* Calculated Exchange Currency Value */}
+        {formData.transactionAmount && formData.exchangeRate && (
           <div className="bg-blue-500/20 rounded-xl p-4 border border-blue-400/30">
-            <div className="text-blue-300 text-sm mb-1">{tradingCurrency} Value (auto-calculated)</div>
+            <div className="text-blue-300 text-sm mb-1">Exchange Value (auto-calculated)</div>
             <div className="text-2xl font-bold text-white">{calculateTrading()}</div>
           </div>
         )}
@@ -226,7 +296,7 @@ export function DetailedEntryForm({ homeCurrency, tradingCurrency, onSuccess }: 
       <button
         type="button"
         onClick={handleSubmit}
-        disabled={isSubmitting || !formData.homeValue || !formData.spotRate || !formData.txnDate || !formData.periodFrom || !formData.periodTo}
+        disabled={isSubmitting || !formData.transactionAmount || !formData.exchangeRate || !formData.txnDate || !formData.periodFrom || !formData.periodTo || !formData.homeCurrency || !formData.exchangeCurrency}
         className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-4 rounded-xl font-bold text-lg hover:shadow-lg hover:shadow-blue-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isSubmitting ? 'Saving...' : 'Save Transaction'}
