@@ -3,7 +3,7 @@ import { generateAuthenticationOptions, verifyAuthenticationResponse } from '@si
 import { db, schema } from '@/app/lib/db';
 import { eq } from 'drizzle-orm';
 
-const { users, authPasskeys, authSessions } = schema;
+const { users, authPasskeys } = schema;
 
 const rpID = process.env.NEXTAUTH_WEBAUTHN_RP_ID!;
 const origin = process.env.NEXTAUTH_WEBAUTHN_ORIGIN!;
@@ -32,14 +32,17 @@ export async function GET(request: Request) {
       }, { status: 404 });
     }
 
-    // Passkeys exist, but they may be from a different domain
-    // Browser will reject credentials from different origins
-    // So we should prompt registration for THIS domain
-    return NextResponse.json({ 
-      error: 'Passkey exists but not for this domain',
-      needsRegistration: true,
-      existingPasskeysCount: passkeys.length
-    }, { status: 404 });
+    // Passkeys exist - generate authentication options for login
+    const options = await generateAuthenticationOptions({
+      rpID,
+      allowCredentials: passkeys.map(pk => ({
+        id: Buffer.from(pk.credential_id, 'base64'),
+        type: 'public-key',
+        transports: ['internal', 'usb', 'ble', 'nfc', 'hybrid'],
+      })),
+    });
+
+    return NextResponse.json(options);
   } catch (e: any) {
     console.error('Auth options error:', e);
     return NextResponse.json({ error: e.message }, { status: 500 });
@@ -76,7 +79,7 @@ export async function POST(request: Request) {
     });
 
     if (verification.verified) {
-      // Update counter
+      // Update counter and last used timestamp
       await db
         .update(authPasskeys)
         .set({
@@ -85,16 +88,7 @@ export async function POST(request: Request) {
         })
         .where(eq(authPasskeys.credential_id, passkey.credential_id));
 
-      // Create session
-      const sessionId = `sess_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      await db.insert(authSessions).values({
-        session_id: sessionId,
-        user_id: userId,
-        session_status: 'OPEN',
-        credential_id: passkey.credential_id,
-      });
-
-      return NextResponse.json({ verified: true, sessionId });
+      return NextResponse.json({ verified: true });
     }
 
     return NextResponse.json({ verified: false }, { status: 400 });

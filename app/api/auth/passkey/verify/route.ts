@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { verifyRegistrationResponse } from '@simplewebauthn/server';
 import { db, schema } from '@/app/lib/db';
 
-const { authPasskeys, authSessions } = schema;
+const { authPasskeys } = schema;
 
 const rpID = process.env.NEXTAUTH_WEBAUTHN_RP_ID!;
 const origin = process.env.NEXTAUTH_WEBAUTHN_ORIGIN!;
@@ -31,16 +31,7 @@ export async function POST(request: Request) {
         device_name: 'Device',
       });
 
-      // Create session
-      const sessionId = `sess_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      await db.insert(authSessions).values({
-        session_id: sessionId,
-        user_id: userId,
-        session_status: 'OPEN',
-        credential_id: credId,
-      });
-
-      return NextResponse.json({ verified: true, sessionId });
+      return NextResponse.json({ verified: true });
     }
 
     return NextResponse.json({ verified: false }, { status: 400 });

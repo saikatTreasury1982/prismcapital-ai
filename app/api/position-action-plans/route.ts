@@ -91,6 +91,15 @@ export async function POST(request: Request) {
         reinvest_amount: planData.reinvest_amount || null,
         withdraw_amount: planData.withdraw_amount || null,
         withdraw_currency: planData.withdraw_currency || null,
+        // New fields for ADD_POSITION
+        buy_shares: planData.buy_shares || null,
+        entry_price: planData.entry_price || null,
+        fees: planData.fees || null,
+        new_average_cost: planData.new_average_cost || null,
+        new_total_shares: planData.new_total_shares || null,
+        last_dividend_per_share: planData.last_dividend_per_share || null,
+        projected_dividend: planData.projected_dividend || null,
+        previous_dividend: planData.previous_dividend || null,
         notes: planData.notes || null,
       })
       .returning();
@@ -131,6 +140,15 @@ export async function PATCH(request: Request) {
     if (planData.reinvest_amount !== undefined) updateData.reinvest_amount = planData.reinvest_amount;
     if (planData.withdraw_amount !== undefined) updateData.withdraw_amount = planData.withdraw_amount;
     if (planData.withdraw_currency !== undefined) updateData.withdraw_currency = planData.withdraw_currency;
+    // New fields for ADD_POSITION
+    if (planData.buy_shares !== undefined) updateData.buy_shares = planData.buy_shares;
+    if (planData.entry_price !== undefined) updateData.entry_price = planData.entry_price;
+    if (planData.fees !== undefined) updateData.fees = planData.fees;
+    if (planData.new_average_cost !== undefined) updateData.new_average_cost = planData.new_average_cost;
+    if (planData.new_total_shares !== undefined) updateData.new_total_shares = planData.new_total_shares;
+    if (planData.last_dividend_per_share !== undefined) updateData.last_dividend_per_share = planData.last_dividend_per_share;
+    if (planData.projected_dividend !== undefined) updateData.projected_dividend = planData.projected_dividend;
+    if (planData.previous_dividend !== undefined) updateData.previous_dividend = planData.previous_dividend;
     if (planData.notes !== undefined) updateData.notes = planData.notes;
     if (planData.status !== undefined) updateData.status = planData.status;
 
