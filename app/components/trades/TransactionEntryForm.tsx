@@ -167,7 +167,8 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
           price: parseFloat(formData.price),
           fees: parseFloat(formData.fees),
           transaction_currency: formData.transaction_currency,
-          notes: formData.notes || undefined
+          notes: formData.notes || undefined,
+          ticker_name: companyName || undefined
         });
       }
 

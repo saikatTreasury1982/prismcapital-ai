@@ -25,6 +25,7 @@ export interface CreateTransactionInput {
   transaction_currency?: string;
   notes?: string;
   strategy_id: number;
+  ticker_name?: string;
 }
 
 export interface UpdateTransactionInput {
