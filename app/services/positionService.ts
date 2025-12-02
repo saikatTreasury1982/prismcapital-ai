@@ -70,7 +70,7 @@ export async function aggregateToPositionTx(tx: any, transaction: {
 
     // Sanitize ticker_name - remove special characters, keep only alphanumeric and spaces
     const sanitizedTickerName = transaction.ticker_name 
-      ? transaction.ticker_name.replace(/[^a-zA-Z0-9\s]/g, '').trim()
+      ? transaction.ticker_name.replace(/,/g, '').replace(/\./g, '').trim()
       : null;
 
     const result = await tx.insert(positions).values({
