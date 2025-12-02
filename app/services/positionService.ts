@@ -1,5 +1,6 @@
 import { db, schema } from '../lib/db';
 import { eq, and } from 'drizzle-orm';
+import {fetchCurrentPrice} from '@/app/api/positions/update-prices/route';
 
 const { positions, realizedPnlHistory } = schema;
 
@@ -63,11 +64,15 @@ export async function aggregateToPositionTx(tx: any, transaction: {
 
     return pos;
   } else {
+    // Fetch current market price before inserting
+    const currentMarketPrice = await fetchCurrentPrice(transaction.ticker);
+
     const result = await tx.insert(positions).values({
       user_id: transaction.user_id,
       ticker: transaction.ticker,
       total_shares: transaction.quantity,
       average_cost: transaction.price,
+      current_market_price: currentMarketPrice,  // ← ADD THIS
       strategy_id: transaction.strategy_id,
       opened_date: transaction.transaction_date,
       position_currency: transaction.transaction_currency,
