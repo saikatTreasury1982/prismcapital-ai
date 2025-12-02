@@ -292,7 +292,6 @@ export const transactions = sqliteTable('transactions', {
   notes: text('notes'),
   created_at: text('created_at').default(sql`(datetime('now'))`),
   updated_at: text('updated_at').default(sql`(datetime('now'))`),
-  trade_lot_id: text('trade_lot_id'),
   transaction_currency: text('transaction_currency').default('USD'),
   trade_value: real('trade_value'),
 });
