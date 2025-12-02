@@ -68,6 +68,11 @@ export async function aggregateToPositionTx(tx: any, transaction: {
     // Fetch current market price before inserting
     const currentMarketPrice = await fetchCurrentPrice(transaction.ticker);
 
+    // Sanitize ticker_name - remove special characters, keep only alphanumeric and spaces
+    const sanitizedTickerName = transaction.ticker_name 
+      ? transaction.ticker_name.replace(/[^a-zA-Z0-9\s]/g, '').trim()
+      : null;
+
     const result = await tx.insert(positions).values({
       user_id: transaction.user_id,
       ticker: transaction.ticker,
