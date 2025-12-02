@@ -1,6 +1,6 @@
 import { db, schema } from '../lib/db';
 import { eq, and } from 'drizzle-orm';
-import {fetchCurrentPrice} from '@/app/api/positions/update-prices/route';
+import {fetchCurrentPrice} from '@/app/lib/priceService';
 
 const { positions, realizedPnlHistory } = schema;
 
