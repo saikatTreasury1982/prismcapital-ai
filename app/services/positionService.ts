@@ -33,6 +33,7 @@ export async function aggregateToPositionTx(tx: any, transaction: {
   transaction_date: string;
   strategy_id: number;
   transaction_currency: string;
+  ticker_name: string;
 }) {
   // Check for existing active position (using only user_id + ticker)
   const existingPosition = await tx
@@ -76,6 +77,7 @@ export async function aggregateToPositionTx(tx: any, transaction: {
       strategy_id: transaction.strategy_id,
       opened_date: transaction.transaction_date,
       position_currency: transaction.transaction_currency,
+      ticker_name: transaction.ticker_name,
       is_active: 1,
       realized_pnl: 0,
     }).returning();
@@ -181,6 +183,7 @@ export async function aggregateToPosition(transaction: {
   transaction_date: string;
   strategy_id: number;
   transaction_currency: string;
+  ticker_name: string;
 }) {
   return await aggregateToPositionTx(db, transaction);
 }

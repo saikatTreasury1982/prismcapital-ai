@@ -119,6 +119,7 @@ export async function POST(request: Request) {
             transaction_date: transactionData.transaction_date,
             strategy_id: transactionData.strategy_id,
             transaction_currency: transactionData.transaction_currency || 'USD',
+            ticker_name: transactionData.ticker_name,
           });
         } else if (transactionData.transaction_type_id === 2) {
           // SELL (NO exchange_id)
