@@ -73,19 +73,16 @@ export async function aggregateToPositionTx(tx: any, transaction: {
       ? transaction.ticker_name.replace(/,/g, '').replace(/\./g, '').replace(/\s+/g, ' ').trim()
       : null;
 
-    console.log('Original ticker_name:', transaction.ticker_name);
-    console.log('Sanitized ticker_name:', sanitizedTickerName);
-
     const result = await tx.insert(positions).values({
       user_id: transaction.user_id,
       ticker: transaction.ticker,
       total_shares: transaction.quantity,
       average_cost: transaction.price,
-      current_market_price: currentMarketPrice,  // ← ADD THIS
+      current_market_price: currentMarketPrice,
       strategy_id: transaction.strategy_id,
       opened_date: transaction.transaction_date,
       position_currency: transaction.transaction_currency,
-      ticker_name: transaction.ticker_name,
+      ticker_name: sanitizedTickerName,
       is_active: 1,
       realized_pnl: 0,
     }).returning();

@@ -88,7 +88,7 @@ export const assetTypes = sqliteTable('asset_types', {
 });
 
 export const assetClassifications = sqliteTable('asset_classifications', {
-  classification_id: text('classification_id').primaryKey(),
+  classification_id: integer('classification_id').primaryKey({ autoIncrement: true }),
   user_id: text('user_id').notNull().references(() => users.user_id),
   ticker: text('ticker').notNull(),
   exchange_id: text('exchange_id').notNull().references(() => exchanges.exchange_code),

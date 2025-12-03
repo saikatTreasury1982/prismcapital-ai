@@ -5,7 +5,7 @@ import { eq, and } from 'drizzle-orm';
 const { assetClassifications, assetTypes } = schema;
 
 export interface AssetClassification {
-  classification_id: string;
+  classification_id: number;
   user_id: string;
   ticker: string;
   exchange_id: string;
