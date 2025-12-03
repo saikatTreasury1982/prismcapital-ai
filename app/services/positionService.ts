@@ -68,9 +68,9 @@ export async function aggregateToPositionTx(tx: any, transaction: {
     // Fetch current market price before inserting
     const currentMarketPrice = await fetchCurrentPrice(transaction.ticker);
 
-    // Sanitize ticker_name - remove special characters, keep only alphanumeric and spaces
+    // Remove commas and periods from ticker_name
     const sanitizedTickerName = transaction.ticker_name 
-      ? transaction.ticker_name.replace(/,/g, '').replace(/\./g, '').trim()
+      ? transaction.ticker_name.replace(/,/g, '').replace(/\./g, '').replace(/\s+/g, ' ').trim()
       : null;
 
     const result = await tx.insert(positions).values({
@@ -78,11 +78,11 @@ export async function aggregateToPositionTx(tx: any, transaction: {
       ticker: transaction.ticker,
       total_shares: transaction.quantity,
       average_cost: transaction.price,
-      current_market_price: currentMarketPrice,  // ← ADD THIS
+      current_market_price: currentMarketPrice,
       strategy_id: transaction.strategy_id,
       opened_date: transaction.transaction_date,
       position_currency: transaction.transaction_currency,
-      ticker_name: transaction.ticker_name,
+      ticker_name: sanitizedTickerName,
       is_active: 1,
       realized_pnl: 0,
     }).returning();

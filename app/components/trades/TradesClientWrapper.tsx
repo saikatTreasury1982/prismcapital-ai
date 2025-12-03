@@ -17,7 +17,6 @@ export function TradesClientWrapper() {
   const handleSuccess = () => {
     setEditingTransaction(null);
     setRefreshKey(prev => prev + 1);
-    setActiveTab('ticker');
   };
 
   const handleEdit = (transaction: Transaction) => {

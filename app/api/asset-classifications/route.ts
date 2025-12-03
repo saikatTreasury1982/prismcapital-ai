@@ -55,9 +55,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'classificationData required' }, { status: 400 });
     }
 
-    // Generate classification ID
-    const classificationId = `cls_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
     // Check if classification already exists
     const existing = await db
       .select()
@@ -89,7 +86,6 @@ export async function POST(request: Request) {
       data = await db
       .insert(assetClassifications)
       .values({
-        classification_id: classificationId,  // ← map variable to snake_case key
         user_id: userId,  // ← changed
         ticker: classificationData.ticker.toUpperCase(),
         exchange_id: classificationData.exchange_id,  // ← changed
@@ -118,7 +114,7 @@ export async function DELETE(request: Request) {
 
     await db
       .delete(assetClassifications)
-      .where(eq(assetClassifications.classification_id, classificationId));
+      .where(eq(assetClassifications.classification_id, parseInt(classificationId)));
 
     return NextResponse.json({ success: true });
   } catch (e: any) {
