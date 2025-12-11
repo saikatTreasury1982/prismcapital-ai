@@ -12,11 +12,16 @@ export default function LoginPage() {
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
 
   const handlePasskey = async () => {
+    // Show loading overlay immediately to prevent multiple clicks
     setLoading(true);
+    setLoadingMessage('Initializing authentication...');
+    
     try {
       // Lookup user_id from identifier (could be user_id or email)
+      setLoadingMessage('Looking up your account...');
       const lookupResponse = await fetch('/api/auth/user/lookup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -28,6 +33,7 @@ export default function LoginPage() {
       }
 
       const { userId } = await lookupResponse.json();
+      setLoadingMessage('Preparing passkey authentication...');
 
       // Try to authenticate with existing passkey first
       const authOptionsResponse = await fetch(`/api/auth/passkey/authenticate?userId=${userId}`);
@@ -35,17 +41,25 @@ export default function LoginPage() {
       if (authOptionsResponse.ok) {
         // User has existing passkey - authenticate
         const options = await authOptionsResponse.json();
+        
+        // Temporarily hide overlay for native Face ID/Touch ID prompt
+        setLoading(false);
+        setLoadingMessage('');
+        
         const { startAuthentication } = await import('@simplewebauthn/browser');
         let credential;
         try {
           credential = await startAuthentication(options);
         } catch (err: any) {
           if (err.name === 'NotAllowedError') {
-            setLoading(false);
             return; // User cancelled, exit gracefully
           }
           throw err; // Re-throw other errors
         }
+
+        // Show loading overlay again after passkey is entered
+        setLoading(true);
+        setLoadingMessage('Verifying your identity...');
 
         const verifyResponse = await fetch('/api/auth/passkey/authenticate', {
           method: 'POST',
@@ -55,6 +69,7 @@ export default function LoginPage() {
 
         const { verified } = await verifyResponse.json();
         if (verified) {
+          setLoadingMessage('Creating your session...');
           // Create NextAuth session
           const result = await signIn('passkey', { 
             userId,
@@ -62,14 +77,16 @@ export default function LoginPage() {
           });
           
           if (result?.ok) {
+            setLoadingMessage('Success! Redirecting...');
             window.location.href = '/dashboard';
-            return;
+            // Don't clear loading - keep overlay visible during redirect
           } else {
             throw new Error('Failed to create session');
           }
         }
       } else {
         // No passkey exists - register new one
+        setLoadingMessage('Setting up new passkey...');
         const { startRegistration } = await import('@simplewebauthn/browser');
         
         const optionsResponse = await fetch('/api/auth/passkey/register', {
@@ -80,16 +97,23 @@ export default function LoginPage() {
 
         const options = await optionsResponse.json();
         
+        // Temporarily hide overlay for native Face ID/Touch ID setup
+        setLoading(false);
+        setLoadingMessage('');
+        
         let credential;
         try {
           credential = await startRegistration(options);
         } catch (err: any) {
           if (err.name === 'NotAllowedError') {
-            setLoading(false);
             return; // User cancelled
           }
           throw err;
         }
+
+        // Show loading overlay again after passkey is registered
+        setLoading(true);
+        setLoadingMessage('Verifying your passkey...');
 
         const verifyResponse = await fetch('/api/auth/passkey/verify', {
           method: 'POST',
@@ -102,6 +126,7 @@ export default function LoginPage() {
           throw new Error('Passkey verification failed');
         }
 
+        setLoadingMessage('Creating your session...');
         // Create NextAuth session
         const result = await signIn('passkey', { 
           userId,
@@ -109,8 +134,9 @@ export default function LoginPage() {
         });
         
         if (result?.ok) {
+          setLoadingMessage('Success! Redirecting...');
           window.location.href = '/dashboard';
-          return;
+          // Don't clear loading - keep overlay visible during redirect
         } else {
           throw new Error('Failed to create session');
         }
@@ -121,14 +147,16 @@ export default function LoginPage() {
       // User cancelled - don't show error
       if (error.name === 'NotAllowedError') {
         setLoading(false);
+        setLoadingMessage('');
         return;
       }
 
       alert('Passkey authentication failed. Please try SMS instead.');
       setShowOTP(true);
-    } finally {
       setLoading(false);
+      setLoadingMessage('');
     }
+    // No finally block - keep loading state during redirect
   };
 
   const handleSendOTP = async () => {
@@ -190,108 +218,130 @@ export default function LoginPage() {
 
           {/* RIGHT SIDE - Login Card */}
           <div className="flex justify-center lg:justify-end">  
-        <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 sm:p-12 border border-white/20 max-w-md w-full shadow-2xl">
-          <h1 className="text-3xl font-bold text-white mb-2 text-center">Welcome</h1>
-          <p className="text-blue-200 text-center mb-8">Sign in to your account</p>
+            <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 sm:p-12 border border-white/20 max-w-md w-full shadow-2xl">
+              <h1 className="text-3xl font-bold text-white mb-2 text-center">Welcome</h1>
+              <p className="text-blue-200 text-center mb-8">Sign in to your account</p>
 
-          {!showOTP ? (
-            <div className="space-y-4">
-              <div className="flex gap-2 items-center">
-                <input
-                  type="text"
-                  placeholder="User ID or Email"
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
-                  suppressHydrationWarning={true}
-                />
-                
-                <GlassButton
-                  icon={Fingerprint}
-                  onClick={handlePasskey}
-                  disabled={loading || !identifier.trim()}
-                  tooltip="Sign in with Passkey"
-                  variant="primary"
-                  size="lg"
-                />
-                
-                <GlassButton
-                  icon={Smartphone}
-                  onClick={() => setShowOTP(true)}
-                  disabled={!identifier.trim()}
-                  tooltip="Use SMS Code Instead"
-                  variant="secondary"
-                  size="lg"
-                />
-              </div>
-            </div>
-            ) : (
-            <div className="space-y-4">
-              {!code && (
-                <div className="flex gap-2 items-center">
-                  <input
-                    type="tel"
-                    placeholder="Phone Number"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
-                  />
-                  
-                  <GlassButton
-                    onClick={handleSendOTP}
-                    disabled={loading || !phone}
-                    tooltip="Send Code"
-                    variant="primary"
-                    size="lg"
-                    className="px-6"
-                  >
-                    <span className="text-white text-sm whitespace-nowrap">
-                      {loading ? 'Sending...' : 'Send'}
-                    </span>
-                  </GlassButton>
-                </div>
-              )}
-
-              {code !== '' && (
-                <>
-                  <div>
+              {!showOTP ? (
+                <div className="space-y-4">
+                  <div className="flex gap-2 items-center">
                     <input
                       type="text"
-                      placeholder="6-Digit Code"
-                      value={code}
-                      onChange={(e) => setCode(e.target.value)}
-                      maxLength={6}
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 text-center text-2xl tracking-widest"
+                      placeholder="User ID or Email"
+                      value={identifier}
+                      onChange={(e) => setIdentifier(e.target.value)}
+                      className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
+                      suppressHydrationWarning={true}
+                    />
+                    
+                    <GlassButton
+                      icon={Fingerprint}
+                      onClick={handlePasskey}
+                      disabled={loading || !identifier.trim()}
+                      tooltip="Sign in with Passkey"
+                      variant="primary"
+                      size="lg"
+                    />
+                    
+                    <GlassButton
+                      icon={Smartphone}
+                      onClick={() => setShowOTP(true)}
+                      disabled={!identifier.trim()}
+                      tooltip="Use SMS Code Instead"
+                      variant="secondary"
+                      size="lg"
                     />
                   </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {!code && (
+                    <div className="flex gap-2 items-center">
+                      <input
+                        type="tel"
+                        placeholder="Phone Number"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
+                      />
+                      
+                      <GlassButton
+                        onClick={handleSendOTP}
+                        disabled={loading || !phone}
+                        tooltip="Send Code"
+                        variant="primary"
+                        size="lg"
+                        className="px-6"
+                      >
+                        <span className="text-white text-sm whitespace-nowrap">
+                          {loading ? 'Sending...' : 'Send'}
+                        </span>
+                      </GlassButton>
+                    </div>
+                  )}
 
-                  <GlassButton
-                    onClick={handleVerifyOTP}
-                    disabled={loading || code.length !== 6}
-                    tooltip="Verify & Sign In"
-                    variant="primary"
-                    size="lg"
-                    className="w-full"
+                  {code !== '' && (
+                    <>
+                      <div>
+                        <input
+                          type="text"
+                          placeholder="6-Digit Code"
+                          value={code}
+                          onChange={(e) => setCode(e.target.value)}
+                          maxLength={6}
+                          className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 text-center text-2xl tracking-widest"
+                        />
+                      </div>
+
+                      <GlassButton
+                        onClick={handleVerifyOTP}
+                        disabled={loading || code.length !== 6}
+                        tooltip="Verify & Sign In"
+                        variant="primary"
+                        size="lg"
+                        className="w-full"
+                      >
+                        <span className="text-white font-semibold">
+                          {loading ? 'Verifying...' : 'Verify & Sign In'}
+                        </span>
+                      </GlassButton>
+                    </>
+                  )}
+
+                  <button
+                    onClick={() => setShowOTP(false)}
+                    className="w-full text-blue-300 text-sm hover:text-white transition-colors"
                   >
-                    <span className="text-white font-semibold">
-                      {loading ? 'Verifying...' : 'Verify & Sign In'}
-                    </span>
-                  </GlassButton>
-                </>
+                    ← Back to Passkey
+                  </button>
+                </div>
               )}
-
-              <button
-                onClick={() => setShowOTP(false)}
-                className="w-full text-blue-300 text-sm hover:text-white transition-colors"
-              >
-                ← Back to Passkey
-              </button>
             </div>
-          )}
-  </div>
           </div>
         </div>
       </div>
+
+      {/* Loading Overlay */}
+      {loading && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20 max-w-md w-full mx-4">
+            <div className="flex flex-col items-center space-y-4">
+              {/* Spinner */}
+              <div className="w-16 h-16 border-4 border-blue-400/30 border-t-blue-400 rounded-full animate-spin"></div>
+              
+              {/* Loading Message */}
+              <div className="text-center">
+                <p className="text-white text-lg font-semibold mb-2">
+                  {loadingMessage || 'Processing...'}
+                </p>
+                <p className="text-blue-200 text-sm">
+                  Please wait, do not close this window
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
