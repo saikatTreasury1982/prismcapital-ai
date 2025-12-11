@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
+import SegmentedControl from '@/app/lib/ui/SegmentedControl';
+import GlassButton from '@/app/lib/ui/GlassButton';
+import { Save, XCircle } from 'lucide-react';
 
 interface DetailedEntryFormProps {
   homeCurrency: string;
@@ -57,6 +60,21 @@ export function DetailedEntryForm({ homeCurrency, tradingCurrency, onSuccess }: 
     return (amount * rate).toFixed(4);
   };
 
+  const handleCancel = () => {
+    setFormData({
+      transactionAmount: '',
+      homeCurrency: formData.homeCurrency,
+      exchangeCurrency: formData.exchangeCurrency,
+      exchangeRate: '',
+      txnDate: new Date().toISOString().split('T')[0],
+      direction: 1,
+      periodFrom: '',
+      periodTo: '',
+      notes: '',
+    });
+    setError(null);
+  };
+
   const handleSubmit = async () => {
     setError(null);
     setIsSubmitting(true);
@@ -108,7 +126,26 @@ export function DetailedEntryForm({ homeCurrency, tradingCurrency, onSuccess }: 
 
   return (
     <div className="bg-gradient-to-br from-blue-500/10 to-purple-600/10 rounded-2xl p-6 border border-blue-400/30">
-      <h3 className="text-white font-semibold mb-4">Complete Transaction Details</h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-white font-semibold">Complete Transaction Details</h3>
+        <div className="flex gap-2">
+          <GlassButton
+            icon={XCircle}
+            onClick={handleCancel}
+            tooltip="Clear Form"
+            variant="secondary"
+            size="md"
+          />
+          <GlassButton
+            icon={Save}
+            onClick={handleSubmit}
+            disabled={isSubmitting || !formData.transactionAmount || !formData.exchangeRate || !formData.txnDate || !formData.periodFrom || !formData.periodTo || !formData.homeCurrency || !formData.exchangeCurrency}
+            tooltip="Save Transaction"
+            variant="primary"
+            size="md"
+          />
+        </div>
+      </div>
       
       {error && (
         <div className="mb-4 p-3 bg-rose-500/20 border border-rose-400/30 rounded-lg text-rose-200 text-sm">
@@ -122,32 +159,15 @@ export function DetailedEntryForm({ homeCurrency, tradingCurrency, onSuccess }: 
           <label className="text-blue-200 text-sm mb-2 block">
             Transaction Type <span className="text-rose-400">*</span>
           </label>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setFormData({...formData, direction: 1})}
-              className={`flex-1 py-3 rounded-xl font-semibold transition-all ${
-                formData.direction === 1
-                  ? 'bg-emerald-500 text-white shadow-lg'
-                  : 'bg-white/10 text-emerald-200 border border-white/20'
-              }`}
-            >
-              <TrendingUp className="w-5 h-5 inline mr-2" />
-              Deposit
-            </button>
-            <button
-              type="button"
-              onClick={() => setFormData({...formData, direction: 2})}
-              className={`flex-1 py-3 rounded-xl font-semibold transition-all ${
-                formData.direction === 2
-                  ? 'bg-rose-500 text-white shadow-lg'
-                  : 'bg-white/10 text-rose-200 border border-white/20'
-              }`}
-            >
-              <TrendingDown className="w-5 h-5 inline mr-2" />
-              Withdrawal
-            </button>
-          </div>
+          <SegmentedControl
+            options={[
+              { value: 1, label: 'Deposit', icon: <TrendingUp className="w-5 h-5" /> },
+              { value: 2, label: 'Withdrawal', icon: <TrendingDown className="w-5 h-5" /> },
+            ]}
+            value={formData.direction}
+            onChange={(value) => setFormData({...formData, direction: value})}
+            className="w-full"
+          />
         </div>
 
         {/* Transaction Amount and Home Currency Row */}
@@ -292,15 +312,6 @@ export function DetailedEntryForm({ homeCurrency, tradingCurrency, onSuccess }: 
           </div>
         </div>
       </div>
-
-      <button
-        type="button"
-        onClick={handleSubmit}
-        disabled={isSubmitting || !formData.transactionAmount || !formData.exchangeRate || !formData.txnDate || !formData.periodFrom || !formData.periodTo || !formData.homeCurrency || !formData.exchangeCurrency}
-        className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-4 rounded-xl font-bold text-lg hover:shadow-lg hover:shadow-blue-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {isSubmitting ? 'Saving...' : 'Save Transaction'}
-      </button>
     </div>
   );
 }

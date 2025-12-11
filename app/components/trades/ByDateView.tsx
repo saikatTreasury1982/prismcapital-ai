@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { Calendar } from 'lucide-react';
+import GlassButton from '@/app/lib/ui/GlassButton';
+import SegmentedControl from '@/app/lib/ui/SegmentedControl';
+import { X, ChevronLeft, ChevronRight, TrendingUp, TrendingDown } from 'lucide-react';
 
 interface RealizedTrade {
   realization_id: number;
@@ -225,30 +228,14 @@ export function ByDateView() {
           {/* Date Type Toggle */}
           <div>
             <label className="text-blue-200 text-sm mb-2 block font-medium">Filter By</label>
-            <div className="inline-flex rounded-xl bg-white/5 border border-white/10 p-1">
-              <button
-                type="button"
-                onClick={() => setFilters({ ...filters, dateType: 'entry', dateFrom: '', dateTo: '' })}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  filters.dateType === 'entry'
-                    ? 'bg-blue-600 text-white shadow-lg'
-                    : 'text-blue-200 hover:text-white'
-                }`}
-              >
-                Entry Date
-              </button>
-              <button
-                type="button"
-                onClick={() => setFilters({ ...filters, dateType: 'exit', dateFrom: '', dateTo: '' })}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  filters.dateType === 'exit'
-                    ? 'bg-blue-600 text-white shadow-lg'
-                    : 'text-blue-200 hover:text-white'
-                }`}
-              >
-                Exit Date
-              </button>
-            </div>
+            <SegmentedControl
+              options={[
+                { value: 1, label: 'Entry Date', icon: <TrendingUp className="w-4 h-4" /> },
+                { value: 2, label: 'Exit Date', icon: <TrendingDown className="w-4 h-4" /> },
+              ]}
+              value={filters.dateType === 'entry' ? 1 : 2}
+              onChange={(value) => setFilters({ ...filters, dateType: value === 1 ? 'entry' : 'exit', dateFrom: '', dateTo: '' })}
+            />
           </div>
 
           {/* From Date */}
@@ -277,14 +264,15 @@ export function ByDateView() {
           </div>
 
           {/* Clear Button */}
-          <div>
+          <div className="flex items-end">
             {(filters.dateFrom || filters.dateTo) && (
-              <button
+              <GlassButton
+                icon={X}
                 onClick={() => setFilters({ dateType: 'entry', dateFrom: '', dateTo: '' })}
-                className="w-full px-4 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-medium transition-colors"
-              >
-                Clear
-              </button>
+                tooltip="Clear Filters"
+                variant="secondary"
+                size="lg"
+              />
             )}
           </div>
         </div>
@@ -409,24 +397,26 @@ export function ByDateView() {
                 <p className="text-blue-200 text-sm">
                   Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, filteredData.length)} of {filteredData.length} trades
                 </p>
-                <div className="flex gap-2">
-                  <button
+                <div className="flex gap-2 items-center">
+                  <GlassButton
+                    icon={ChevronLeft}
                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
-                    className="px-4 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Previous
-                  </button>
-                  <span className="px-4 py-2 text-white">
+                    tooltip="Previous Page"
+                    variant="primary"
+                    size="md"
+                  />
+                  <span className="px-4 py-2 text-white font-medium">
                     Page {currentPage} of {totalPages}
                   </span>
-                  <button
+                  <GlassButton
+                    icon={ChevronRight}
                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
-                    className="px-4 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Next
-                  </button>
+                    tooltip="Next Page"
+                    variant="primary"
+                    size="md"
+                  />
                 </div>
               </div>
             )}

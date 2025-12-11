@@ -5,6 +5,7 @@ import { Position } from '@/app/lib/types/transaction';
 import { getPositions } from '@/app/services/positionServiceClient';
 import { ReducePositionPlanner } from './ReducePositionPlanner';
 import { IncreasePositionPlanner } from './IncreasePositionPlanner';
+import SegmentedControl from '@/app/lib/ui/SegmentedControl';
 
 export function PositionActions() {
   const [positions, setPositions] = useState<Position[]>([]);
@@ -87,27 +88,16 @@ export function PositionActions() {
   return (
     <>
       {/* View Mode Toggle */}
-      <div className="flex gap-2 mb-6">
-        <button
-          onClick={() => setViewMode('by-position')}
-          className={`px-6 py-2 rounded-xl font-semibold transition-all ${
-            viewMode === 'by-position'
-              ? 'bg-blue-600 text-white'
-              : 'bg-white/10 text-blue-200 hover:bg-white/20 border border-white/20'
-          }`}
-        >
-          By Position
-        </button>
-        <button
-          onClick={() => setViewMode('all-plans')}
-          className={`px-6 py-2 rounded-xl font-semibold transition-all ${
-            viewMode === 'all-plans'
-              ? 'bg-blue-600 text-white'
-              : 'bg-white/10 text-blue-200 hover:bg-white/20 border border-white/20'
-          }`}
-        >
-          All Plans
-        </button>
+      <div className="mb-6 inline-flex">
+        <SegmentedControl
+          options={[
+            { value: 1, label: 'By Position' },
+            { value: 2, label: 'All Plans' },
+          ]}
+          value={viewMode === 'by-position' ? 1 : 2}
+          onChange={(value) => setViewMode(value === 1 ? 'by-position' : 'all-plans')}
+          color="blue"
+        />
       </div>
 
       {/* By Position View */}

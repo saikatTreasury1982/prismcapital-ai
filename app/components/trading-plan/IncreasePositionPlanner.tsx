@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { TrendingUp, Save } from 'lucide-react';
 import { Position } from '@/app/lib/types/transaction';
 import { createPositionActionPlan, updatePositionActionPlan } from '@/app/services/positionActionPlanServiceClient';
+import GlassButton from '@/app/lib/ui/GlassButton';
+import { XCircle } from 'lucide-react';
 
 interface IncreasePositionPlannerProps {
   position: Position;
@@ -167,17 +169,26 @@ export function IncreasePositionPlanner({ position, editingPlan, onSuccess, onCa
               {editingScenario ? 'Update your saved scenario' : 'Plan additional investment and analyze impact on your position'}
             </p>
           </div>
-          {editingPlan && (
-            <button
+          <div className="flex gap-2">
+            <GlassButton
+              icon={XCircle}
               onClick={() => {
                 handleCancelEdit();
                 onCancel?.();
               }}
-              className="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-xl transition-all"
-            >
-              Cancel Edit
-            </button>
-          )}
+              tooltip="Cancel"
+              variant="secondary"
+              size="md"
+            />
+            <GlassButton
+              icon={Save}
+              onClick={handleSaveScenario}
+              disabled={isSaving || buyShares <= 0 || entryPrice <= 0 || newTotalShares <= 0}
+              tooltip={isSaving ? (editingScenario ? 'Updating...' : 'Saving...') : (editingScenario ? 'Update Scenario' : 'Save Scenario')}
+              variant="primary"
+              size="md"
+            />
+          </div>
         </div>
       </div>
 
@@ -302,16 +313,6 @@ export function IncreasePositionPlanner({ position, editingPlan, onSuccess, onCa
         />
       </div>
 
-      {/* Save Button */}
-      <button
-        onClick={handleSaveScenario}
-        disabled={isSaving || buyShares <= 0 || entryPrice <= 0 || newTotalShares <= 0}
-        className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 rounded-xl font-bold text-lg hover:shadow-lg hover:shadow-green-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-      >
-        <Save className="w-5 h-5" />
-        {isSaving ? (editingScenario ? 'Updating...' : 'Saving...') : (editingScenario ? 'Update Scenario' : 'Save Scenario')}
-      </button>
-
       {/* View Scenario Modal */}
       {viewingScenario && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -390,22 +391,24 @@ export function IncreasePositionPlanner({ position, editingPlan, onSuccess, onCa
               )}
             </div>
 
-            <div className="flex gap-3 mt-6">
-              <button
+            <div className="flex gap-3 mt-6 justify-end">
+              <GlassButton
+                icon={XCircle}
+                onClick={() => setViewingScenario(null)}
+                tooltip="Close"
+                variant="secondary"
+                size="lg"
+              />
+              <GlassButton
+                icon={Save}
                 onClick={() => {
                   setViewingScenario(null);
                   handleLoadScenario(viewingScenario);
                 }}
-                className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 rounded-xl font-bold hover:shadow-lg hover:shadow-green-500/50 transition-all"
-              >
-                Edit Scenario
-              </button>
-              <button
-                onClick={() => setViewingScenario(null)}
-                className="px-6 bg-slate-600 hover:bg-slate-700 text-white py-3 rounded-xl font-bold transition-all"
-              >
-                Close
-              </button>
+                tooltip="Edit Scenario"
+                variant="primary"
+                size="lg"
+              />
             </div>
           </div>
         </div>

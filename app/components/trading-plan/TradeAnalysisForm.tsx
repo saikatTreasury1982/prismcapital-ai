@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
 import { TradeAnalysis } from '@/app/lib/types/tradeAnalysis';
 import { createTradeAnalysis, updateTradeAnalysis } from '@/app/services/tradeAnalysisServiceClient';
+import GlassButton from '@/app/lib/ui/GlassButton';
+import { Save, XCircle, RotateCcw } from 'lucide-react';
 
 interface TradeAnalysisFormProps {
   editingAnalysis?: TradeAnalysis | null;
@@ -158,6 +159,19 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
     }
   };
 
+  const handleClear = () => {
+    setFormData({
+      ticker: '',
+      exchange_code: '',
+      entry_price: '',
+      position_size: '',
+      stop_loss: '',
+      take_profit: '',
+      notes: '',
+    });
+    setError(null);
+  };
+
   return (
     <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20">
       {/* Header */}
@@ -165,12 +179,32 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
         <h2 className="text-2xl font-bold text-white">
           {editingAnalysis ? 'Edit Trade Analysis' : 'New Trade Analysis'}
         </h2>
-        <button
-          onClick={onCancel}
-          className="p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all"
-        >
-          <X className="w-5 h-5" />
-        </button>
+        <div className="flex gap-2">
+          <GlassButton
+            icon={RotateCcw}
+            onClick={handleClear}
+            disabled={isSubmitting}
+            tooltip="Clear Form"
+            variant="secondary"
+            size="md"
+          />
+          <GlassButton
+            icon={XCircle}
+            onClick={onCancel}
+            disabled={isSubmitting}
+            tooltip="Cancel"
+            variant="secondary"
+            size="md"
+          />
+          <GlassButton
+            icon={Save}
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            tooltip={isSubmitting ? 'Saving...' : (editingAnalysis ? 'Update Analysis' : 'Create Analysis')}
+            variant="primary"
+            size="md"
+          />
+        </div>
       </div>
 
       {error && (
@@ -320,24 +354,6 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
             </p>
           </div>
         </div>
-      </div>
-
-      {/* Actions */}
-      <div className="flex gap-3">
-        <button
-          onClick={handleSubmit}
-          disabled={isSubmitting}
-          className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white py-4 rounded-xl font-bold text-lg hover:shadow-lg hover:shadow-blue-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isSubmitting ? 'Saving...' : (editingAnalysis ? 'Update Analysis' : 'Create Analysis')}
-        </button>
-        <button
-          onClick={onCancel}
-          disabled={isSubmitting}
-          className="px-6 bg-slate-600 hover:bg-slate-700 text-white py-4 rounded-xl font-bold text-lg transition-all disabled:opacity-50"
-        >
-          Cancel
-        </button>
       </div>
 
       <div className="mt-3 text-center text-xs text-blue-300">

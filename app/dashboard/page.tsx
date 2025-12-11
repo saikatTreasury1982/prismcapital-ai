@@ -7,6 +7,8 @@ import FundingCard from '../components/dashboard/FundingCard';
 import InvestmentCharts from '../components/dashboard/InvestmentCharts';
 import DividendCard from '../components/dashboard/DividendCard';
 import TradeStrategyCard from '../components/dashboard/TradeStrategyCard';
+import GlassButton from '../lib/ui/GlassButton';
+import { RefreshCw } from 'lucide-react';
 
 interface StrategyData {
   strategies: any[];
@@ -224,28 +226,15 @@ export default function DashboardPage() {
           </p>
           
           {/* Refresh Prices Button */}
-          <button
+          <GlassButton
             onClick={handleRefreshPrices}
             disabled={isRefreshingPrices}
-            className={`w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-emerald-600 flex items-center justify-center transition-all shadow-md hover:shadow-lg ${
-              isRefreshingPrices ? 'opacity-50 cursor-not-allowed' : 'hover:scale-110'
-            }`}
-            title="Refresh Market Prices"
-          >
-            <svg
-              className={`w-4 h-4 text-white ${isRefreshingPrices ? 'animate-spin' : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-          </button>
+            tooltip="Refresh Market Prices"
+            variant="secondary"
+            size="sm"
+            icon={RefreshCw}
+            className={isRefreshingPrices ? 'animate-spin' : ''}
+          />
         </div>
 
         {/* Refresh Status Message */}

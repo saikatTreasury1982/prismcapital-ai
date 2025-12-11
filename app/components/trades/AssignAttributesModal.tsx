@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { X, Tag } from 'lucide-react';
 import { Position, AssetClass, AssetType } from '../../lib/types/transaction';
 import { getAssetClasses, getAssetTypes, getAssetClassification, saveAssetClassification } from '../../services/assetClassificationServiceClient';
+import GlassButton from '@/app/lib/ui/GlassButton';
+import { Save, XCircle, Sliders } from 'lucide-react';
 
 interface AssignAttributesModalProps {
   position: Position | null;
@@ -68,9 +70,9 @@ export function AssignAttributesModal({ position, onClose, onSuccess }: AssignAt
 
         if (classification) {
           setFormData({
-            exchange_id: classification.exchange_id || '',
-            class_id: classification.class_id || '',
-            type_id: classification.type_id || ''
+            exchange_id: classification.exchange_id ? String(classification.exchange_id) : '',
+            class_id: classification.class_id ? String(classification.class_id) : '',
+            type_id: classification.type_id ? String(classification.type_id) : ''
           });
         }
       } catch (err: any) {
@@ -79,7 +81,8 @@ export function AssignAttributesModal({ position, onClose, onSuccess }: AssignAt
     };
 
     fetchAndFillClassification();
-  }, [position]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [position?.ticker]);
 
   const handleSave = async () => {
     if (!position) return;
@@ -119,7 +122,7 @@ export function AssignAttributesModal({ position, onClose, onSuccess }: AssignAt
         <div className="backdrop-blur-xl bg-white/10 border-b border-white/20 p-6 flex items-start justify-between rounded-t-3xl">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
-              <Tag className="w-6 h-6 text-white" />
+              <Sliders className="w-6 h-6 text-white" />
             </div>
             <div>
               <h2 className="text-2xl font-bold text-white">Assign Attributes</h2>
@@ -241,21 +244,23 @@ export function AssignAttributesModal({ position, onClose, onSuccess }: AssignAt
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-3 mt-8">
-                <button
+              <div className="flex gap-3 mt-8 justify-end">
+                <GlassButton
+                  icon={XCircle}
                   onClick={onClose}
                   disabled={isSaving}
-                  className="flex-1 bg-slate-600 hover:bg-slate-700 text-white py-3 rounded-xl font-bold text-lg transition-all disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
+                  tooltip="Cancel"
+                  variant="secondary"
+                  size="lg"
+                />
+                <GlassButton
+                  icon={Save}
                   onClick={handleSave}
                   disabled={isSaving || formData.class_id === ''}
-                  className="flex-1 bg-gradient-to-r from-emerald-400 to-teal-500 text-white py-3 rounded-xl font-bold text-lg hover:shadow-lg hover:shadow-emerald-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isSaving ? 'Saving...' : 'Save Attributes'}
-                </button>
+                  tooltip={isSaving ? 'Saving...' : 'Save Attributes'}
+                  variant="primary"
+                  size="lg"
+                />
               </div>
 
               <div className="mt-3 text-center text-xs text-blue-300">

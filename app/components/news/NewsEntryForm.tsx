@@ -7,6 +7,8 @@ import { NewsType } from '../../lib/types/news';
 import { NewsListItem } from '../../lib/types/newsViews';
 import { createNews, updateNews } from '../../services/newsServiceClient';
 import { useSession } from 'next-auth/react';
+import GlassButton from '@/app/lib/ui/GlassButton';
+import { Save, XCircle } from 'lucide-react';
 
 interface NewsEntryFormProps {
   newsTypes: NewsType[];
@@ -49,6 +51,29 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
       'PRODUCT': '🚀'
     };
     return icons[typeCode] || '📰';
+  };
+
+  const handleCancel = () => {
+    setFormData({
+      ticker: '',
+      exchange_id: 1,
+      company_name: '',
+      news_type_id: newsTypes[0]?.news_type_id || 1,
+      news_description: '',
+      news_date: new Date().toISOString().split('T')[0],
+      alert_date: '',
+      alert_notes: '',
+      news_source: '',
+      news_url: '',
+      tags: '',
+    });
+    setShowAlert(false);
+    setError(null);
+    setTickerError(null);
+    setHasPosition(null);
+    if (onCancelEdit) {
+      onCancelEdit();
+    }
   };
 
   const handleSubmit = async () => {
@@ -217,10 +242,29 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
 
   return (
     <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-6 sm:p-8 border border-white/20">
-      <h2 className="text-xl sm:text-2xl font-bold text-white mb-6 flex items-center gap-3">
-        <Plus className="w-6 h-6" />
-        {editingNews ? 'Edit News Entry' : 'Quick News Entry'}
-      </h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-3">
+          <Plus className="w-6 h-6" />
+          {editingNews ? 'Edit News Entry' : 'Quick News Entry'}
+        </h2>
+        <div className="flex gap-2">
+          <GlassButton
+            icon={XCircle}
+            onClick={handleCancel}
+            tooltip="Clear Form"
+            variant="secondary"
+            size="md"
+          />
+          <GlassButton
+            icon={Save}
+            onClick={handleSubmit}
+            disabled={isSubmitting || !formData.ticker || !formData.news_description}
+            tooltip={editingNews ? 'Update News Entry' : 'Save News Entry'}
+            variant="primary"
+            size="md"
+          />
+        </div>
+      </div>
 
       {error && (
         <div className="mb-4 p-3 bg-rose-500/20 border border-rose-400/30 rounded-lg text-rose-200 text-sm">
@@ -396,25 +440,6 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
           </>
         )}
       </div>
-
-      <div className="flex gap-3">
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmitting || !formData.ticker || !formData.news_description}
-            className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white py-4 rounded-xl font-bold text-lg hover:shadow-lg hover:shadow-blue-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? 'Saving...' : (editingNews ? 'Update News Entry' : 'Save News Entry')}
-          </button>
-          {editingNews && onCancelEdit && (
-            <button
-              onClick={onCancelEdit}
-              disabled={isSubmitting}
-              className="px-6 bg-slate-600 hover:bg-slate-700 text-white py-4 rounded-xl font-bold text-lg transition-all disabled:opacity-50"
-            >
-              Cancel
-            </button>
-          )}
-        </div>
 
       <div className="mt-3 text-center text-xs text-blue-300">
         * Required fields

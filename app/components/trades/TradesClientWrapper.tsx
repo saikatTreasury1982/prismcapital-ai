@@ -8,6 +8,7 @@ import { TransactionEntryForm } from './TransactionEntryForm';
 import { ByTickerView } from './ByTickerView';
 import { ByStatusView } from './ByStatusView';
 import { ByDateView } from './ByDateView';
+import UnderlineTabs from '@/app/lib/ui/UnderlineTabs';
 
 export function TradesClientWrapper() {
   const [activeTab, setActiveTab] = useState<'entry' | 'ticker' | 'status' | 'date'>('entry');
@@ -36,59 +37,21 @@ export function TradesClientWrapper() {
     <div className="min-h-screen p-4 sm:p-6">
       {/* Navigation Tabs */}
       <div className="max-w-7xl mx-auto mb-6">
-        <div className="backdrop-blur-xl bg-white/5 rounded-2xl p-2 border border-white/10 inline-flex gap-2 flex-wrap">
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab('entry');
+        <UnderlineTabs
+          tabs={[
+            { id: 'entry', label: 'Quick Entry', icon: <Plus className="w-5 h-5" /> },
+            { id: 'ticker', label: 'By Ticker', icon: <List className="w-5 h-5" /> },
+            { id: 'status', label: 'By Status', icon: <BarChart2 className="w-5 h-5" /> },
+            { id: 'date', label: 'By Date', icon: <Calendar className="w-5 h-5" /> },
+          ]}
+          activeTab={activeTab}
+          onChange={(tabId) => {
+            setActiveTab(tabId as 'entry' | 'ticker' | 'status' | 'date');
+            if (tabId === 'entry') {
               setEditingTransaction(null);
-            }}
-            className={`px-6 py-3 rounded-xl flex items-center gap-2 transition-all ${
-              activeTab === 'entry' 
-                ? 'funding-emerald-gradient text-white shadow-lg' 
-                : 'text-blue-200 hover:bg-white/5'
-            }`}
-          >
-            <Plus className="w-5 h-5" />
-            <span>Quick Entry</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('ticker')}
-            className={`px-6 py-3 rounded-xl flex items-center gap-2 transition-all ${
-              activeTab === 'ticker' 
-                ? 'funding-blue-gradient text-white shadow-lg' 
-                : 'text-blue-200 hover:bg-white/5'
-            }`}
-          >
-            <List className="w-5 h-5" />
-            <span>By Ticker</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('status')}
-            className={`px-6 py-3 rounded-xl flex items-center gap-2 transition-all ${
-              activeTab === 'status' 
-                ? 'funding-blue-gradient text-white shadow-lg' 
-                : 'text-blue-200 hover:bg-white/5'
-            }`}
-          >
-            <BarChart2 className="w-5 h-5" />
-            <span>By Status</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('date')}
-            className={`px-6 py-3 rounded-xl flex items-center gap-2 transition-all ${
-              activeTab === 'date' 
-                ? 'funding-blue-gradient text-white shadow-lg' 
-                : 'text-blue-200 hover:bg-white/5'
-            }`}
-          >
-            <Calendar className="w-5 h-5" />
-            <span>By Date</span>
-          </button>
-        </div>
+            }
+          }}
+        />
       </div>
 
       {/* Content */}

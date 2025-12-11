@@ -4,6 +4,7 @@ import { X, Edit2, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Transaction } from '../../lib/types/transaction';
 import { deleteTransaction } from '../../services/transactionServiceClient';
+import GlassButton from '@/app/lib/ui/GlassButton';
 
 interface TransactionDetailModalProps {
   transaction: Transaction | null;
@@ -110,25 +111,25 @@ export function TransactionDetailModal({ transaction, onClose, onEdit, onDelete 
           {/* Action Buttons - Floating Bottom Right */}
           <div className="fixed bottom-6 right-6 flex gap-3">
             {onEdit && (
-              <button
+              <GlassButton
+                icon={Edit2}
                 onClick={() => {
                   onEdit(transaction);
                   onClose();
                 }}
-                className="p-4 bg-white/10 hover:bg-white/20 backdrop-blur-xl text-blue-300 rounded-full border border-white/20 hover:border-blue-400/50 transition-all shadow-lg cursor-pointer"
-                title="Edit"
-              >
-                <Edit2 className="w-5 h-5" />
-              </button>
+                tooltip="Edit Transaction"
+                variant="primary"
+                size="lg"
+              />
             )}
             {onDelete && (
-              <button
+              <GlassButton
+                icon={Trash2}
                 onClick={() => setShowDeleteConfirm(true)}
-                className="p-4 bg-white/10 hover:bg-white/20 backdrop-blur-xl text-rose-300 rounded-full border border-white/20 hover:border-rose-400/50 transition-all shadow-lg cursor-pointer"
-                title="Delete"
-              >
-                <Trash2 className="w-5 h-5" />
-              </button>
+                tooltip="Delete Transaction"
+                variant="secondary"
+                size="lg"
+              />
             )}
           </div>
 

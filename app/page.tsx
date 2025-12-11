@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { Fingerprint, Smartphone } from 'lucide-react';
 import { startRegistration } from '@simplewebauthn/browser';
+import GlassButton from '@/app/lib/ui/GlassButton';
 
 export default function LoginPage() {
   const [identifier, setIdentifier] = useState('');
@@ -195,55 +196,60 @@ export default function LoginPage() {
 
           {!showOTP ? (
             <div className="space-y-4">
-              <div>
+              <div className="flex gap-2 items-center">
                 <input
                   type="text"
                   placeholder="User ID or Email"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
+                  className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
                   suppressHydrationWarning={true}
                 />
+                
+                <GlassButton
+                  icon={Fingerprint}
+                  onClick={handlePasskey}
+                  disabled={loading || !identifier.trim()}
+                  tooltip="Sign in with Passkey"
+                  variant="primary"
+                  size="lg"
+                />
+                
+                <GlassButton
+                  icon={Smartphone}
+                  onClick={() => setShowOTP(true)}
+                  disabled={!identifier.trim()}
+                  tooltip="Use SMS Code Instead"
+                  variant="secondary"
+                  size="lg"
+                />
               </div>
-
-              <button
-                onClick={handlePasskey}
-                disabled={loading || !identifier.trim()}
-                className="w-full bg-gradient-to-r from-blue-500 to-emerald-600 text-white py-4 rounded-2xl font-semibold flex items-center justify-center gap-3 hover:from-blue-600 hover:to-blue-700 hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Fingerprint className="w-6 h-6" />
-                {loading ? 'Authenticating...' : 'Sign in with Passkey'}
-              </button>
-
-              <button
-                onClick={() => setShowOTP(true)}
-                disabled={!identifier.trim()}
-                className="w-full bg-gradient-to-r from-blue-500 to-emerald-600 text-white py-4 rounded-2xl font-semibold flex items-center justify-center gap-3 hover:from-blue-600 hover:to-blue-700 hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Smartphone className="w-6 h-6" />
-                Use SMS Code Instead
-              </button>
             </div>
             ) : (
             <div className="space-y-4">
-              <div>
-                <input
-                  type="tel"
-                  placeholder="Phone Number"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
-                />
-              </div>
-
               {!code && (
-                <button
-                  onClick={handleSendOTP}
-                  disabled={loading || !phone}
-                  className="w-full bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent text-white py-3 rounded-2xl font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed enabled:hover:from-blue-600 enabled:hover:to-blue-700 enabled:hover:shadow-xl"
-                >
-                  {loading ? 'Sending...' : 'Send Code'}
-                </button>
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="tel"
+                    placeholder="Phone Number"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
+                  />
+                  
+                  <GlassButton
+                    onClick={handleSendOTP}
+                    disabled={loading || !phone}
+                    tooltip="Send Code"
+                    variant="primary"
+                    size="lg"
+                    className="px-6"
+                  >
+                    <span className="text-white text-sm whitespace-nowrap">
+                      {loading ? 'Sending...' : 'Send'}
+                    </span>
+                  </GlassButton>
+                </div>
               )}
 
               {code !== '' && (
@@ -259,13 +265,18 @@ export default function LoginPage() {
                     />
                   </div>
 
-                  <button
+                  <GlassButton
                     onClick={handleVerifyOTP}
                     disabled={loading || code.length !== 6}
-                    className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-2xl font-semibold hover:from-blue-600 hover:to-blue-700 hover:shadow-xl transition-all disabled:opacity-50"
+                    tooltip="Verify & Sign In"
+                    variant="primary"
+                    size="lg"
+                    className="w-full"
                   >
-                    {loading ? 'Verifying...' : 'Verify & Sign In'}
-                  </button>
+                    <span className="text-white font-semibold">
+                      {loading ? 'Verifying...' : 'Verify & Sign In'}
+                    </span>
+                  </GlassButton>
                 </>
               )}
 

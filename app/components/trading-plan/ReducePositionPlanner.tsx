@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 import { DollarSign, TrendingUp, Wallet, Save } from 'lucide-react';
 import { Position } from '@/app/lib/types/transaction';
 import { convertCurrency, createPositionActionPlan, updatePositionActionPlan } from '@/app/services/positionActionPlanServiceClient';
+import GlassButton from '@/app/lib/ui/GlassButton';
+import { XCircle } from 'lucide-react';
+import SegmentedControl from '@/app/lib/ui/SegmentedControl';
 
 interface ReducePositionPlannerProps {
   position: Position;
@@ -247,17 +250,26 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
               {editingScenario ? 'Update your saved scenario' : 'Plan your liquidation, reinvestment, and withdrawal strategy'}
             </p>
           </div>
-          {editingPlan && (
-            <button
+          <div className="flex gap-2">
+            <GlassButton
+              icon={XCircle}
               onClick={() => {
                 handleCancelEdit();
                 onCancel?.();
               }}
-              className="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-xl transition-all"
-            >
-              Cancel Edit
-            </button>
-          )}
+              tooltip="Cancel"
+              variant="secondary"
+              size="md"
+            />
+            <GlassButton
+              icon={Save}
+              onClick={handleSaveScenario}
+              disabled={isSaving || proceeds <= 0}
+              tooltip={isSaving ? (editingScenario ? 'Updating...' : 'Saving...') : (editingScenario ? 'Update Scenario' : 'Save Scenario')}
+              variant="primary"
+              size="md"
+            />
+          </div>
         </div>
       </div>
 
@@ -280,27 +292,16 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
         </div>
 
         {/* Liquidation Type Toggle */}
-        <div className="inline-flex rounded-xl overflow-hidden border border-white/20 mb-4">
-          <button
-            onClick={() => setLiquidationType('full')}
-            className={`px-6 py-3 font-semibold transition-all ${
-              liquidationType === 'full'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white/5 text-blue-200 hover:bg-white/10'
-            }`}
-          >
-            Full Liquidation
-          </button>
-          <button
-            onClick={() => setLiquidationType('partial')}
-            className={`px-6 py-3 font-semibold transition-all ${
-              liquidationType === 'partial'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white/5 text-blue-200 hover:bg-white/10'
-            }`}
-          >
-            Partial Sale
-          </button>
+        <div className="mb-4 inline-flex">
+          <SegmentedControl
+            options={[
+              { value: 1, label: 'Full Liquidation' },
+              { value: 2, label: 'Partial Sale' },
+            ]}
+            value={liquidationType === 'full' ? 1 : 2}
+            onChange={(value) => setLiquidationType(value === 1 ? 'full' : 'partial')}
+            color="rose"
+          />
         </div>
 
         {liquidationType === 'partial' && (
@@ -379,38 +380,16 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
           <label className="text-blue-200 text-sm mb-2 block font-medium">
             What would you like to do with the proceeds?
           </label>
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              onClick={() => setNextAction('none')}
-              className={`px-4 py-3 rounded-xl font-semibold transition-all ${
-                nextAction === 'none'
-                  ? 'bg-slate-600 text-white shadow-lg'
-                  : 'bg-white/5 text-blue-200 hover:bg-white/10 border border-white/10'
-              }`}
-            >
-              Decide Later
-            </button>
-            <button
-              onClick={() => setNextAction('reinvest')}
-              className={`px-4 py-3 rounded-xl font-semibold transition-all ${
-                nextAction === 'reinvest'
-                  ? 'bg-green-600 text-white shadow-lg'
-                  : 'bg-white/5 text-blue-200 hover:bg-white/10 border border-white/10'
-              }`}
-            >
-              Reinvest
-            </button>
-            <button
-              onClick={() => setNextAction('withdraw')}
-              className={`px-4 py-3 rounded-xl font-semibold transition-all ${
-                nextAction === 'withdraw'
-                  ? 'bg-purple-600 text-white shadow-lg'
-                  : 'bg-white/5 text-blue-200 hover:bg-white/10 border border-white/10'
-              }`}
-            >
-              Withdraw
-            </button>
-          </div>
+          <SegmentedControl
+            options={[
+              { value: 1, label: 'Decide Later' },
+              { value: 2, label: 'Reinvest' },
+              { value: 3, label: 'Withdraw' },
+            ]}
+            value={nextAction === 'none' ? 1 : nextAction === 'reinvest' ? 2 : 3}
+            onChange={(value) => setNextAction(value === 1 ? 'none' : value === 2 ? 'reinvest' : 'withdraw')}
+            color="blue"
+          />
         </div>
       </div>
 
@@ -549,16 +528,6 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
           className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 resize-none"
         />
       </div>
-
-      {/* Save Button */}
-      <button
-        onClick={handleSaveScenario}
-        disabled={isSaving || proceeds <= 0}
-        className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-4 rounded-xl font-bold text-lg hover:shadow-lg hover:shadow-blue-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-      >
-        <Save className="w-5 h-5" />
-        {isSaving ? (editingScenario ? 'Updating...' : 'Saving...') : (editingScenario ? 'Update Scenario' : 'Save Scenario')}
-      </button>
 
       {/* View Scenario Modal */}
       {viewingScenario && (
@@ -706,22 +675,24 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-3">
-              <button
+            <div className="flex gap-3 justify-end">
+              <GlassButton
+                icon={XCircle}
+                onClick={() => setViewingScenario(null)}
+                tooltip="Close"
+                variant="secondary"
+                size="lg"
+              />
+              <GlassButton
+                icon={Save}
                 onClick={() => {
                   setViewingScenario(null);
                   handleLoadScenario(viewingScenario);
                 }}
-                className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-xl font-bold hover:shadow-lg hover:shadow-blue-500/50 transition-all"
-              >
-                Edit Scenario
-              </button>
-              <button
-                onClick={() => setViewingScenario(null)}
-                className="px-6 bg-slate-600 hover:bg-slate-700 text-white py-3 rounded-xl font-bold transition-all"
-              >
-                Close
-              </button>
+                tooltip="Edit Scenario"
+                variant="primary"
+                size="lg"
+              />
             </div>
           </div>
         </div>

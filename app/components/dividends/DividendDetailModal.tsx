@@ -3,6 +3,7 @@
 import { X, Edit2, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Dividend } from '../../lib/types/dividend';
+import GlassButton from '@/app/lib/ui/GlassButton';
 
 interface DividendDetailModalProps {
   dividend: Dividend | null;
@@ -107,25 +108,25 @@ export function DividendDetailModal({ dividend, onClose, onEdit, onDelete }: Div
           {/* Action Buttons - Floating Bottom Right */}
           <div className="fixed bottom-6 right-6 flex gap-3">
             {onEdit && (
-              <button
+              <GlassButton
+                icon={Edit2}
                 onClick={() => {
                   onEdit(dividend);
                   onClose();
                 }}
-                className="p-4 bg-white/10 hover:bg-white/20 backdrop-blur-xl text-blue-300 rounded-full border border-white/20 hover:border-blue-400/50 transition-all shadow-lg"
-                title="Edit"
-              >
-                <Edit2 className="w-5 h-5" />
-              </button>
+                tooltip="Edit Dividend"
+                variant="primary"
+                size="lg"
+              />
             )}
             {onDelete && (
-              <button
+              <GlassButton
+                icon={Trash2}
                 onClick={() => setShowDeleteConfirm(true)}
-                className="p-4 bg-white/10 hover:bg-white/20 backdrop-blur-xl text-rose-300 rounded-full border border-white/20 hover:border-rose-400/50 transition-all shadow-lg"
-                title="Delete"
-              >
-                <Trash2 className="w-5 h-5" />
-              </button>
+                tooltip="Delete Dividend"
+                variant="secondary"
+                size="lg"
+              />
             )}
           </div>
 

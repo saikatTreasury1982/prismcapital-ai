@@ -5,6 +5,8 @@ import { Plus, Sparkles } from 'lucide-react';
 import { PositionForDividend, Dividend } from '../../lib/types/dividend';
 import { createDividend, updateDividend } from '../../services/dividendServiceClient';
 import { useSession } from 'next-auth/react';
+import GlassButton from '@/app/lib/ui/GlassButton';
+import { Save, XCircle } from 'lucide-react';
 
 interface DividendEntryFormProps {
   positions: PositionForDividend[];
@@ -17,21 +19,38 @@ interface PositionCardProps {
   position: PositionForDividend;
   onAutoFill: (position: PositionForDividend) => void;
   isAutoFilling: boolean;
+  loadingTicker: string | null;
 }
 
-function PositionCard({ position, onAutoFill, isAutoFilling }: PositionCardProps) {
+function PositionCard({ position, onAutoFill, isAutoFilling, loadingTicker }: PositionCardProps) {
+  const isThisCardLoading = loadingTicker === position.ticker;
+  const isDisabled = isAutoFilling && !isThisCardLoading;
+  
   return (
-    <div className="p-3 bg-white/5 rounded-xl border border-white/10">
+    <div 
+      onClick={() => !isAutoFilling && onAutoFill(position)}
+      className={`p-3 bg-white/5 rounded-xl border border-white/10 transition-all relative ${
+        isDisabled 
+          ? 'opacity-30 cursor-not-allowed' 
+          : 'cursor-pointer hover:scale-105 hover:border-emerald-400/50 hover:shadow-lg hover:shadow-emerald-500/20'
+      } ${isThisCardLoading ? 'border-emerald-400 animate-pulse' : ''}`}
+      title={isDisabled ? '' : 'Click to propose dividend for this position'}
+      style={{ pointerEvents: isAutoFilling ? 'none' : 'auto' }}
+    >
+      {isThisCardLoading && (
+        <div className="absolute inset-0 bg-emerald-500/20 rounded-xl flex items-center justify-center backdrop-blur-sm z-10">
+          <div className="flex flex-col items-center gap-2">
+            <svg className="animate-spin h-8 w-8 text-emerald-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span className="text-emerald-300 text-xs font-semibold">Loading...</span>
+          </div>
+        </div>
+      )}
+      
       <div className="flex items-start justify-between mb-2">
         <h4 className="text-white font-bold text-lg">{position.ticker}</h4>
-        <button
-          onClick={() => onAutoFill(position)}
-          disabled={isAutoFilling}
-          className="p-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-full hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-          title="Auto-Fill"
-        >
-          <Sparkles className="w-4 h-4" />
-        </button>
       </div>
       
       {position.ticker_name && (
@@ -72,6 +91,7 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isAutoFilling, setIsAutoFilling] = useState(false);
+  const [loadingTicker, setLoadingTicker] = useState<string | null>(null);
 
   // Auto-calculate total dividend amount
   useEffect(() => {
@@ -120,6 +140,7 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
 
   const handleAutoFill = async (position: PositionForDividend) => {
     setIsAutoFilling(true);
+    setLoadingTicker(position.ticker);
     setError(null);
 
     try {
@@ -179,6 +200,25 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
       setError(err.message || 'Failed to fetch dividend data');
     } finally {
       setIsAutoFilling(false);
+      setLoadingTicker(null);
+    }
+  };
+
+  const handleCancel = () => {
+    setFormData({
+      ticker: '',
+      ex_dividend_date: '',
+      payment_date: '',
+      dividend_per_share: '',
+      shares_owned: '',
+      total_dividend_amount: '',
+      dividend_yield: '',
+      notes: '',
+      Currency: 'USD'
+    });
+    setError(null);
+    if (onCancelEdit) {
+      onCancelEdit();
     }
   };
 
@@ -283,6 +323,7 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
                 position={position}
                 onAutoFill={handleAutoFill}
                 isAutoFilling={isAutoFilling}
+                loadingTicker={loadingTicker}
               />
             ))}
           </div>
@@ -290,11 +331,45 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
       </div>
 
       {/* Right Column - Form */}
-      <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-6 sm:p-8 border border-white/20">
-        <h2 className="text-xl sm:text-2xl font-bold text-white mb-6 flex items-center gap-3">
-          <Plus className="w-6 h-6" />
-          {editingDividend ? 'Edit Dividend Entry' : 'Quick Dividend Entry'}
-        </h2>
+      <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-6 sm:p-8 border border-white/20 relative">
+        {/* Loading Overlay */}
+        {isAutoFilling && (
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm rounded-3xl flex items-center justify-center z-50">
+            <div className="flex flex-col items-center gap-3">
+              <svg className="animate-spin h-12 w-12 text-emerald-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span className="text-white text-lg font-semibold">Fetching dividend data...</span>
+              {loadingTicker && (
+                <span className="text-emerald-300 text-sm">for {loadingTicker}</span>
+              )}
+            </div>
+          </div>
+        )}
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-3">
+            <Plus className="w-6 h-6" />
+            {editingDividend ? 'Edit Dividend Entry' : 'Quick Dividend Entry'}
+          </h2>
+          <div className="flex gap-2">
+            <GlassButton
+              icon={XCircle}
+              onClick={handleCancel}
+              tooltip="Clear Form"
+              variant="secondary"
+              size="md"
+            />
+            <GlassButton
+              icon={Save}
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              tooltip={editingDividend ? 'Update Dividend Entry' : 'Save Dividend Entry'}
+              variant="primary"
+              size="md"
+            />
+          </div>
+        </div>
 
         {error && (
           <div className="mb-4 p-3 bg-rose-500/20 border border-rose-400/30 rounded-lg text-rose-200 text-sm">
@@ -418,25 +493,6 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
               className="w-full funding-input rounded-xl px-4 py-3 resize-none"
             />
           </div>
-        </div>
-
-        <div className="flex gap-3">
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white py-4 rounded-xl font-bold text-lg hover:shadow-lg hover:shadow-blue-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? 'Saving...' : (editingDividend ? 'Update Dividend Entry' : 'Save Dividend Entry')}
-          </button>
-          {editingDividend && onCancelEdit && (
-            <button
-              onClick={onCancelEdit}
-              disabled={isSubmitting}
-              className="px-6 bg-slate-600 hover:bg-slate-700 text-white py-4 rounded-xl font-bold text-lg transition-all disabled:opacity-50"
-            >
-              Cancel
-            </button>
-          )}
         </div>
 
         <div className="mt-3 text-center text-xs text-blue-300">

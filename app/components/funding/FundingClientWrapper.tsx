@@ -7,6 +7,7 @@ import { DetailedEntryForm } from './DetailedEntryForm';
 import { PeriodTimeline } from './PeriodTimeline';
 import { PeriodCompare } from './PeriodCompare';
 import { RecentTransactions } from './RecentTransactions';
+import UnderlineTabs from '@/app/lib/ui/UnderlineTabs';
 
 interface FundingClientWrapperProps {
   currencies: UserCurrencies;
@@ -30,47 +31,15 @@ export function FundingClientWrapper({
     <div className="min-h-screen p-4 sm:p-6">
     {/* Navigation Tabs */}
     <div className="max-w-7xl mx-auto mb-6">
-      <div 
-        className="backdrop-blur-xl bg-white/5 rounded-2xl p-2 border border-white/10 inline-flex gap-2"
-        suppressHydrationWarning
-      >
-        <button
-          type="button"
-          onClick={() => setViewMode('entry')}
-          className={`px-6 py-3 rounded-xl flex items-center gap-2 transition-all ${
-            viewMode === 'entry' 
-              ? 'funding-emerald-gradient text-white shadow-lg' 
-              : 'text-blue-200 hover:bg-white/5'
-          }`}
-        >
-          <Edit3 className="w-5 h-5" />
-          <span>Record Entry</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setViewMode('timeline')}
-          className={`px-6 py-3 rounded-xl flex items-center gap-2 transition-all ${
-            viewMode === 'timeline' 
-              ? 'funding-blue-gradient text-white shadow-lg' 
-              : 'text-blue-200 hover:bg-white/5'
-          }`}
-        >
-          <BarChart3 className="w-5 h-5" />
-          <span>Visual Timeline</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setViewMode('compare')}
-          className={`px-6 py-3 rounded-xl flex items-center gap-2 transition-all ${
-            viewMode === 'compare' 
-              ? 'funding-blue-gradient text-white shadow-lg' 
-              : 'text-blue-200 hover:bg-white/5'
-          }`}
-        >
-          <ArrowLeftRight className="w-5 h-5" />
-          <span>Period Compare</span>
-        </button>
-      </div>
+      <UnderlineTabs
+        tabs={[
+          { id: 'entry', label: 'Record Entry', icon: <Edit3 className="w-5 h-5" /> },
+          { id: 'timeline', label: 'Visual Timeline', icon: <BarChart3 className="w-5 h-5" /> },
+          { id: 'compare', label: 'Period Compare', icon: <ArrowLeftRight className="w-5 h-5" /> },
+        ]}
+        activeTab={viewMode}
+        onChange={(tabId) => setViewMode(tabId as 'entry' | 'timeline' | 'compare')}
+      />
     </div>
 
       {/* Entry View */}

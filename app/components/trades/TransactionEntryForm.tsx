@@ -5,6 +5,9 @@ import { Plus } from 'lucide-react';
 import { Transaction, CreateTransactionInput } from '../../lib/types/transaction';
 import { createTransaction, updateTransaction } from '../../services/transactionServiceClient';
 import { useDebounce } from '../../lib/hooks/useDebounce';
+import GlassButton from '@/app/lib/ui/GlassButton';
+import SegmentedControl from '@/app/lib/ui/SegmentedControl';
+import { Save, XCircle, TrendingUp, TrendingDown } from 'lucide-react';
 
 interface TransactionEntryFormProps {
   onSuccess: () => void;
@@ -196,12 +199,53 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
     }
   };
 
+  const handleCancel = () => {
+    setFormData({
+      ticker: '',
+      transaction_type_id: 1,
+      strategy_id: 1,
+      transaction_date: new Date().toISOString().split('T')[0],
+      quantity: '',
+      price: '',
+      fees: '0',
+      transaction_currency: 'USD',
+      notes: '',
+      trade_value: '0'
+    });
+    setCompanyName('');
+    setHasPosition(null);
+    setError(null);
+    setTickerError(null);
+    if (onCancelEdit) {
+      onCancelEdit();
+    }
+  };
+
   return (
     <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-6 sm:p-8 border border-white/20">
-      <h2 className="text-xl sm:text-2xl font-bold text-white mb-6 flex items-center gap-3">
-        <Plus className="w-6 h-6" />
-        {editingTransaction ? 'Edit Transaction' : 'Quick Transaction Entry'}
-      </h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-3">
+          <Plus className="w-6 h-6" />
+          {editingTransaction ? 'Edit Transaction' : 'Quick Transaction Entry'}
+        </h2>
+        <div className="flex gap-2">
+          <GlassButton
+            icon={XCircle}
+            onClick={handleCancel}
+            tooltip="Clear Form"
+            variant="secondary"
+            size="md"
+          />
+          <GlassButton
+            icon={Save}
+            onClick={handleSubmit}
+            disabled={isSubmitting || !formData.ticker || !formData.quantity || !formData.price}
+            tooltip={editingTransaction ? 'Update Transaction' : 'Save Transaction'}
+            variant="primary"
+            size="md"
+          />
+        </div>
+      </div>
 
       {editingTransaction && (
         <div className="mb-4 p-3 bg-blue-500/20 border border-blue-400/30 rounded-lg text-blue-200 text-sm">
@@ -310,31 +354,15 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
         {/* Transaction Type */}
         <div>
           <label className="text-blue-200 text-sm mb-2 block font-medium">Transaction Type *</label>
-          <div className={`inline-flex rounded-xl overflow-hidden border border-white/20 ${editingTransaction ? 'opacity-50 pointer-events-none' : ''}`}>
-            <button
-              type="button"
-              onClick={() => setFormData({ ...formData, transaction_type_id: 1 })}
-              disabled={!!editingTransaction}
-              className={`px-6 py-3 font-semibold transition-all ${
-                formData.transaction_type_id === 1
-                  ? 'bg-green-600 text-white'
-                  : 'bg-white/5 text-blue-200 hover:bg-white/10'
-              }`}
-            >
-              Buy
-            </button>
-            <button
-              type="button"
-              onClick={() => setFormData({ ...formData, transaction_type_id: 2 })}
-              disabled={!!editingTransaction}
-              className={`px-6 py-3 font-semibold transition-all ${
-                formData.transaction_type_id === 2
-                  ? 'bg-rose-600 text-white'
-                  : 'bg-white/5 text-blue-200 hover:bg-white/10'
-              }`}
-            >
-              Sell
-            </button>
+          <div className={editingTransaction ? 'opacity-50 pointer-events-none' : ''}>
+            <SegmentedControl
+              options={[
+                { value: 1, label: 'Buy', icon: <TrendingUp className="w-5 h-5" /> },
+                { value: 2, label: 'Sell', icon: <TrendingDown className="w-5 h-5" /> },
+              ]}
+              value={formData.transaction_type_id}
+              onChange={(value) => setFormData({ ...formData, transaction_type_id: value })}
+            />
           </div>
         </div>
 
@@ -430,25 +458,6 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
             className="w-full funding-input rounded-xl px-4 py-3 resize-none"
           />
         </div>
-      </div>
-
-      <div className="flex gap-3">
-        <button
-          onClick={handleSubmit}
-          disabled={isSubmitting || !formData.ticker || !formData.quantity || !formData.price}
-          className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white py-4 rounded-xl font-bold text-lg hover:shadow-lg hover:shadow-blue-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isSubmitting ? 'Saving...' : (editingTransaction ? 'Update Transaction' : 'Save Transaction')}
-        </button>
-        {editingTransaction && onCancelEdit && (
-          <button
-            onClick={onCancelEdit}
-            disabled={isSubmitting}
-            className="px-6 bg-slate-600 hover:bg-slate-700 text-white py-4 rounded-xl font-bold text-lg transition-all disabled:opacity-50"
-          >
-            Cancel
-          </button>
-        )}
       </div>
 
       <div className="mt-3 text-center text-xs text-blue-300">
