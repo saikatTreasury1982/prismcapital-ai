@@ -6,6 +6,8 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 import { NewsSummaryByType, NewsListItem } from '../../lib/types/newsViews';
 import { NewsDetailModal } from './NewsDetailModal';
 import { useSession } from 'next-auth/react';
+import GlassButton from '@/app/lib/ui/GlassButton';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface ByCategoryViewProps {
   onEdit?: (news: NewsListItem) => void;
@@ -219,23 +221,25 @@ export function ByCategoryView({ onEdit, onDelete }: ByCategoryViewProps) {
                 {/* Pagination */}
                 {totalPages[summary.type_name] > 1 && (
                   <div className="flex items-center justify-center gap-2 mt-4">
-                    <button
+                    <GlassButton
+                      icon={ChevronLeft}
                       onClick={() => handlePageChange(summary.type_name, (currentPage[summary.type_name] || 1) - 1)}
                       disabled={(currentPage[summary.type_name] || 1) === 1}
-                      className="px-4 py-2 bg-white/10 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/20 transition-colors"
-                    >
-                      Previous
-                    </button>
-                    <span className="text-white">
+                      tooltip="Previous Page"
+                      variant="primary"
+                      size="sm"
+                    />
+                    <span className="text-white text-sm">
                       Page {currentPage[summary.type_name] || 1} of {totalPages[summary.type_name]}
                     </span>
-                    <button
+                    <GlassButton
+                      icon={ChevronRight}
                       onClick={() => handlePageChange(summary.type_name, (currentPage[summary.type_name] || 1) + 1)}
                       disabled={(currentPage[summary.type_name] || 1) >= totalPages[summary.type_name]}
-                      className="px-4 py-2 bg-white/10 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/20 transition-colors"
-                    >
-                      Next
-                    </button>
+                      tooltip="Next Page"
+                      variant="primary"
+                      size="sm"
+                    />
                   </div>
                 )}
               </div>
