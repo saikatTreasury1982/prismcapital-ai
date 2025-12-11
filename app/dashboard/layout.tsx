@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 import { DashboardNav } from '../components/dashboard/DashboardNav';
 import { Settings, LogOut, UserCircle } from 'lucide-react';
+import GlassButton from '@/app/lib/ui/GlassButton';
+import { X } from 'lucide-react';
 
 export default function DashboardLayout({
   children,
@@ -139,7 +141,17 @@ export default function DashboardLayout({
       {showPreferences && preferences && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 max-w-md w-full p-8">
-            <h2 className="text-2xl font-bold text-white mb-6">User Preferences</h2>
+            {/* Header with Close Button */}
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white">User Preferences</h2>
+              <GlassButton
+                icon={X}
+                onClick={() => setShowPreferences(false)}
+                tooltip="Close"
+                variant="secondary"
+                size="md"
+              />
+            </div>
             
             <div className="space-y-4 text-white">
               <div className="bg-white/5 rounded-xl p-4 border border-white/10">
@@ -174,13 +186,6 @@ export default function DashboardLayout({
                 </div>
               )}
             </div>
-            
-            <button
-              onClick={() => setShowPreferences(false)}
-              className="mt-6 w-full bg-gradient-to-r from-blue-500 to-emerald-600 text-white py-3 rounded-2xl font-semibold hover:shadow-xl transition-all"
-            >
-              Close
-            </button>
           </div>
         </div>
       )}
