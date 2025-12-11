@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Filter } from 'lucide-react';
+import { Plus, Filter, BarChart3 } from 'lucide-react';
 import { TradeAnalysis } from '@/app/lib/types/tradeAnalysis';
 import { getTradeAnalyses, deleteTradeAnalysis } from '@/app/services/tradeAnalysisServiceClient';
 import { TradeAnalysisCard } from './TradeAnalysisCard';
 import { TradeAnalysisForm } from './TradeAnalysisForm';
+import GlassButton from '@/app/lib/ui/GlassButton';
+import SegmentedControl from '@/app/lib/ui/SegmentedControl';
 
 export function TradeAnalyzer() {
   const [analyses, setAnalyses] = useState<TradeAnalysis[]>([]);
@@ -84,52 +86,29 @@ export function TradeAnalyzer() {
     <div className="space-y-6">
       {/* Top Bar */}
       <div className="flex items-center justify-between">
-        <button
+        <GlassButton
+          icon={BarChart3}
           onClick={() => {
             setEditingAnalysis(null);
             setShowForm(true);
           }}
-          className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2 hover:shadow-lg hover:shadow-emerald-500/50 transition-all"
-        >
-          <Plus className="w-5 h-5" />
-          Add Analysis
-        </button>
+          tooltip="Add Analysis"
+          variant="secondary"
+          size="lg"
+        />
 
         {/* Filters */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Filter className="w-5 h-5 text-blue-300" />
-          <div className="backdrop-blur-xl bg-white/5 rounded-xl p-1 border border-white/10 inline-flex gap-1">
-            <button
-              onClick={() => setFilterStatus('all')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                filterStatus === 'all'
-                  ? 'bg-blue-500 text-white'
-                  : 'text-blue-200 hover:bg-white/10'
-              }`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setFilterStatus('flagged')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                filterStatus === 'flagged'
-                  ? 'bg-blue-500 text-white'
-                  : 'text-blue-200 hover:bg-white/10'
-              }`}
-            >
-              Flagged
-            </button>
-            <button
-              onClick={() => setFilterStatus('archived')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                filterStatus === 'archived'
-                  ? 'bg-blue-500 text-white'
-                  : 'text-blue-200 hover:bg-white/10'
-              }`}
-            >
-              Archived
-            </button>
-          </div>
+          <SegmentedControl
+            options={[
+              { value: 1, label: 'All' },
+              { value: 2, label: 'Flagged' },
+              { value: 3, label: 'Archived' },
+            ]}
+            value={filterStatus === 'all' ? 1 : filterStatus === 'flagged' ? 2 : 3}
+            onChange={(value) => setFilterStatus(value === 1 ? 'all' : value === 2 ? 'flagged' : 'archived')}
+          />
         </div>
       </div>
 

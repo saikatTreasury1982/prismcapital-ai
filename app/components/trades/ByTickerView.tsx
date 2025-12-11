@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { List } from 'lucide-react';
+import GlassButton from '@/app/lib/ui/GlassButton';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface RealizedTrade {
   realization_id: number;
@@ -116,13 +118,12 @@ export function ByTickerView() {
           <List className="w-5 h-5 text-blue-300" />
           <h3 className="text-lg font-bold text-white">Filter by Ticker</h3>
         </div>
-
-        <div className="max-w-md">
-          <label className="text-blue-200 text-sm mb-2 block font-medium">Select Ticker</label>
+        <div className="flex gap-3 items-center">
+          <label className="text-blue-200 text-sm font-medium whitespace-nowrap">Select Ticker</label>
           <select
             value={selectedTicker}
             onChange={(e) => setSelectedTicker(e.target.value)}
-            className="w-full funding-input rounded-xl px-4 py-3"
+            className="w-48 funding-input rounded-xl px-3 py-2 text-sm"
           >
             <option value="all" className="bg-slate-800 text-white">All Tickers</option>
             {uniqueTickers.map(ticker => (
@@ -131,16 +132,17 @@ export function ByTickerView() {
               </option>
             ))}
           </select>
+          
+          {selectedTicker !== 'all' && (
+            <GlassButton
+              icon={X}
+              onClick={() => setSelectedTicker('all')}
+              tooltip="Clear Filter"
+              variant="secondary"
+              size="sm"
+            />
+          )}
         </div>
-
-        {selectedTicker !== 'all' && (
-          <button
-            onClick={() => setSelectedTicker('all')}
-            className="mt-4 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-sm transition-colors"
-          >
-            Clear Filter
-          </button>
-        )}
       </div>
 
       {/* Summary Stats */}
@@ -233,24 +235,26 @@ export function ByTickerView() {
                 <p className="text-blue-200 text-sm">
                   Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, filteredTrades.length)} of {filteredTrades.length} trades
                 </p>
-                <div className="flex gap-2">
-                  <button
+                <div className="flex gap-2 items-center">
+                  <GlassButton
+                    icon={ChevronLeft}
                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
-                    className="px-4 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Previous
-                  </button>
-                  <span className="px-4 py-2 text-white">
+                    tooltip="Previous Page"
+                    variant="primary"
+                    size="md"
+                  />
+                  <span className="px-4 py-2 text-white font-medium">
                     Page {currentPage} of {totalPages}
                   </span>
-                  <button
+                  <GlassButton
+                    icon={ChevronRight}
                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
-                    className="px-4 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Next
-                  </button>
+                    tooltip="Next Page"
+                    variant="primary"
+                    size="md"
+                  />
                 </div>
               </div>
             )}

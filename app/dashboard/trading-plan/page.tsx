@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Target, LineChart } from 'lucide-react';
 import { TradeAnalyzer } from '@/app/components/trading-plan/TradeAnalyzer';
 import { PositionActions } from '@/app/components/trading-plan/PositionActions';
+import SegmentedControl from '@/app/lib/ui/SegmentedControl';
 
 export default function TradingPlanPage() {
   const [activeTab, setActiveTab] = useState<'actions' | 'analyzer'>('analyzer');
@@ -16,31 +17,16 @@ export default function TradingPlanPage() {
       </div>
 
       {/* Tabs */}
-      <div className="backdrop-blur-xl bg-white/5 rounded-2xl p-2 border border-white/10 inline-flex gap-2 mb-8">
-        <button
-          type="button"
-          onClick={() => setActiveTab('actions')}
-          className={`px-6 py-3 rounded-xl flex items-center gap-2 transition-all ${
-            activeTab === 'actions' 
-              ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg' 
-              : 'text-blue-200 hover:bg-white/5'
-          }`}
-        >
-          <Target className="w-5 h-5" />
-          <span>Position Actions</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('analyzer')}
-          className={`px-6 py-3 rounded-xl flex items-center gap-2 transition-all ${
-            activeTab === 'analyzer' 
-              ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg' 
-              : 'text-blue-200 hover:bg-white/5'
-          }`}
-        >
-          <LineChart className="w-5 h-5" />
-          <span>Trade Analyzer</span>
-        </button>
+      <div className="mb-8">
+      <SegmentedControl
+        options={[
+          { value: 1, label: 'Position Actions', icon: <Target className="w-5 h-5" /> },
+          { value: 2, label: 'Trade Analyzer', icon: <LineChart className="w-5 h-5" /> },
+        ]}
+        value={activeTab === 'actions' ? 1 : 2}
+        onChange={(value) => setActiveTab(value === 1 ? 'actions' : 'analyzer')}
+        className="inline-flex"
+      />
       </div>
 
       {/* Tab Content */}

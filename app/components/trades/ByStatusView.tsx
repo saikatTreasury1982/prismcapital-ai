@@ -1,12 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Tag, RefreshCw } from 'lucide-react';
+import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Sliders, RefreshCw } from 'lucide-react';
 import { Position, Transaction } from '../../lib/types/transaction';
 import { getPositions } from '../../services/positionServiceClient';
 import { getTransactions } from '../../services/transactionServiceClient';
 import { TransactionDetailModal } from './TransactionDetailModal';
 import { AssignAttributesModal } from './AssignAttributesModal';
+import GlassButton from '@/app/lib/ui/GlassButton';
+import SegmentedControl from '@/app/lib/ui/SegmentedControl';
+import { ChevronLeft, ChevronRight, Eye } from 'lucide-react';
 
 
 interface ByStatusViewProps {
@@ -247,59 +250,34 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
     <div className="space-y-6">
       {/* Sub-tabs with Refresh Button */}
       <div className="flex items-center gap-4">
-        {/* Original Sub-tabs */}
-        <div className="backdrop-blur-xl bg-white/5 rounded-2xl p-2 border border-white/10 inline-flex gap-2">
-          <button
-            type="button"
-            onClick={() => setActiveSubTab('open')}
-            className={`px-6 py-3 rounded-xl flex items-center gap-2 transition-all ${
-              activeSubTab === 'open' 
-                ? 'bg-green-600 text-white shadow-lg' 
-                : 'text-blue-200 hover:bg-white/5'
-            }`}
-          >
-            <TrendingUp className="w-5 h-5" />
-            <span>Open Trades</span>
-            <span className="px-2 py-1 bg-white/20 rounded-full text-xs font-bold">
-              {positions.length}
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveSubTab('closed')}
-            className={`px-6 py-3 rounded-xl flex items-center gap-2 transition-all ${
-              activeSubTab === 'closed' 
-                ? 'bg-slate-600 text-white shadow-lg' 
-                : 'text-blue-200 hover:bg-white/5'
-            }`}
-          >
-            <TrendingDown className="w-5 h-5" />
-            <span>Closed Trades</span>
-            <span className="px-2 py-1 bg-white/20 rounded-full text-xs font-bold">
-              {closedLots.length}
-            </span>
-          </button>
-        </div>
+        <SegmentedControl
+          options={[
+            { 
+              value: 1, 
+              label: `Open Trades (${positions.length})`, 
+              icon: <TrendingUp className="w-4 h-4" /> 
+            },
+            { 
+              value: 2, 
+              label: `Closed Trades (${closedLots.length})`, 
+              icon: <TrendingDown className="w-4 h-4" /> 
+            },
+          ]}
+          value={activeSubTab === 'open' ? 1 : 2}
+          onChange={(value) => setActiveSubTab(value === 1 ? 'open' : 'closed')}
+        />
 
-        {/* NEW: Refresh Prices Button (only shows on Open Trades tab) */}
+        {/* Refresh Prices Button (only shows on Open Trades tab) */}
         {activeSubTab === 'open' && (
-          <button
-            type="button"
+          <GlassButton
+            icon={RefreshCw}
             onClick={handleRefreshPrices}
             disabled={isRefreshing}
-            className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white flex items-center justify-center transition-all shadow-lg hover:shadow-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed group relative"
-            title="Update market prices"
-          >
-            <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
-            
-            {/* Tooltip */}
-            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-              {isRefreshing ? 'Updating prices...' : 'Refresh market prices'}
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
-                <div className="border-4 border-transparent border-t-gray-900"></div>
-              </div>
-            </div>
-          </button>
+            tooltip={isRefreshing ? 'Updating prices...' : 'Refresh market prices'}
+            variant="secondary"
+            size="md"
+            className={isRefreshing ? 'animate-spin' : ''}
+          />
         )}
       </div>
 
@@ -364,13 +342,13 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
                           )}
                           <button
                             onClick={(e) => {
-                              e.stopPropagation(); // Prevent card expansion
+                              e.stopPropagation();
                               setSelectedPositionForAttributes(position);
                             }}
-                            className="ml-2 w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 flex items-center justify-center transition-all shadow-lg hover:shadow-emerald-500/50"
+                            className="text-emerald-400 hover:text-emerald-300 transition-colors"
                             title="Assign Attributes"
                           >
-                            <Tag className="w-4 h-4 text-white" />
+                            <Sliders className="w-4 h-4" />
                           </button>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-7 gap-4 text-sm">
@@ -493,9 +471,10 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
                                         <td className="py-3 text-center">
                                           <button
                                             onClick={() => setSelectedTransaction(transaction)}
-                                            className="text-blue-400 hover:text-blue-300 text-xs underline"
+                                            className="text-blue-400 hover:text-blue-300 transition-colors"
+                                            title="View Transaction"
                                           >
-                                            View
+                                            <Eye className="w-4 h-4" />
                                           </button>
                                         </td>
                                       </tr>
@@ -515,30 +494,32 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
                                   <p className="text-blue-200">
                                     Showing {((currentPage - 1) * transactionPageSize) + 1} to {Math.min(currentPage * transactionPageSize, tickerTransactions[position.ticker].length)} of {tickerTransactions[position.ticker].length} transactions
                                   </p>
-                                  <div className="flex gap-2">
-                                    <button
+                                  <div className="flex gap-2 items-center">
+                                    <GlassButton
+                                      icon={ChevronLeft}
                                       onClick={() => setTransactionPages(prev => ({ 
                                         ...prev, 
                                         [position.ticker]: Math.max(1, currentPage - 1) 
                                       }))}
                                       disabled={currentPage === 1}
-                                      className="px-3 py-1 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs"
-                                    >
-                                      Previous
-                                    </button>
-                                    <span className="px-3 py-1 text-white">
+                                      tooltip="Previous Page"
+                                      variant="primary"
+                                      size="sm"
+                                    />
+                                    <span className="px-3 py-1 text-white text-xs">
                                       Page {currentPage} of {totalPages}
                                     </span>
-                                    <button
+                                    <GlassButton
+                                      icon={ChevronRight}
                                       onClick={() => setTransactionPages(prev => ({ 
                                         ...prev, 
                                         [position.ticker]: Math.min(totalPages, currentPage + 1) 
                                       }))}
                                       disabled={currentPage === totalPages}
-                                      className="px-3 py-1 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs"
-                                    >
-                                      Next
-                                    </button>
+                                      tooltip="Next Page"
+                                      variant="primary"
+                                      size="sm"
+                                    />
                                   </div>
                                 </div>
                               );
@@ -660,24 +641,26 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
                     <p className="text-blue-200 text-sm">
                       Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, closedLots.length)} of {closedLots.length} lots
                     </p>
-                    <div className="flex gap-2">
-                      <button
+                    <div className="flex gap-2 items-center">
+                      <GlassButton
+                        icon={ChevronLeft}
                         onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                         disabled={currentPage === 1}
-                        className="px-4 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        Previous
-                      </button>
-                      <span className="px-4 py-2 text-white">
+                        tooltip="Previous Page"
+                        variant="primary"
+                        size="md"
+                      />
+                      <span className="px-4 py-2 text-white font-medium">
                         Page {currentPage} of {totalPages}
                       </span>
-                      <button
+                      <GlassButton
+                        icon={ChevronRight}
                         onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                         disabled={currentPage === totalPages}
-                        className="px-4 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        Next
-                      </button>
+                        tooltip="Next Page"
+                        variant="primary"
+                        size="md"
+                      />
                     </div>
                   </div>
                 )}
