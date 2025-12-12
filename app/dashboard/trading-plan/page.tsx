@@ -26,6 +26,7 @@ export default function TradingPlanPage() {
         value={activeTab === 'actions' ? 1 : 2}
         onChange={(value) => setActiveTab(value === 1 ? 'actions' : 'analyzer')}
         className="inline-flex"
+        color='emerald'
       />
       </div>
 
