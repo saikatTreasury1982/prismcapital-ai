@@ -17,7 +17,7 @@ interface ByYearViewProps {
 export function ByYearView({ onEdit, onDelete }: ByYearViewProps) {
   const { data: session } = useSession();
   const [summaries, setSummaries] = useState<DividendSummaryByYear[]>([]);
-  const [expandedYear, setExpandedYear] = useState<number | null>(null);
+  const [expandedYears, setExpandedYears] = useState<Set<number>>(new Set());
   const [yearDividends, setYearDividends] = useState<Record<number, Dividend[]>>({});
   const [currentPage, setCurrentPage] = useState<Record<number, number>>({});
   const [totalPages, setTotalPages] = useState<Record<number, number>>({});
@@ -54,13 +54,18 @@ export function ByYearView({ onEdit, onDelete }: ByYearViewProps) {
   };
 
   const handleYearClick = async (year: number) => {
-    if (expandedYear === year) {
-      setExpandedYear(null);
-      return;
-    }
+    // Toggle expansion
+    setExpandedYears(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(year)) {
+        newSet.delete(year);
+      } else {
+        newSet.add(year);
+      }
+      return newSet;
+    });
 
-    setExpandedYear(year);
-
+    // Fetch data if not already loaded
     if (!yearDividends[year]) {
       try {
         const page = currentPage[year] || 1;
@@ -123,7 +128,7 @@ export function ByYearView({ onEdit, onDelete }: ByYearViewProps) {
                   <div className="flex-1">
                     <h3 className="text-2xl font-bold text-white">{summary.year}</h3>
                   </div>
-                  {expandedYear === summary.year ? (
+                  {expandedYears.has(summary.year) ? (
                     <ChevronUp className="w-5 h-5 text-white flex-shrink-0 ml-2" />
                   ) : (
                     <ChevronDown className="w-5 h-5 text-white flex-shrink-0 ml-2" />
@@ -149,7 +154,7 @@ export function ByYearView({ onEdit, onDelete }: ByYearViewProps) {
                 </div>
               </button>
 
-              {expandedYear === summary.year && yearDividends[summary.year] && (
+              {expandedYears.has(summary.year) && yearDividends[summary.year] && (
                 <div className="border-t border-white/20 p-4 bg-white/5">
                   <div className="space-y-3">
                     {yearDividends[summary.year].map((dividend) => (
@@ -164,15 +169,30 @@ export function ByYearView({ onEdit, onDelete }: ByYearViewProps) {
                             ${(dividend.dividend_per_share * dividend.shares_owned).toFixed(2)}
                           </span>
                         </div>
-                        <div className="text-blue-300 text-sm">
-                          {dividend.payment_date 
-                              ? new Date(dividend.payment_date).toLocaleDateString('en-GB', { 
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div>
+                            <p className="text-blue-300/70">Ex-Div Date</p>
+                            <p className="text-blue-200">
+                              {new Date(dividend.ex_dividend_date).toLocaleDateString('en-GB', { 
                                 day: '2-digit', 
                                 month: 'short', 
                                 year: 'numeric' 
-                              })
-                            : 'Not set'
-                          }
+                              })}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-emerald-300/70">Payment Date</p>
+                            <p className="text-emerald-200">
+                              {dividend.payment_date 
+                                ? new Date(dividend.payment_date).toLocaleDateString('en-GB', { 
+                                    day: '2-digit', 
+                                    month: 'short', 
+                                    year: 'numeric' 
+                                  })
+                                : 'Not set'
+                              }
+                            </p>
+                          </div>
                         </div>
                       </button>
                     ))}

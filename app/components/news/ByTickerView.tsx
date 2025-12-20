@@ -17,7 +17,7 @@ interface ByTickerViewProps {
 export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
   const { data: session } = useSession();
   const [summaries, setSummaries] = useState<NewsSummaryByTicker[]>([]);
-  const [expandedTicker, setExpandedTicker] = useState<string | null>(null);
+  const [expandedTickers, setExpandedTickers] = useState<Set<string>>(new Set());
   const [tickerNews, setTickerNews] = useState<Record<string, NewsListItem[]>>({});
   const [currentPage, setCurrentPage] = useState<Record<string, number>>({});
   const [totalPages, setTotalPages] = useState<Record<string, number>>({});
@@ -56,13 +56,18 @@ export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
   }, [session?.user?.id]);
 
   const handleTickerClick = async (ticker: string) => {
-    if (expandedTicker === ticker) {
-      setExpandedTicker(null);
-      return;
-    }
+    // Toggle expansion
+    setExpandedTickers(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(ticker)) {
+        newSet.delete(ticker);
+      } else {
+        newSet.add(ticker);
+      }
+      return newSet;
+    });
 
-    setExpandedTicker(ticker);
-
+    // Fetch data if not already loaded
     if (!tickerNews[ticker]) {
       try {
         const page = currentPage[ticker] || 1;
@@ -138,7 +143,7 @@ export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
                     <p className="text-blue-200 text-sm line-clamp-1">{summary.company_name}</p>
                   )}
                 </div>
-                {expandedTicker === summary.ticker ? (
+                {expandedTickers.has(summary.ticker) ? (
                   <ChevronUp className="w-5 h-5 text-white flex-shrink-0 ml-2" />
                 ) : (
                   <ChevronDown className="w-5 h-5 text-white flex-shrink-0 ml-2" />
@@ -173,7 +178,7 @@ export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
             </button>
 
             {/* Expanded Content */}
-            {expandedTicker === summary.ticker && tickerNews[summary.ticker] && (
+            {expandedTickers.has(summary.ticker) && tickerNews[summary.ticker] && (
               <div className="border-t border-white/20 p-4 bg-white/5">
                 <div className="space-y-3">
                   {tickerNews[summary.ticker].map((news, index) => (

@@ -17,7 +17,7 @@ interface ByQuarterViewProps {
 export function ByQuarterView({ onEdit, onDelete }: ByQuarterViewProps) {
   const { data: session } = useSession();
   const [summaries, setSummaries] = useState<DividendSummaryByQuarter[]>([]);
-  const [expandedQuarter, setExpandedQuarter] = useState<string | null>(null);
+  const [expandedQuarters, setExpandedQuarters] = useState<Set<string>>(new Set());
   const [quarterDividends, setQuarterDividends] = useState<Record<string, Dividend[]>>({});
   const [currentPage, setCurrentPage] = useState<Record<string, number>>({});
   const [totalPages, setTotalPages] = useState<Record<string, number>>({});
@@ -45,13 +45,18 @@ export function ByQuarterView({ onEdit, onDelete }: ByQuarterViewProps) {
   const handleQuarterClick = async (year: number, quarter: number) => {
     const key = getQuarterKey(year, quarter);
     
-    if (expandedQuarter === key) {
-      setExpandedQuarter(null);
-      return;
-    }
+    // Toggle expansion
+    setExpandedQuarters(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(key)) {
+        newSet.delete(key);
+      } else {
+        newSet.add(key);
+      }
+      return newSet;
+    });
 
-    setExpandedQuarter(key);
-
+    // Fetch data if not already loaded
     if (!quarterDividends[key]) {
       try {
         const page = currentPage[key] || 1;
@@ -127,7 +132,7 @@ export function ByQuarterView({ onEdit, onDelete }: ByQuarterViewProps) {
                       })}
                     </p>
                   </div>
-                  {expandedQuarter === key ? (
+                  {expandedQuarters.has(key) ? (
                     <ChevronUp className="w-5 h-5 text-white flex-shrink-0 ml-2" />
                   ) : (
                     <ChevronDown className="w-5 h-5 text-white flex-shrink-0 ml-2" />
@@ -147,7 +152,7 @@ export function ByQuarterView({ onEdit, onDelete }: ByQuarterViewProps) {
                 </div>
               </button>
 
-              {expandedQuarter === key && quarterDividends[key] && (
+              {expandedQuarters.has(key) && quarterDividends[key] && (
                 <div className="border-t border-white/20 p-4 bg-white/5">
                   <div className="space-y-3">
                     {quarterDividends[key].map((dividend) => (
@@ -162,15 +167,30 @@ export function ByQuarterView({ onEdit, onDelete }: ByQuarterViewProps) {
                             ${(dividend.dividend_per_share * dividend.shares_owned).toFixed(2)}
                           </span>
                         </div>
-                        <div className="text-blue-300 text-sm">
-                          {dividend.payment_date 
-                            ? new Date(dividend.payment_date).toLocaleDateString('en-GB', { 
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div>
+                            <p className="text-blue-300/70">Ex-Div Date</p>
+                            <p className="text-blue-200">
+                              {new Date(dividend.ex_dividend_date).toLocaleDateString('en-GB', { 
                                 day: '2-digit', 
                                 month: 'short', 
                                 year: 'numeric' 
-                              })
-                            : 'Not set'
-                          }
+                              })}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-emerald-300/70">Payment Date</p>
+                            <p className="text-emerald-200">
+                              {dividend.payment_date 
+                                ? new Date(dividend.payment_date).toLocaleDateString('en-GB', { 
+                                    day: '2-digit', 
+                                    month: 'short', 
+                                    year: 'numeric' 
+                                  })
+                                : 'Not set'
+                              }
+                            </p>
+                          </div>
                         </div>
                       </button>
                     ))}

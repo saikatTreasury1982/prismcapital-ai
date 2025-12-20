@@ -23,7 +23,8 @@ export async function GET() {
           COUNT(*) as total_dividend_payments,
           ROUND(SUM(d.dividend_per_share * d.shares_owned), 4) as total_dividends_received,
           ROUND(AVG(d.dividend_per_share), 4) as avg_dividend_per_share,
-          MAX(d.payment_date) as latest_payment_date
+          MAX(CASE WHEN d.ex_dividend_date IS NOT NULL THEN d.ex_dividend_date END) as latest_ex_div_date,
+          MAX(CASE WHEN d.payment_date IS NOT NULL THEN d.payment_date END) as latest_payment_date
         FROM dividends d
         LEFT JOIN positions p ON d.ticker = p.ticker AND d.user_id = p.user_id
         WHERE d.user_id = ? 
@@ -43,16 +44,19 @@ export async function GET() {
           COUNT(*) as total_dividend_payments,
           ROUND(SUM(d.dividend_per_share * d.shares_owned), 4) as total_dividends_received,
           ROUND(AVG(d.dividend_per_share), 4) as avg_dividend_per_share,
-          MAX(d.payment_date) as latest_payment_date
+          MAX(CASE WHEN d.ex_dividend_date IS NOT NULL THEN d.ex_dividend_date END) as latest_ex_div_date,
+          MAX(CASE WHEN d.payment_date IS NOT NULL THEN d.payment_date END) as latest_payment_date
         FROM dividends d
         LEFT JOIN positions p ON d.ticker = p.ticker AND d.user_id = p.user_id
         WHERE d.user_id = ? 
-          AND CAST(strftime('%Y', d.ex_dividend_date) AS INTEGER) = ?
-          AND (d.payment_date IS NULL OR d.payment_date <= ?)
+          AND (
+            (d.payment_date IS NOT NULL AND CAST(strftime('%Y', d.payment_date) AS INTEGER) = ? AND d.payment_date <= ?)
+            OR (d.payment_date IS NULL AND CAST(strftime('%Y', d.ex_dividend_date) AS INTEGER) = ?)
+          )
         GROUP BY d.ticker, p.ticker_name
         ORDER BY total_dividends_received DESC
       `,
-      args: [userId, currentYear, currentDate],
+      args: [userId, currentYear, currentDate, currentYear],
     });
 
     // Get year-to-date dividends
@@ -64,10 +68,12 @@ export async function GET() {
           ROUND(SUM(dividend_per_share * shares_owned), 4) as total_dividends_received
         FROM dividends
         WHERE user_id = ? 
-          AND CAST(strftime('%Y', ex_dividend_date) AS INTEGER) = ?
-          AND (payment_date IS NULL OR payment_date <= ?)
+          AND (
+            (payment_date IS NOT NULL AND CAST(strftime('%Y', payment_date) AS INTEGER) = ? AND payment_date <= ?)
+            OR (payment_date IS NULL AND CAST(strftime('%Y', ex_dividend_date) AS INTEGER) = ?)
+          )
       `,
-      args: [userId, currentYear, currentDate],
+      args: [userId, currentYear, currentDate, currentYear],
     });
 
     // Get all-time total
@@ -78,7 +84,7 @@ export async function GET() {
           ROUND(SUM(dividend_per_share * shares_owned), 4) as total_dividends
         FROM dividends
         WHERE user_id = ?
-          AND (payment_date IS NULL OR payment_date <= ?)
+          AND payment_date <= ?
       `,
       args: [userId, currentDate],
     });
@@ -92,7 +98,8 @@ export async function GET() {
       totalPayments: Number(row.total_dividend_payments) || 0,
       totalReceived: Number(row.total_dividends_received) || 0,
       avgPerShare: Number(row.avg_dividend_per_share) || 0,
-      latestDate: row.latest_payment_date || null,
+      latestExDivDate: row.latest_ex_div_date || null,
+      latestPaymentDate: row.latest_payment_date || null,
     }));
 
     const ytdBreakdown = ytdTickerSummary.rows.map(row => ({
@@ -101,7 +108,8 @@ export async function GET() {
       totalPayments: Number(row.total_dividend_payments) || 0,
       totalReceived: Number(row.total_dividends_received) || 0,
       avgPerShare: Number(row.avg_dividend_per_share) || 0,
-      latestDate: row.latest_payment_date || null,
+      latestExDivDate: row.latest_ex_div_date || null,
+      latestPaymentDate: row.latest_payment_date || null,
     }));
 
     return NextResponse.json({

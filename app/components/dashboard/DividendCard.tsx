@@ -9,7 +9,8 @@ interface TickerBreakdown {
   totalPayments: number;
   totalReceived: number;
   avgPerShare: number;
-  latestDate: string | null;
+  latestExDivDate: string | null;
+  latestPaymentDate: string | null;
 }
 
 interface DividendCardProps {
@@ -51,11 +52,12 @@ export default function DividendCard({ summary, allTimeBreakdown, ytdBreakdown }
       <table className="w-full table-fixed">
         <thead>
           <tr className="border-b border-white/10">
-            <th className="text-left text-blue-200 text-sm font-medium pb-3 w-[20%]">Ticker</th>
-            <th className="text-right text-blue-200 text-sm font-medium pb-3 w-[15%]">Payments</th>
-            <th className="text-right text-blue-200 text-sm font-medium pb-3 w-[25%]">Total Received</th>
-            <th className="text-right text-blue-200 text-sm font-medium pb-3 w-[20%]">Avg/Share</th>
-            <th className="text-right text-blue-200 text-sm font-medium pb-3 w-[20%]">Latest Date</th>
+            <th className="text-left text-blue-200 text-sm font-medium pb-3 w-[15%]">Ticker</th>
+            <th className="text-right text-blue-200 text-sm font-medium pb-3 w-[12%]">Payments</th>
+            <th className="text-right text-blue-200 text-sm font-medium pb-3 w-[20%]">Total Received</th>
+            <th className="text-right text-blue-200 text-sm font-medium pb-3 w-[15%]">Avg/Share</th>
+            <th className="text-right text-blue-200 text-sm font-medium pb-3 w-[19%]">Ex-Div Date</th>
+            <th className="text-right text-blue-200 text-sm font-medium pb-3 w-[19%]">Payment Date</th>
           </tr>
         </thead>
         <tbody>
@@ -86,7 +88,10 @@ export default function DividendCard({ summary, allTimeBreakdown, ytdBreakdown }
                 {formatCurrency(item.avgPerShare)}
               </td>
               <td className="text-right text-blue-200 text-sm py-2">
-                {formatDate(item.latestDate)}
+                {formatDate(item.latestExDivDate)}
+              </td>
+              <td className="text-right text-emerald-200 text-sm py-2">
+                {formatDate(item.latestPaymentDate)}
               </td>
             </tr>
           ))}
