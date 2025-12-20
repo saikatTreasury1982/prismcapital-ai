@@ -28,17 +28,18 @@ export async function GET(request: Request) {
       const startDate = `${yearNum}-${String(startMonth).padStart(2, '0')}-01`;
       const endDate = quarterNum === 4 ? `${yearNum + 1}-01-01` : `${yearNum}-${String(endMonth).padStart(2, '0')}-01`;
 
+      // Changed from ex_dividend_date to payment_date
       const data = await db
         .select()
         .from(dividends)
         .where(
           and(
             eq(dividends.user_id, userId),
-            gte(dividends.ex_dividend_date, startDate),
-            lt(dividends.ex_dividend_date, endDate)
+            gte(dividends.payment_date, startDate),
+            lt(dividends.payment_date, endDate)
           )
         )
-        .orderBy(desc(dividends.ex_dividend_date))
+        .orderBy(desc(dividends.payment_date))
         .limit(pageSize)
         .offset(offset);
 
@@ -48,8 +49,8 @@ export async function GET(request: Request) {
         .where(
           and(
             eq(dividends.user_id, userId),
-            gte(dividends.ex_dividend_date, startDate),
-            lt(dividends.ex_dividend_date, endDate)
+            gte(dividends.payment_date, startDate),
+            lt(dividends.payment_date, endDate)
           )
         );
 

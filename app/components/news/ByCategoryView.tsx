@@ -17,7 +17,7 @@ interface ByCategoryViewProps {
 export function ByCategoryView({ onEdit, onDelete }: ByCategoryViewProps) {
   const { data: session } = useSession();
   const [summaries, setSummaries] = useState<NewsSummaryByType[]>([]);
-  const [expandedType, setExpandedType] = useState<string | null>(null);
+  const [expandedTypes, setExpandedTypes] = useState<Set<string>>(new Set());
   const [typeNews, setTypeNews] = useState<Record<string, NewsListItem[]>>({});
   const [currentPage, setCurrentPage] = useState<Record<string, number>>({});
   const [totalPages, setTotalPages] = useState<Record<string, number>>({});
@@ -58,13 +58,18 @@ export function ByCategoryView({ onEdit, onDelete }: ByCategoryViewProps) {
   }, [session?.user?.id]);
 
   const handleTypeClick = async (typeName: string) => {
-    if (expandedType === typeName) {
-      setExpandedType(null);
-      return;
-    }
+    // Toggle expansion
+    setExpandedTypes(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(typeName)) {
+        newSet.delete(typeName);
+      } else {
+        newSet.add(typeName);
+      }
+      return newSet;
+    });
 
-    setExpandedType(typeName);
-
+    // Fetch data if not already loaded
     if (!typeNews[typeName]) {
       try {
         const page = currentPage[typeName] || 1;
@@ -160,7 +165,7 @@ export function ByCategoryView({ onEdit, onDelete }: ByCategoryViewProps) {
                   <span className="text-3xl">{getNewsTypeIcon(summary.type_name)}</span>
                   <h3 className="text-xl font-bold text-white">{summary.type_name}</h3>
                 </div>
-                {expandedType === summary.type_name ? (
+                {expandedTypes.has(summary.type_name) ? (
                   <ChevronUp className="w-5 h-5 text-white flex-shrink-0" />
                 ) : (
                   <ChevronDown className="w-5 h-5 text-white flex-shrink-0" />
@@ -178,7 +183,7 @@ export function ByCategoryView({ onEdit, onDelete }: ByCategoryViewProps) {
             </button>
 
             {/* Expanded Content */}
-            {expandedType === summary.type_name && typeNews[summary.type_name] && (
+            {expandedTypes.has(summary.type_name) && typeNews[summary.type_name] && (
               <div className="border-t border-white/20 p-4 bg-white/5">
                 <div className="space-y-3">
                   {typeNews[summary.type_name].map((news) => (

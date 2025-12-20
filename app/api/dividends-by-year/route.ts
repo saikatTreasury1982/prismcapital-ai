@@ -21,17 +21,18 @@ export async function GET(request: Request) {
       const offset = (page - 1) * pageSize;
       const yearNum = parseInt(year);
 
+      // Changed from ex_dividend_date to payment_date
       const data = await db
         .select()
         .from(dividends)
         .where(
           and(
             eq(dividends.user_id, userId),
-            gte(dividends.ex_dividend_date, `${yearNum}-01-01`),
-            lt(dividends.ex_dividend_date, `${yearNum + 1}-01-01`)
+            gte(dividends.payment_date, `${yearNum}-01-01`),
+            lt(dividends.payment_date, `${yearNum + 1}-01-01`)
           )
         )
-        .orderBy(desc(dividends.ex_dividend_date))
+        .orderBy(desc(dividends.payment_date))
         .limit(pageSize)
         .offset(offset);
 
@@ -41,8 +42,8 @@ export async function GET(request: Request) {
         .where(
           and(
             eq(dividends.user_id, userId),
-            gte(dividends.ex_dividend_date, `${yearNum}-01-01`),
-            lt(dividends.ex_dividend_date, `${yearNum + 1}-01-01`)
+            gte(dividends.payment_date, `${yearNum}-01-01`),
+            lt(dividends.payment_date, `${yearNum + 1}-01-01`)
           )
         );
 
