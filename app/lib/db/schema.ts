@@ -310,17 +310,6 @@ export const auditLog = sqliteTable('audit_log', {
   created_at: text('created_at').default(sql`(datetime('now'))`),
 });
 
-// AUTH TABLES
-export const authSessions = sqliteTable('auth_sessions', {
-  session_id: text('session_id').primaryKey(),
-  user_id: text('user_id').notNull().references(() => users.user_id),
-  session_status: text('session_status').default('OPEN'),
-  closed_at: text('closed_at'),
-  credential_id: text('credential_id').references(() => authPasskeys.credential_id),
-  otp_id: text('otp_id').references(() => authOtpCodes.otp_id),
-  created_at: text('created_at').default(sql`(datetime('now'))`),
-});
-
 export const authPasskeys = sqliteTable('auth_passkeys', {
   credential_id: text('credential_id').primaryKey(),
   user_id: text('user_id').notNull().references(() => users.user_id),
@@ -331,14 +320,12 @@ export const authPasskeys = sqliteTable('auth_passkeys', {
   last_used_at: text('last_used_at'),
 });
 
-export const authOtpCodes = sqliteTable('auth_otp_codes', {
-  otp_id: text('otp_id').primaryKey(),
-  user_id: text('user_id').notNull().references(() => users.user_id),
-  phone_number: text('phone_number').notNull(),
-  code: text('code').notNull(),
-  expires_at: text('expires_at').notNull(),
-  is_used: integer('is_used').default(0),
+export const authPasswords = sqliteTable('auth_passwords', {
+  password_id: text('password_id').primaryKey(),
+  user_id: text('user_id').notNull().unique().references(() => users.user_id),
+  password_hash: text('password_hash').notNull(),
   created_at: text('created_at').default(sql`(datetime('now'))`),
+  updated_at: text('updated_at').default(sql`(datetime('now'))`),
 });
 
 export const pnlStrategies = sqliteTable('pnl_strategies', {

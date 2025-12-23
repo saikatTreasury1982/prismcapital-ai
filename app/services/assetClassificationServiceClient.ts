@@ -19,7 +19,7 @@ export async function getAssetClasses(): Promise<AssetClass[]> {
   return result.data;
 }
 
-export async function getAssetTypes(classId?: number): Promise<AssetType[]> {
+export async function getAssetTypes(classId?: string): Promise<AssetType[]> {
   let url = '/api/asset-types';
   if (classId) {
     url += `?classId=${classId}`;

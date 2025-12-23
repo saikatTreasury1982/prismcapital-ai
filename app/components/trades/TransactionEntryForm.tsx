@@ -43,6 +43,7 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
   const [tickerError, setTickerError] = useState<string | null>(null);
   const [isLoadingTicker, setIsLoadingTicker] = useState(false);
   const [companyName, setCompanyName] = useState<string>('');
+  const [positionStrategy, setPositionStrategy] = useState<string | null>(null);
 
   const debouncedTicker = useDebounce(formData.ticker, 500);
 
@@ -81,6 +82,13 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
         setHasPosition(null);
         setTickerError(null);
         setCompanyName('');
+        setPositionStrategy(null);
+        return;
+      }
+
+      // Don't fetch if strategies aren't loaded yet
+      if (strategies.length === 0) {
+        console.log('Waiting for strategies to load...');
         return;
       }
 
@@ -93,6 +101,45 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
         const posData = await posRes.json();
         
         setHasPosition(posData.hasPosition);
+
+        // If has position, fetch the strategy info
+        if (posData.hasPosition) {
+          console.log('Fetching position details for:', debouncedTicker);
+          // Get position details including strategy
+          const positionRes = await fetch(`/api/positions/${encodeURIComponent(debouncedTicker)}`);
+          console.log('Position API response status:', positionRes.status);
+          
+          if (positionRes.ok) {
+            const positionData = await positionRes.json();
+            console.log('Position data:', positionData);
+            console.log('Available strategies:', strategies);
+            
+            if (positionData.data && positionData.data.strategy_id) {
+              console.log('Position strategy_id:', positionData.data.strategy_id);
+              // Find strategy name from strategies list
+              const strategy = strategies.find(s => s.strategy_id === positionData.data.strategy_id);
+              console.log('Found strategy:', strategy);
+              
+              if (strategy) {
+                const strategyText = `${strategy.strategy_id} - ${strategy.strategy_name}`;
+                console.log('Setting position strategy to:', strategyText);
+                setPositionStrategy(strategyText);
+              } else {
+                console.log('Strategy not found in strategies list');
+                setPositionStrategy(null);
+              }
+            } else {
+              console.log('No strategy_id in position data or no position data');
+              setPositionStrategy(null);
+            }
+          } else {
+            console.log('Position API call failed');
+            setPositionStrategy(null);
+          }
+        } else {
+          console.log('No position for this ticker');
+          setPositionStrategy(null);
+        }
 
         // Use ticker_name from positions if available
         if (posData.hasPosition && posData.tickerName) {
@@ -116,13 +163,14 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
         setTickerError('Failed to lookup ticker');
         setCompanyName('');
         setHasPosition(null);
+        setPositionStrategy(null);
       } finally {
         setIsLoadingTicker(false);
       }
     };
 
     fetchTickerData();
-  }, [debouncedTicker]);
+  }, [debouncedTicker, strategies]);
 
   // Pre-fill form when editing (only fees and notes)
   useEffect(() => {
@@ -190,6 +238,7 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
       });
       setCompanyName('');
       setHasPosition(null);
+      setPositionStrategy(null);
 
       onSuccess();
     } catch (err: any) {
@@ -216,6 +265,8 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
     setHasPosition(null);
     setError(null);
     setTickerError(null);
+    setPositionStrategy(null);
+
     if (onCancelEdit) {
       onCancelEdit();
     }
@@ -319,6 +370,13 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
           </div>
           {tickerError && (
             <p className="text-rose-400 text-sm mt-2">{tickerError}</p>
+          )}
+          {hasPosition && positionStrategy && (
+            <div className="mt-2 p-2 bg-green-500/10 border border-green-400/30 rounded-lg">
+              <p className="text-green-300 text-xs font-medium">
+                Current Strategy: {positionStrategy}
+              </p>
+            </div>
           )}
         </div>
 
