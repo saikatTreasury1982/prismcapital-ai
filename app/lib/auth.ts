@@ -1,9 +1,10 @@
 import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import { db, schema } from './db';
-import { eq } from 'drizzle-orm';
+import { eq, or } from 'drizzle-orm';
+import bcrypt from 'bcryptjs';
 
-const { users, authOtpCodes } = schema;
+const { users, authPasswords } = schema;
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -34,48 +35,52 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
     }),
     Credentials({
-      id: 'otp',
-      name: 'OTP',
+      id: 'password',
+      name: 'Password',
       credentials: {
-        phone: { type: 'text' },
-        code: { type: 'text' },
+        identifier: { type: 'text' },
+        password: { type: 'password' },
       },
       async authorize(credentials) {
-        const { phone, code } = credentials as { phone: string; code: string };
+        const { identifier, password } = credentials as { identifier: string; password: string };
 
-        const otpRecord = await db
-          .select()
-          .from(authOtpCodes)
-          .where(eq(authOtpCodes.phone_number, phone))
-          .limit(1);
+        if (!identifier || !password) return null;
 
-        if (!otpRecord || otpRecord.length === 0) return null;
-
-        const otp = otpRecord[0];
-
-        if (otp.code !== code || otp.is_used === 1) return null;
-        if (new Date(otp.expires_at) < new Date()) return null;
-
-        await db
-          .update(authOtpCodes)
-          .set({ is_used: 1 })
-          .where(eq(authOtpCodes.otp_id, otp.otp_id));
-
+        // Find user by user_id or email
         const user = await db
           .select()
           .from(users)
-          .where(eq(users.user_id, otp.user_id))
+          .where(
+            or(
+              eq(users.user_id, identifier),
+              eq(users.email, identifier)
+            )
+          )
           .limit(1);
 
-        if (user && user.length > 0) {
-          return {
-            id: user[0].user_id,
-            email: user[0].email,
-            name: `${user[0].first_name} ${user[0].last_name}`,
-          };
-        }
+        if (!user || user.length === 0) return null;
 
-        return null;
+        const userId = user[0].user_id;
+
+        // Get password hash
+        const passwordRecord = await db
+          .select()
+          .from(authPasswords)
+          .where(eq(authPasswords.user_id, userId))
+          .limit(1);
+
+        if (!passwordRecord || passwordRecord.length === 0) return null;
+
+        // Verify password
+        const isValid = await bcrypt.compare(password, passwordRecord[0].password_hash);
+
+        if (!isValid) return null;
+
+        return {
+          id: user[0].user_id,
+          email: user[0].email,
+          name: `${user[0].first_name} ${user[0].last_name}`,
+        };
       },
     }),
   ],

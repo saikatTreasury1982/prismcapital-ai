@@ -426,14 +426,14 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
                               <table className="w-full text-sm">
                                 <thead>
                                   <tr className="border-b border-white/10">
-                                    <th className="text-left text-blue-300 pb-2">Date</th>
-                                    <th className="text-center text-blue-300 pb-2">Type</th>
-                                    <th className="text-right text-blue-300 pb-2">Quantity</th>
-                                    <th className="text-right text-blue-300 pb-2">Price</th>
-                                    <th className="text-right text-blue-300 pb-2">Fees</th>
-                                    <th className="text-right text-blue-300 pb-2">Trade Value</th>
-                                    <th className="text-left text-blue-300 pb-2">Notes</th>
-                                    <th className="text-center text-blue-300 pb-2">Actions</th>
+                                    <th className="text-left text-blue-300 pb-2 px-2">Date</th>
+                                    <th className="text-center text-blue-300 pb-2 px-2">Type</th>
+                                    <th className="text-right text-blue-300 pb-2 px-2">Quantity</th>
+                                    <th className="text-right text-blue-300 pb-2 px-2">Price</th>
+                                    <th className="text-right text-blue-300 pb-2 px-2">Fees</th>
+                                    <th className="text-right text-blue-300 pb-2 px-4">Trade Value</th>
+                                    <th className="text-left text-blue-300 pb-2 px-4">Notes</th>
+                                    <th className="text-center text-blue-300 pb-2 px-2">Actions</th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -445,14 +445,14 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
                                     
                                     return paginatedTransactions.map((transaction) => (
                                       <tr key={transaction.transaction_id} className="border-b border-white/5">
-                                        <td className="py-3 text-white">
+                                        <td className="py-3 px-2 text-white">
                                           {new Date(transaction.transaction_date).toLocaleDateString('en-US', { 
                                             year: 'numeric', 
                                             month: 'short', 
                                             day: 'numeric' 
                                           })}
                                         </td>
-                                        <td className="py-3 text-center">
+                                        <td className="py-3 px-2 text-center">
                                           <span className={`px-2 py-1 rounded text-xs font-semibold ${
                                             transaction.transaction_type_id === 1 
                                               ? 'bg-green-500/20 text-green-300' 
@@ -461,14 +461,14 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
                                             {transaction.transaction_type_id === 1 ? 'BUY' : 'SELL'}
                                           </span>
                                         </td>
-                                        <td className="py-3 text-right text-white">{transaction.quantity}</td>
-                                        <td className="py-3 text-right text-white">${transaction.price.toFixed(2)}</td>
-                                        <td className="py-3 text-right text-white">${transaction.fees.toFixed(2)}</td>
-                                        <td className="py-3 text-right text-white">${(transaction.trade_value ||0).toFixed(2)}</td>
-                                        <td className="py-3 text-white text-sm truncate max-w-[150px]">
+                                        <td className="py-3 px-2 text-right text-white">{transaction.quantity}</td>
+                                        <td className="py-3 px-2 text-right text-white">${transaction.price.toFixed(2)}</td>
+                                        <td className="py-3 px-2 text-right text-white">${transaction.fees.toFixed(2)}</td>
+                                        <td className="py-3 px-4 text-right text-white">${(transaction.trade_value ||0).toFixed(2)}</td>
+                                        <td className="py-3 px-4 text-white text-sm">
                                           {transaction.notes || '-'}
                                         </td>
-                                        <td className="py-3 text-center">
+                                        <td className="py-3 px-2 text-center">
                                           <button
                                             onClick={() => setSelectedTransaction(transaction)}
                                             className="text-blue-400 hover:text-blue-300 transition-colors"

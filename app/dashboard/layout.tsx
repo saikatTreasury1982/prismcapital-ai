@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 import { DashboardNav } from '../components/dashboard/DashboardNav';
-import { Settings, LogOut, UserCircle } from 'lucide-react';
+import { Settings, LogOut } from 'lucide-react';
 import GlassButton from '@/app/lib/ui/GlassButton';
 import { X } from 'lucide-react';
 
@@ -15,7 +15,7 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const { data: session } = useSession();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   const [showPreferences, setShowPreferences] = useState(false);
   const [preferences, setPreferences] = useState<any>(null);
   const [loadingPreferences, setLoadingPreferences] = useState(false);
@@ -58,7 +58,6 @@ export default function DashboardLayout({
       const data = await response.json();
       setPreferences(data);
       setShowPreferences(true);
-      setIsMenuOpen(false);
     } catch (error) {
       console.error('Failed to load preferences:', error);
     } finally {
@@ -83,50 +82,25 @@ export default function DashboardLayout({
               <DashboardNav menuItems={menuItems} />
             </div>
             
-            {/* User Menu Button - Extreme Right */}
-            <div className="relative">
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="w-10 h-10 rounded-full backdrop-blur-xl bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all"
-              >
-                <UserCircle className="w-6 h-6 text-white" />
-              </button>
-
-              {/* Dropdown Menu */}
-              {isMenuOpen && (
-                <>
-                  {/* Backdrop to close menu */}
-                  <div 
-                    className="fixed inset-0 z-10" 
-                    onClick={() => setIsMenuOpen(false)}
-                  />
-                  
-                  {/* Menu */}
-                  <div className="absolute right-0 mt-2 w-56 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl z-20">
-                    <div className="py-2">
-                      <button
-                        onClick={handleUserPreferences}
-                        disabled={loadingPreferences}
-                        className="w-full px-4 py-3 text-left text-white hover:bg-white/10 transition-colors flex items-center gap-3 disabled:opacity-50"
-                      >
-                        <Settings className="w-5 h-5" />
-                        <span>User Preferences</span>
-                      </button>
-                      
-                      <div className="border-t border-white/10 my-1"></div>
-                      
-                      <button
-                        onClick={handleSignOff}
-                        disabled={loadingSignOff}
-                        className="w-full px-4 py-3 text-left text-red-400 hover:bg-white/10 transition-colors flex items-center gap-3 disabled:opacity-50"
-                      >
-                        <LogOut className="w-5 h-5" />
-                        <span>{loadingSignOff ? 'Signing off...' : 'Sign Off'}</span>
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
+            {/* Action Buttons - Extreme Right */}
+            <div className="flex items-center gap-2">
+              <GlassButton
+                icon={Settings}
+                onClick={handleUserPreferences}
+                disabled={loadingPreferences}
+                tooltip="User Preferences"
+                variant="secondary"
+                size="md"
+              />
+              
+              <GlassButton
+                icon={LogOut}
+                onClick={handleSignOff}
+                disabled={loadingSignOff}
+                tooltip={loadingSignOff ? 'Signing off...' : 'Sign Off'}
+                variant="secondary"
+                size="md"
+              />
             </div>
           </div>
         </div>

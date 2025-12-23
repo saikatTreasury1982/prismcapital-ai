@@ -2,25 +2,26 @@
 
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { Fingerprint, Smartphone } from 'lucide-react';
-import { startRegistration } from '@simplewebauthn/browser';
+import { Fingerprint, Lock, Key } from 'lucide-react';
 import GlassButton from '@/app/lib/ui/GlassButton';
 
 export default function LoginPage() {
   const [identifier, setIdentifier] = useState('');
-  const [showOTP, setShowOTP] = useState(false);
-  const [phone, setPhone] = useState('');
-  const [code, setCode] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [isSettingPassword, setIsSettingPassword] = useState(false);
+  const [hasPassword, setHasPassword] = useState<boolean | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   const handlePasskey = async () => {
-    // Show loading overlay immediately to prevent multiple clicks
     setLoading(true);
     setLoadingMessage('Initializing authentication...');
     
     try {
-      // Lookup user_id from identifier (could be user_id or email)
       setLoadingMessage('Looking up your account...');
       const lookupResponse = await fetch('/api/auth/user/lookup', {
         method: 'POST',
@@ -35,14 +36,10 @@ export default function LoginPage() {
       const { userId } = await lookupResponse.json();
       setLoadingMessage('Preparing passkey authentication...');
 
-      // Try to authenticate with existing passkey first
       const authOptionsResponse = await fetch(`/api/auth/passkey/authenticate?userId=${userId}`);
       
       if (authOptionsResponse.ok) {
-        // User has existing passkey - authenticate
         const options = await authOptionsResponse.json();
-        
-        // Temporarily hide overlay for native Face ID/Touch ID prompt
         setLoading(false);
         setLoadingMessage('');
         
@@ -52,12 +49,11 @@ export default function LoginPage() {
           credential = await startAuthentication(options);
         } catch (err: any) {
           if (err.name === 'NotAllowedError') {
-            return; // User cancelled, exit gracefully
+            return;
           }
-          throw err; // Re-throw other errors
+          throw err;
         }
 
-        // Show loading overlay again after passkey is entered
         setLoading(true);
         setLoadingMessage('Verifying your identity...');
 
@@ -70,7 +66,6 @@ export default function LoginPage() {
         const { verified } = await verifyResponse.json();
         if (verified) {
           setLoadingMessage('Creating your session...');
-          // Create NextAuth session
           const result = await signIn('passkey', { 
             userId,
             redirect: false,
@@ -79,13 +74,11 @@ export default function LoginPage() {
           if (result?.ok) {
             setLoadingMessage('Success! Redirecting...');
             window.location.href = '/dashboard';
-            // Don't clear loading - keep overlay visible during redirect
           } else {
             throw new Error('Failed to create session');
           }
         }
       } else {
-        // No passkey exists - register new one
         setLoadingMessage('Setting up new passkey...');
         const { startRegistration } = await import('@simplewebauthn/browser');
         
@@ -96,8 +89,6 @@ export default function LoginPage() {
         });
 
         const options = await optionsResponse.json();
-        
-        // Temporarily hide overlay for native Face ID/Touch ID setup
         setLoading(false);
         setLoadingMessage('');
         
@@ -106,12 +97,11 @@ export default function LoginPage() {
           credential = await startRegistration(options);
         } catch (err: any) {
           if (err.name === 'NotAllowedError') {
-            return; // User cancelled
+            return;
           }
           throw err;
         }
 
-        // Show loading overlay again after passkey is registered
         setLoading(true);
         setLoadingMessage('Verifying your passkey...');
 
@@ -127,7 +117,6 @@ export default function LoginPage() {
         }
 
         setLoadingMessage('Creating your session...');
-        // Create NextAuth session
         const result = await signIn('passkey', { 
           userId,
           redirect: false,
@@ -136,7 +125,6 @@ export default function LoginPage() {
         if (result?.ok) {
           setLoadingMessage('Success! Redirecting...');
           window.location.href = '/dashboard';
-          // Don't clear loading - keep overlay visible during redirect
         } else {
           throw new Error('Failed to create session');
         }
@@ -144,43 +132,126 @@ export default function LoginPage() {
     } catch (error: any) {
       console.error('Passkey failed:', error);
 
-      // User cancelled - don't show error
       if (error.name === 'NotAllowedError') {
         setLoading(false);
         setLoadingMessage('');
         return;
       }
 
-      alert('Passkey authentication failed. Please try SMS instead.');
-      setShowOTP(true);
+      alert('Passkey authentication failed. Please try password instead.');
+      setShowPasswordForm(true);
       setLoading(false);
       setLoadingMessage('');
     }
-    // No finally block - keep loading state during redirect
   };
 
-  const handleSendOTP = async () => {
+  const handlePasswordClick = async () => {
+    if (!identifier.trim()) {
+      setError('Please enter your User ID or Email first');
+      return;
+    }
+
     setLoading(true);
+    setError(null);
+
     try {
-      await fetch('/api/auth/otp/send', {
+      // Check if password exists
+      const response = await fetch('/api/auth/password/check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ identifier }),
       });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to check password');
+      }
+
+      const data = await response.json();
+      setHasPassword(data.hasPassword);
+      setUserId(data.userId);
+      setShowPasswordForm(true);
+      setIsSettingPassword(!data.hasPassword);
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleVerifyOTP = async () => {
+  const handleSetupPassword = async () => {
+    if (!password || !confirmPassword) {
+      setError('Please fill in all fields');
+      return;
+    }
+
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
     setLoading(true);
+    setError(null);
+
     try {
-      await signIn('otp', {
-        phone,
-        code,
-        redirect: true,
-        callbackUrl: '/dashboard',
+      const response = await fetch('/api/auth/password/setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, password }),
       });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to set password');
+      }
+
+      // Password set successfully, now log in
+      const result = await signIn('password', {
+        identifier,
+        password,
+        redirect: false,
+      });
+
+      if (result?.ok) {
+        window.location.href = '/dashboard';
+      } else {
+        throw new Error('Login failed after setting password');
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordLogin = async () => {
+    if (!password) {
+      setError('Please enter your password');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const result = await signIn('password', {
+        identifier,
+        password,
+        redirect: false,
+      });
+
+      if (result?.ok) {
+        window.location.href = '/dashboard';
+      } else {
+        throw new Error('Invalid credentials');
+      }
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -222,7 +293,13 @@ export default function LoginPage() {
               <h1 className="text-3xl font-bold text-white mb-2 text-center">Welcome</h1>
               <p className="text-blue-200 text-center mb-8">Sign in to your account</p>
 
-              {!showOTP ? (
+              {error && (
+                <div className="mb-4 p-3 bg-rose-500/20 border border-rose-400/30 rounded-lg text-rose-200 text-sm">
+                  {error}
+                </div>
+              )}
+
+              {!showPasswordForm ? (
                 <div className="space-y-4">
                   <div className="flex gap-2 items-center">
                     <input
@@ -244,10 +321,10 @@ export default function LoginPage() {
                     />
                     
                     <GlassButton
-                      icon={Smartphone}
-                      onClick={() => setShowOTP(true)}
-                      disabled={!identifier.trim()}
-                      tooltip="Use SMS Code Instead"
+                      icon={Lock}
+                      onClick={handlePasswordClick}
+                      disabled={loading || !identifier.trim()}
+                      tooltip="Sign in with Password"
                       variant="secondary"
                       size="lg"
                     />
@@ -255,64 +332,72 @@ export default function LoginPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {!code && (
-                    <div className="flex gap-2 items-center">
-                      <input
-                        type="tel"
-                        placeholder="Phone Number"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
-                      />
-                      
-                      <GlassButton
-                        onClick={handleSendOTP}
-                        disabled={loading || !phone}
-                        tooltip="Send Code"
-                        variant="primary"
-                        size="lg"
-                        className="px-6"
-                      >
-                        <span className="text-white text-sm whitespace-nowrap">
-                          {loading ? 'Sending...' : 'Send'}
-                        </span>
-                      </GlassButton>
-                    </div>
-                  )}
-
-                  {code !== '' && (
+                  {isSettingPassword ? (
                     <>
-                      <div>
-                        <input
-                          type="text"
-                          placeholder="6-Digit Code"
-                          value={code}
-                          onChange={(e) => setCode(e.target.value)}
-                          maxLength={6}
-                          className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 text-center text-2xl tracking-widest"
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-lg font-semibold text-white">Set Your Password</h2>
+                        <GlassButton
+                          icon={Key}
+                          onClick={handleSetupPassword}
+                          disabled={loading || !password || !confirmPassword}
+                          tooltip={loading ? 'Setting Password...' : 'Set Password & Sign In'}
+                          variant="primary"
+                          size="md"
                         />
                       </div>
+                      
+                      <input
+                        type="password"
+                        placeholder="Password (min 8 characters)"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
+                      />
 
-                      <GlassButton
-                        onClick={handleVerifyOTP}
-                        disabled={loading || code.length !== 6}
-                        tooltip="Verify & Sign In"
-                        variant="primary"
-                        size="lg"
-                        className="w-full"
-                      >
-                        <span className="text-white font-semibold">
-                          {loading ? 'Verifying...' : 'Verify & Sign In'}
-                        </span>
-                      </GlassButton>
+                      <input
+                        type="password"
+                        placeholder="Confirm Password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-lg font-semibold text-white">Enter Your Password</h2>
+                        <GlassButton
+                          icon={Lock}
+                          onClick={handlePasswordLogin}
+                          disabled={loading || !password}
+                          tooltip={loading ? 'Signing In...' : 'Sign In'}
+                          variant="primary"
+                          size="md"
+                        />
+                      </div>
+                      
+                      <input
+                        type="password"
+                        placeholder="Password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handlePasswordLogin()}
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
+                      />
                     </>
                   )}
 
                   <button
-                    onClick={() => setShowOTP(false)}
+                    onClick={() => {
+                      setShowPasswordForm(false);
+                      setIsSettingPassword(false);
+                      setPassword('');
+                      setConfirmPassword('');
+                      setError(null);
+                    }}
                     className="w-full text-blue-300 text-sm hover:text-white transition-colors"
                   >
-                    ← Back to Passkey
+                    ← Back
                   </button>
                 </div>
               )}
@@ -326,10 +411,7 @@ export default function LoginPage() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
           <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20 max-w-md w-full mx-4">
             <div className="flex flex-col items-center space-y-4">
-              {/* Spinner */}
               <div className="w-16 h-16 border-4 border-blue-400/30 border-t-blue-400 rounded-full animate-spin"></div>
-              
-              {/* Loading Message */}
               <div className="text-center">
                 <p className="text-white text-lg font-semibold mb-2">
                   {loadingMessage || 'Processing...'}

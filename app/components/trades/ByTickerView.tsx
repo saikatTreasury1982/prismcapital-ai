@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { List } from 'lucide-react';
+import { List, Save } from 'lucide-react';
 import GlassButton from '@/app/lib/ui/GlassButton';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+
 
 interface RealizedTrade {
   realization_id: number;
@@ -31,6 +32,17 @@ export function ByTickerView() {
   // Filter state
   const [selectedTicker, setSelectedTicker] = useState<string>('all');
   const [uniqueTickers, setUniqueTickers] = useState<string[]>([]);
+  const [editingTrade, setEditingTrade] = useState<RealizedTrade | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    sale_date: '',
+    quantity: '',
+    average_cost: '',
+    sale_price: '',
+    fees: '',
+    notes: ''
+  });
+  const [isSaving, setIsSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchTrades = async () => {
@@ -64,6 +76,102 @@ export function ByTickerView() {
     setFilteredTrades(filtered);
     setCurrentPage(1);
   }, [selectedTicker, trades]);
+
+  const handleEditClick = (trade: RealizedTrade) => {
+    setEditingTrade(trade);
+    setEditFormData({
+      sale_date: trade.sale_date,
+      quantity: trade.quantity.toString(),
+      average_cost: trade.average_cost.toString(),
+      sale_price: trade.sale_price.toString(),
+      fees: trade.fees.toString(),
+      notes: trade.notes || ''
+    });
+    setEditError(null);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingTrade) return;
+
+    // Validation
+    if (!editFormData.sale_date || !editFormData.quantity || !editFormData.average_cost || !editFormData.sale_price) {
+      setEditError('Please fill in all required fields');
+      return;
+    }
+
+    const quantity = parseFloat(editFormData.quantity);
+    const avgCost = parseFloat(editFormData.average_cost);
+    const salePrice = parseFloat(editFormData.sale_price);
+    const fees = parseFloat(editFormData.fees);
+
+    if (isNaN(quantity) || isNaN(avgCost) || isNaN(salePrice) || isNaN(fees)) {
+      setEditError('Please enter valid numbers');
+      return;
+    }
+
+    if (quantity <= 0 || avgCost <= 0 || salePrice <= 0 || fees < 0) {
+      setEditError('Invalid values entered');
+      return;
+    }
+
+    setIsSaving(true);
+    setEditError(null);
+
+    try {
+      const response = await fetch(`/api/trades/realized-history/${editingTrade.realization_id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sale_date: editFormData.sale_date,
+          quantity: quantity,
+          average_cost: avgCost,
+          sale_price: salePrice,
+          fees: fees,
+          notes: editFormData.notes || null
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update trade');
+      }
+
+      // Refresh trades list
+      const tradesResponse = await fetch('/api/trades/realized-history');
+      const data = await tradesResponse.json();
+      setTrades(data.history);
+      setFilteredTrades(data.history);
+
+      // Apply current filter
+      if (selectedTicker !== 'all') {
+        setFilteredTrades(data.history.filter((t: RealizedTrade) => t.ticker === selectedTicker));
+      }
+
+      setEditingTrade(null);
+    } catch (err: any) {
+      setEditError(err.message || 'Failed to save changes');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTrade(null);
+    setEditError(null);
+  };
+
+  // Calculate values for edit form
+  const editTotalCost = editFormData.quantity && editFormData.average_cost
+    ? (parseFloat(editFormData.quantity) * parseFloat(editFormData.average_cost)).toFixed(2)
+    : '0.00';
+
+  const editProceeds = editFormData.quantity && editFormData.sale_price
+    ? (parseFloat(editFormData.quantity) * parseFloat(editFormData.sale_price)).toFixed(2)
+    : '0.00';
+
+  const editRealizedPnL = editFormData.quantity && editFormData.average_cost && editFormData.sale_price
+    ? ((parseFloat(editFormData.quantity) * parseFloat(editFormData.sale_price)) - 
+      (parseFloat(editFormData.quantity) * parseFloat(editFormData.average_cost))).toFixed(2)
+    : '0.00';
 
   const totalPages = Math.ceil(filteredTrades.length / pageSize);
   const paginatedTrades = filteredTrades.slice(
@@ -196,6 +304,7 @@ export function ByTickerView() {
                     <th className="text-right text-blue-300 p-4">Fees</th>
                     <th className="text-right text-blue-300 p-4">Realized P/L</th>
                     <th className="text-left text-blue-300 p-4">Notes</th>
+                    <th className="text-center text-blue-300 p-4">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -222,6 +331,14 @@ export function ByTickerView() {
                       </td>
                       <td className="p-4 text-white text-xs truncate max-w-[150px]">
                         {trade.notes || '-'}
+                      </td>
+                      <td className="p-4 text-center">
+                        <button
+                          onClick={() => handleEditClick(trade)}
+                          className="text-blue-400 hover:text-blue-300 transition-colors text-sm font-medium underline"
+                        >
+                          Edit
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -261,6 +378,149 @@ export function ByTickerView() {
           </>
         )}
       </div>
+
+      {/* Edit Modal */}
+      {editingTrade && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="backdrop-blur-xl bg-white/10 rounded-3xl border border-white/20 max-w-2xl w-full overflow-hidden">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-slate-700/50 to-slate-600/50 backdrop-blur-xl border-b border-white/20 p-6 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-white">Edit Trade - {editingTrade.ticker}</h2>
+              <div className="flex items-center gap-2">
+                <GlassButton
+                  icon={Save}
+                  onClick={handleSaveEdit}
+                  disabled={isSaving}
+                  tooltip={isSaving ? 'Saving...' : 'Save Changes'}
+                  variant="primary"
+                  size="md"
+                />
+                <GlassButton
+                  icon={X}
+                  onClick={handleCancelEdit}
+                  disabled={isSaving}
+                  tooltip="Close"
+                  variant="secondary"
+                  size="md"
+                />
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-8">
+
+            {editError && (
+              <div className="mb-4 p-3 bg-rose-500/20 border border-rose-400/30 rounded-lg text-rose-200 text-sm">
+                {editError}
+              </div>
+            )}
+
+            <div className="space-y-4">
+              {/* Sale Date */}
+              <div>
+                <label className="text-blue-200 text-sm mb-2 block font-medium">Sale Date *</label>
+                <input
+                  type="date"
+                  value={editFormData.sale_date}
+                  onChange={(e) => setEditFormData({ ...editFormData, sale_date: e.target.value })}
+                  className="w-full funding-input rounded-xl px-4 py-3"
+                  disabled={isSaving}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {/* Quantity */}
+                <div>
+                  <label className="text-blue-200 text-sm mb-2 block font-medium">Quantity *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={editFormData.quantity}
+                    onChange={(e) => setEditFormData({ ...editFormData, quantity: e.target.value })}
+                    className="w-full funding-input rounded-xl px-4 py-3"
+                    disabled={isSaving}
+                  />
+                </div>
+
+                {/* Average Cost */}
+                <div>
+                  <label className="text-blue-200 text-sm mb-2 block font-medium">Average Cost *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={editFormData.average_cost}
+                    onChange={(e) => setEditFormData({ ...editFormData, average_cost: e.target.value })}
+                    className="w-full funding-input rounded-xl px-4 py-3"
+                    disabled={isSaving}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {/* Sale Price */}
+                <div>
+                  <label className="text-blue-200 text-sm mb-2 block font-medium">Sale Price *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={editFormData.sale_price}
+                    onChange={(e) => setEditFormData({ ...editFormData, sale_price: e.target.value })}
+                    className="w-full funding-input rounded-xl px-4 py-3"
+                    disabled={isSaving}
+                  />
+                </div>
+
+                {/* Fees */}
+                <div>
+                  <label className="text-blue-200 text-sm mb-2 block font-medium">Fees</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={editFormData.fees}
+                    onChange={(e) => setEditFormData({ ...editFormData, fees: e.target.value })}
+                    className="w-full funding-input rounded-xl px-4 py-3"
+                    disabled={isSaving}
+                  />
+                </div>
+              </div>
+
+              {/* Auto-calculated fields (read-only display) */}
+              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                <p className="text-blue-200 text-sm mb-3 font-medium">Calculated Values</p>
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <p className="text-blue-300 mb-1">Total Cost</p>
+                    <p className="text-white font-semibold">${editTotalCost}</p>
+                  </div>
+                  <div>
+                    <p className="text-blue-300 mb-1">Proceeds</p>
+                    <p className="text-white font-semibold">${editProceeds}</p>
+                  </div>
+                  <div>
+                    <p className="text-blue-300 mb-1">Realized P/L</p>
+                    <p className={`font-semibold ${parseFloat(editRealizedPnL) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      ${editRealizedPnL}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="text-blue-200 text-sm mb-2 block font-medium">Notes</label>
+                <textarea
+                  value={editFormData.notes}
+                  onChange={(e) => setEditFormData({ ...editFormData, notes: e.target.value })}
+                  className="w-full funding-input rounded-xl px-4 py-3 resize-none"
+                  rows={3}
+                  disabled={isSaving}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      )}
     </div>
   );
 }
