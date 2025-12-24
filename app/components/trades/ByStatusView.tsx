@@ -5,17 +5,11 @@ import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Sliders, RefreshCw } 
 import { Position, Transaction } from '../../lib/types/transaction';
 import { getPositions } from '../../services/positionServiceClient';
 import { getTransactions } from '../../services/transactionServiceClient';
-import { TransactionDetailModal } from './TransactionDetailModal';
 import { AssignAttributesModal } from './AssignAttributesModal';
 import GlassButton from '@/app/lib/ui/GlassButton';
 import SegmentedControl from '@/app/lib/ui/SegmentedControl';
-import { ChevronLeft, ChevronRight, Eye } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-
-interface ByStatusViewProps {
-  onEdit?: (transaction: Transaction) => void;
-  onDelete?: () => void;
-}
 
 interface RealizedTrade {
   realization_id: number;
@@ -33,7 +27,7 @@ interface RealizedTrade {
   notes: string | null;
 }
 
-export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
+export function ByStatusView() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [activeSubTab, setActiveSubTab] = useState<'open' | 'closed'>('open');
@@ -42,7 +36,6 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
   const [expandedTicker, setExpandedTicker] = useState<string | null>(null);
   const [tickerTransactions, setTickerTransactions] = useState<Record<string, Transaction[]>>({});
   const [loading, setLoading] = useState(true);
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [selectedPositionForAttributes, setSelectedPositionForAttributes] = useState<Position | null>(null);
   const [transactionPages, setTransactionPages] = useState<Record<string, number>>({});
   const transactionPageSize = 5;
@@ -177,39 +170,6 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
         console.error('Failed to fetch transactions:', err);
       }
     }
-  };
-
-  const handleDeleteComplete = async () => {
-    if (onDelete) {
-      onDelete();
-    }
-    // Refresh data
-    if (activeSubTab === 'open') {
-      const data = await getPositions(true);
-      setPositions(data);
-      // Clear cached data for refresh
-      setTickerTransactions({});
-    } else {
-      const response = await fetch('/api/trades/realized-history');
-      const data = await response.json();
-      setClosedLots(data.history);
-    }
-  };
-
-  const getStrategyName = (strategyId: number | null) => {
-    if (strategyId === 1) return 'Day Trade';
-    if (strategyId === 2) return 'Swing Trade';
-    if (strategyId === 3) return 'Position Trade';
-    return '-';
-  };
-
-  const getStatusBadge = (status: string) => {
-    const colors = {
-      'OPEN': 'bg-green-500/20 text-green-300 border-green-400/30',
-      'PARTIAL': 'bg-yellow-500/20 text-yellow-300 border-yellow-400/30',
-      'CLOSED': 'bg-slate-500/20 text-slate-300 border-slate-400/30'
-    };
-    return colors[status as keyof typeof colors] || colors.CLOSED;
   };
 
   // Calculate totals for open positions (STOCKS ONLY)
@@ -433,7 +393,6 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
                                     <th className="text-right text-blue-300 pb-2 px-2">Fees</th>
                                     <th className="text-right text-blue-300 pb-2 px-4">Trade Value</th>
                                     <th className="text-left text-blue-300 pb-2 px-4">Notes</th>
-                                    <th className="text-center text-blue-300 pb-2 px-2">Actions</th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -467,15 +426,6 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
                                         <td className="py-3 px-4 text-right text-white">${(transaction.trade_value ||0).toFixed(2)}</td>
                                         <td className="py-3 px-4 text-white text-sm">
                                           {transaction.notes || '-'}
-                                        </td>
-                                        <td className="py-3 px-2 text-center">
-                                          <button
-                                            onClick={() => setSelectedTransaction(transaction)}
-                                            className="text-blue-400 hover:text-blue-300 transition-colors"
-                                            title="View Transaction"
-                                          >
-                                            <Eye className="w-4 h-4" />
-                                          </button>
                                         </td>
                                       </tr>
                                     ));
@@ -669,19 +619,6 @@ export function ByStatusView({ onEdit, onDelete }: ByStatusViewProps) {
           </div>
         </>
       )}
-
-      {/* Transaction Detail Modal */}
-      <TransactionDetailModal
-        transaction={selectedTransaction}
-        onClose={() => setSelectedTransaction(null)}
-        onEdit={(transaction) => {
-          if (onEdit) {
-            onEdit(transaction);
-          }
-          setSelectedTransaction(null);
-        }}
-        onDelete={handleDeleteComplete}
-      />
 
       {/* Assign Attributes Modal */}
       <AssignAttributesModal
