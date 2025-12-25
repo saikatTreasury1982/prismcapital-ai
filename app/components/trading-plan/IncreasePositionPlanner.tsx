@@ -111,8 +111,13 @@ export function IncreasePositionPlanner({ position, editingPlan, onSuccess, onCa
     setIsSaving(true);
 
     try {
-      if (editingPlan) {
-        await updatePositionActionPlan(editingPlan.plan_id, {
+      // Determine if we're editing an existing plan
+      const isEditing = editingPlan?.plan_id || editingScenario?.plan_id;
+      const planId = editingPlan?.plan_id || editingScenario?.plan_id;
+      
+      if (isEditing && planId) {
+      // UPDATE existing plan
+        await updatePositionActionPlan(planId, {
           action_type: 'ADD_POSITION',
           buy_shares: buyShares,
           entry_price: entryPrice,
@@ -163,10 +168,10 @@ export function IncreasePositionPlanner({ position, editingPlan, onSuccess, onCa
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-white mb-1">
-              {editingScenario ? 'Edit Scenario' : 'Increase Position'} for {position.ticker}
+              {editingPlan || editingScenario ? 'Edit Scenario' : 'Increase Position'} for {position.ticker}
             </h2>
             <p className="text-blue-200 text-sm">
-              {editingScenario ? 'Update your saved scenario' : 'Plan additional investment and analyze impact on your position'}
+              {editingPlan || editingScenario ? 'Update your saved scenario' : 'Plan additional investment and analyze impact on your position'}
             </p>
           </div>
           <div className="flex gap-2">
@@ -184,7 +189,7 @@ export function IncreasePositionPlanner({ position, editingPlan, onSuccess, onCa
               icon={Save}
               onClick={handleSaveScenario}
               disabled={isSaving || buyShares <= 0 || entryPrice <= 0 || newTotalShares <= 0}
-              tooltip={isSaving ? (editingScenario ? 'Updating...' : 'Saving...') : (editingScenario ? 'Update Scenario' : 'Save Scenario')}
+              tooltip={isSaving ? (editingPlan || editingScenario ? 'Updating...' : 'Saving...') : (editingPlan || editingScenario ? 'Update Scenario' : 'Save Scenario')}
               variant="primary"
               size="md"
             />

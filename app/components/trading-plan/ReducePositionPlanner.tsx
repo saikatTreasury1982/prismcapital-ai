@@ -191,9 +191,13 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
     setIsSaving(true);
 
     try {
-      if (editingScenario) {
-        // Update existing scenario - don't include position_id
-        await updatePositionActionPlan(editingScenario.plan_id, {
+      // Determine if we're editing an existing plan
+      const isEditing = editingPlan?.plan_id || editingScenario?.plan_id;
+      const planId = editingPlan?.plan_id || editingScenario?.plan_id;  
+
+      if (isEditing && planId) {
+        // UPDATE existing scenario - don't include position_id
+        await updatePositionActionPlan(planId, {
           action_type: liquidationType === 'full' ? 'LIQUIDATE' : 'PARTIAL_SELL',
           sell_percentage: liquidationType === 'partial' ? sellPercentage : 100,
           sell_shares: sellShares,
@@ -244,10 +248,10 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-white mb-1">
-              {editingScenario ? 'Edit Scenario' : 'Action Plan'} for {position.ticker}
+              {editingPlan || editingScenario ? 'Edit Scenario' : 'Action Plan'} for {position.ticker}
             </h2>
             <p className="text-blue-200 text-sm">
-              {editingScenario ? 'Update your saved scenario' : 'Plan your liquidation, reinvestment, and withdrawal strategy'}
+              {editingPlan || editingScenario ? 'Update your saved scenario' : 'Plan your liquidation, reinvestment, and withdrawal strategy'}
             </p>
           </div>
           <div className="flex gap-2">
@@ -265,7 +269,7 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
               icon={Save}
               onClick={handleSaveScenario}
               disabled={isSaving || proceeds <= 0}
-              tooltip={isSaving ? (editingScenario ? 'Updating...' : 'Saving...') : (editingScenario ? 'Update Scenario' : 'Save Scenario')}
+              tooltip={isSaving ? (editingPlan || editingScenario ? 'Updating...' : 'Saving...') : (editingPlan || editingScenario ? 'Update Scenario' : 'Save Scenario')}
               variant="primary"
               size="md"
             />
