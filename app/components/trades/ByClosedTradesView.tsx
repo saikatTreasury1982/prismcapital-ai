@@ -22,7 +22,7 @@ interface RealizedTrade {
   notes: string | null;
 }
 
-export function ByTickerView() {
+export function ByClosedTradesView() {
   const [trades, setTrades] = useState<RealizedTrade[]>([]);
   const [filteredTrades, setFilteredTrades] = useState<RealizedTrade[]>([]);
   const [loading, setLoading] = useState(true);
@@ -254,28 +254,50 @@ export function ByTickerView() {
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        {/* Closed Trades */}
         <div className="backdrop-blur-xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-2xl p-6 border border-blue-400/20">
           <p className="text-blue-300 text-sm mb-1">Closed Trades</p>
           <p className="text-white text-3xl font-bold">{stats.totalTrades}</p>
           <p className="text-blue-200 text-xs mt-1">{stats.totalQuantity.toFixed(2)} shares</p>
         </div>
+
+        {/* Profitable Trades */}
         <div className="backdrop-blur-xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-2xl p-6 border border-green-400/20">
           <p className="text-green-300 text-sm mb-1">Profitable Trades</p>
           <p className="text-white text-2xl font-bold">{stats.profitCount}</p>
           <p className="text-green-200 text-xs mt-1">+${stats.totalProfit.toFixed(2)}</p>
         </div>
+
+        {/* Loss Trades */}
         <div className="backdrop-blur-xl bg-gradient-to-br from-rose-500/10 to-red-500/10 rounded-2xl p-6 border border-rose-400/20">
           <p className="text-rose-300 text-sm mb-1">Loss Trades</p>
           <p className="text-white text-2xl font-bold">{stats.lossCount}</p>
           <p className="text-rose-200 text-xs mt-1">-${stats.totalLoss.toFixed(2)}</p>
         </div>
+
+        {/* Win Rate */}
+        <div className="backdrop-blur-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-2xl p-6 border border-blue-400/20">
+          <p className="text-blue-300 text-sm mb-1">Win Rate</p>
+          <p className="text-white text-3xl font-bold">
+            {stats.totalTrades > 0 
+              ? ((stats.profitCount / stats.totalTrades) * 100).toFixed(1)
+              : '0.0'}%
+          </p>
+          <p className="text-blue-200 text-xs mt-1">
+            {stats.profitCount}/{stats.totalTrades} trades
+          </p>
+        </div>
+
+        {/* Total P/L */}
         <div className="backdrop-blur-xl bg-gradient-to-br from-amber-500/10 to-yellow-500/10 rounded-2xl p-6 border border-amber-400/20">
           <p className="text-amber-300 text-sm mb-1">Total P/L</p>
           <p className={`text-3xl font-bold ${stats.totalPnL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
             ${stats.totalPnL.toFixed(2)}
           </p>
         </div>
+
+        {/* Total Fees */}
         <div className="backdrop-blur-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-2xl p-6 border border-purple-400/20">
           <p className="text-purple-300 text-sm mb-1">Total Fees</p>
           <p className="text-white text-3xl font-bold">${stats.totalFees.toFixed(2)}</p>
@@ -294,22 +316,31 @@ export function ByTickerView() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/10 bg-white/5">
-                    <th className="text-left text-blue-300 p-4">Sale Date</th>
-                    <th className="text-left text-blue-300 p-4">Ticker</th>
-                    <th className="text-right text-blue-300 p-4">Quantity</th>
-                    <th className="text-right text-blue-300 p-4">Avg Cost</th>
-                    <th className="text-right text-blue-300 p-4">Sale Price</th>
-                    <th className="text-right text-blue-300 p-4">Total Cost</th>
-                    <th className="text-right text-blue-300 p-4">Proceeds</th>
-                    <th className="text-right text-blue-300 p-4">Fees</th>
-                    <th className="text-right text-blue-300 p-4">Realized P/L</th>
-                    <th className="text-left text-blue-300 p-4">Notes</th>
-                    <th className="text-center text-blue-300 p-4">Actions</th>
+                    <th className="text-left text-blue-100 p-4 font-semibold">Ticker</th>
+                    <th className="text-left text-blue-100 p-4 font-semibold">Entry Date</th>
+                    <th className="text-left text-blue-100 p-4 font-semibold">Sale Date</th>
+                    <th className="text-right text-blue-100 p-4 font-semibold">Quantity</th>
+                    <th className="text-right text-blue-100 p-4 font-semibold">Avg Cost</th>
+                    <th className="text-right text-blue-100 p-4 font-semibold">Sale Price</th>
+                    <th className="text-right text-blue-100 p-4 font-semibold">Total Cost</th>
+                    <th className="text-right text-blue-100 p-4 font-semibold">Proceeds</th>
+                    <th className="text-right text-blue-100 p-4 font-semibold">Fees</th>
+                    <th className="text-right text-blue-100 p-4 font-semibold">Realized P/L</th>
+                    <th className="text-left text-blue-100 p-4 font-semibold">Notes</th>
+                    <th className="text-center text-blue-100 p-4 font-semibold">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginatedTrades.map((trade) => (
                     <tr key={trade.realization_id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                      <td className="p-4 text-white font-semibold">{trade.ticker}</td>
+                      <td className="p-4 text-white">
+                        {new Date(trade.entry_date).toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'short', 
+                          day: 'numeric' 
+                        })}
+                      </td>
                       <td className="p-4 text-white">
                         {new Date(trade.sale_date).toLocaleDateString('en-US', { 
                           year: 'numeric', 
@@ -317,7 +348,6 @@ export function ByTickerView() {
                           day: 'numeric' 
                         })}
                       </td>
-                      <td className="p-4 text-white font-semibold">{trade.ticker}</td>
                       <td className="p-4 text-right text-white">{trade.quantity.toFixed(2)}</td>
                       <td className="p-4 text-right text-white">${trade.average_cost.toFixed(2)}</td>
                       <td className="p-4 text-right text-white">${trade.sale_price.toFixed(2)}</td>

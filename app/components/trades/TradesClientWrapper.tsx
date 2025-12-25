@@ -5,8 +5,8 @@ import { Plus, List, BarChart2, Calendar } from 'lucide-react';
 import { RecentTransactionsList } from './RecentTransactionsList';
 import { Transaction } from '../../lib/types/transaction';
 import { TransactionEntryForm } from './TransactionEntryForm';
-import { ByTickerView } from './ByTickerView';
-import { ByStatusView } from './ByStatusView';
+import { ByClosedTradesView } from './ByClosedTradesView';
+import { ByOpenTradesView } from './ByOpenTradesView';
 import { ByDateView } from './ByDateView';
 import UnderlineTabs from '@/app/lib/ui/UnderlineTabs';
 
@@ -40,8 +40,8 @@ export function TradesClientWrapper() {
         <UnderlineTabs
           tabs={[
             { id: 'entry', label: 'Quick Entry', icon: <Plus className="w-5 h-5" /> },
-            { id: 'ticker', label: 'By Ticker', icon: <List className="w-5 h-5" /> },
-            { id: 'status', label: 'By Status', icon: <BarChart2 className="w-5 h-5" /> },
+            { id: 'ticker', label: 'Closed Trades', icon: <List className="w-5 h-5" /> },
+            { id: 'status', label: 'Open Trades', icon: <BarChart2 className="w-5 h-5" /> },
             { id: 'date', label: 'By Date', icon: <Calendar className="w-5 h-5" /> },
           ]}
           activeTab={activeTab}
@@ -75,13 +75,13 @@ export function TradesClientWrapper() {
         )}
 
         {activeTab === 'ticker' && (
-          <ByTickerView 
+          <ByClosedTradesView 
             key={refreshKey}
           />
         )}
 
         {activeTab === 'status' && (
-          <ByStatusView 
+          <ByOpenTradesView 
             key={refreshKey}
           />
         )}
