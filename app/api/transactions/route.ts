@@ -96,9 +96,7 @@ export async function POST(request: Request) {
           transaction_date: transactionData.transaction_date,
           quantity: transactionData.quantity,
           price: transactionData.price,
-          fees: transactionData.fees || 0,
           transaction_currency: transactionData.transaction_currency || 'USD',
-          notes: transactionData.notes || null,
           trade_value: transactionData.quantity * transactionData.price,
         })
         .returning();

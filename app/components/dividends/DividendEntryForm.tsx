@@ -308,7 +308,7 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[30%_70%] gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-[350px_1fr] gap-6">
       {/* Left Column - Position Cards */}
       <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-4 border border-white/20 h-fit">
         <h3 className="text-lg font-bold text-white mb-4">Open Positions</h3>

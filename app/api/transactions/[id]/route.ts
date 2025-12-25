@@ -35,8 +35,6 @@ export async function PUT(
         transaction_date,
         quantity,
         price,
-        fees,
-        notes,
         trade_value,
         updated_at: new Date().toISOString(),
       })
