@@ -17,7 +17,7 @@ interface ByTickerViewProps {
 export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
   const { data: session } = useSession();
   const [summaries, setSummaries] = useState<DividendSummaryByTicker[]>([]);
-  const [expandedTicker, setExpandedTicker] = useState<string | null>(null);
+  const [expandedTickers, setExpandedTickers] = useState<Set<string>>(new Set());
   const [tickerDividends, setTickerDividends] = useState<Record<string, Dividend[]>>({});
   const [currentPage, setCurrentPage] = useState<Record<string, number>>({});
   const [totalPages, setTotalPages] = useState<Record<string, number>>({});
@@ -51,12 +51,15 @@ export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
   }, []);
 
   const handleTickerClick = async (ticker: string) => {
-    if (expandedTicker === ticker) {
-      setExpandedTicker(null);
-      return;
-    }
-
-    setExpandedTicker(ticker);
+    setExpandedTickers(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(ticker)) {
+        newSet.delete(ticker);
+      } else {
+        newSet.add(ticker);
+      }
+      return newSet;
+    });
 
     if (!tickerDividends[ticker]) {
       try {
@@ -117,7 +120,7 @@ export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
                 <div className="flex-1">
                   <h3 className="text-xl font-bold text-white mb-1">{summary.ticker}</h3>
                 </div>
-                {expandedTicker === summary.ticker ? (
+                {expandedTickers.has(summary.ticker) ? (
                   <ChevronUp className="w-5 h-5 text-white flex-shrink-0 ml-2" />
                 ) : (
                   <ChevronDown className="w-5 h-5 text-white flex-shrink-0 ml-2" />
@@ -164,7 +167,7 @@ export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
               </div>
             </button>
 
-            {expandedTicker === summary.ticker && tickerDividends[summary.ticker] && (
+            {expandedTickers.has(summary.ticker) && tickerDividends[summary.ticker] && (
               <div className="border-t border-white/20 p-4 bg-white/5">
                 <div className="space-y-3">
                   {tickerDividends[summary.ticker].map((dividend) => (
@@ -236,9 +239,23 @@ export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
       <DividendDetailModal 
         dividend={selectedDividend} 
         onClose={() => setSelectedDividend(null)}
-        onEdit={(dividend) => {
-          if (onEdit) {
-            onEdit(dividend);
+        onEdit={async (dividend) => {
+          // Refresh the data instead of navigating away
+          try {
+            const res = await fetch(`/api/dividends-by-ticker?userId=${session?.user?.id}`);
+            const result = await res.json();
+            setSummaries(result.data);
+            
+            // Refresh the expanded ticker's dividends if it's open
+            if (expandedTickers.has(dividend.ticker)) {
+              const page = currentPage[dividend.ticker] || 1;
+              const divRes = await fetch(`/api/dividends-by-ticker?userId=${session?.user?.id}&ticker=${encodeURIComponent(dividend.ticker)}&page=${page}&pageSize=5`);
+              const divResult = await divRes.json();
+              const { data } = divResult;
+              setTickerDividends(prev => ({ ...prev, [dividend.ticker]: data }));
+            }
+          } catch (error) {
+            console.error('Error refreshing dividends:', error);
           }
           setSelectedDividend(null);
         }}
