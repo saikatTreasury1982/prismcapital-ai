@@ -8,7 +8,7 @@ import InvestmentCharts from '../components/dashboard/InvestmentCharts';
 import DividendCard from '../components/dashboard/DividendCard';
 import TradeStrategyCard from '../components/dashboard/TradeStrategyCard';
 import GlassButton from '../lib/ui/GlassButton';
-import { RefreshCw } from 'lucide-react';
+import { BarChart3 } from 'lucide-react';
 
 interface StrategyData {
   strategies: any[];
@@ -211,39 +211,64 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white mb-2">
-          Portfolio Summary | {session?.user?.id}
-        </h1>
-        <div className="flex items-center gap-3">
-          <p className="text-blue-200">
-            {new Date().toLocaleDateString('en-GB', { 
-              day: '2-digit', 
-              month: 'short', 
-              year: 'numeric' 
-            })}
-          </p>
-          
-          {/* Refresh Prices Button */}
-          <GlassButton
-            onClick={handleRefreshPrices}
-            disabled={isRefreshingPrices}
-            tooltip="Refresh Market Prices"
-            variant="secondary"
-            size="sm"
-            icon={RefreshCw}
-            className={isRefreshingPrices ? 'animate-spin' : ''}
-          />
-        </div>
-
-        {/* Refresh Status Message */}
-        {refreshMessage && (
-          <div className="mt-3 bg-blue-500/10 border border-blue-500/20 rounded-lg px-4 py-2">
-            <p className="text-blue-300 text-sm">{refreshMessage}</p>
+  <div className="p-8">
+    {/* Elegant Header */}
+    <div className="mb-8">
+      <div className="backdrop-blur-xl bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 rounded-3xl p-8 border border-white/20">
+        <div className="flex items-center justify-between">
+          {/* Left Section - Title and User */}
+          <div>
+            <h1 className="text-4xl font-bold text-white mb-3 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+              Portfolio Summary
+            </h1>
+            <div className="flex items-center gap-4 text-blue-200">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">
+                    {session?.user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                  </span>
+                </div>
+                <span className="text-lg font-semibold text-white">
+                  {session?.user?.name || session?.user?.id}
+                </span>
+              </div>
+              <span className="text-blue-300">•</span>
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span className="text-sm">
+                  {new Date().toLocaleDateString('en-US', { 
+                    weekday: 'short',
+                    day: 'numeric', 
+                    month: 'short', 
+                    year: 'numeric' 
+                  })}
+                </span>
+              </div>
+            </div>
           </div>
-        )}
+
+          {/* Right Section - Refresh Button */}
+          <div className="flex flex-col items-end gap-2">
+            <GlassButton
+              onClick={handleRefreshPrices}
+              disabled={isRefreshingPrices}
+              tooltip="Refresh Market Prices"
+              variant="primary"
+              size="md"
+              icon={BarChart3}
+              className={isRefreshingPrices ? 'animate-spin' : ''}
+            />
+            {refreshMessage && (
+              <div className="bg-blue-500/20 border border-blue-400/30 rounded-lg px-3 py-1">
+                <p className="text-blue-300 text-xs">{refreshMessage}</p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
+    </div>
 
       {error && (
         <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">

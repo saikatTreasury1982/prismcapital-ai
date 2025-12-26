@@ -120,7 +120,31 @@ const InvestmentCharts = memo(function InvestmentCharts({ data }: InvestmentChar
                   innerRadius={60}
                   fill="#8884d8"
                   dataKey="value"
-                  label={({ name, percentage }) => `${name}: ${percentage}%`}
+                  label={(props: any) => {
+                    const RADIAN = Math.PI / 180;
+                    const radius = (props.outerRadius as number) + 30;
+                    const x = (props.cx as number) + radius * Math.cos(-(props.midAngle as number) * RADIAN);
+                    const y = (props.cy as number) + radius * Math.sin(-(props.midAngle as number) * RADIAN);
+
+                    return (
+                      <text
+                        x={x}
+                        y={y}
+                        fill="white"
+                        textAnchor={x > (props.cx as number) ? 'start' : 'end'}
+                        dominantBaseline="central"
+                        style={{ 
+                          fontSize: '14px',
+                        }}
+                      >
+                        {`${props.name}: ${props.percentage}%`}
+                      </text>
+                    );
+                  }}
+                  labelLine={{
+                    stroke: 'rgba(255, 255, 255, 0.6)',
+                    strokeWidth: 2
+                  }}
                 >
                   {pieData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
