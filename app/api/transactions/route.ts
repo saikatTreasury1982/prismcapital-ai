@@ -115,7 +115,7 @@ export async function POST(request: Request) {
             quantity: transactionData.quantity,
             price: transactionData.price,
             transaction_date: transactionData.transaction_date,
-            strategy_id: transactionData.strategy_id,
+            strategy_code: transactionData.strategy_code,
             transaction_currency: transactionData.transaction_currency || 'USD',
             ticker_name: transactionData.ticker_name,
           });
@@ -127,7 +127,7 @@ export async function POST(request: Request) {
             quantity: transactionData.quantity,
             price: transactionData.price,
             transaction_date: transactionData.transaction_date,
-            strategy_id: transactionData.strategy_id,
+            strategy_code: transactionData.strategy_code,
           });
         }
       }
