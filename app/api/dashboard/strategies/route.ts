@@ -19,24 +19,24 @@ export async function GET() {
     const result = await db.$client.execute({
       sql: `
         SELECT 
-          p.strategy_id,
+          p.strategy,
           ts.strategy_name,
           ts.description as strategy_description,
           COUNT(*) as position_count,
           GROUP_CONCAT(
+            p.position_id || '|' ||
             p.ticker || '|' || 
-            p.ticker_name || '|' || 
+            COALESCE(p.ticker_name, p.ticker) || '|' || 
             p.total_shares || '|' || 
             p.average_cost || '|' || 
-            p.current_market_price || '|' ||
-            p.unrealized_pnl || '|' ||
-            p.position_currency,
+            COALESCE(p.current_market_price, 0) || '|' ||
+            COALESCE(p.unrealized_pnl, 0),
             ','
           ) as positions_data
         FROM positions p
-        LEFT JOIN trade_strategies ts ON p.strategy_id = ts.strategy_id
+        LEFT JOIN trade_strategies ts ON p.strategy = ts.strategy_code
         WHERE p.user_id = ? AND p.is_active = 1
-        GROUP BY p.strategy_id, ts.strategy_name, ts.description
+        GROUP BY p.strategy, ts.strategy_name, ts.description
         ORDER BY position_count DESC
       `,
       args: [userId],
@@ -44,23 +44,23 @@ export async function GET() {
 
     const strategyBreakdown = result.rows.map(row => {
       const positionsData = (row.positions_data as string)?.split(',').map(pos => {
-        const [ticker, tickerName, quantity, avgCost, currentPrice, unrealizedPnl, currency] = pos.split('|');
+        const [positionId, ticker, tickerName, totalShares, avgCost, currentPrice, unrealizedPnl] = pos.split('|');
         return {
+          position_id: Number(positionId) || 0,
           ticker: ticker || '',
-          tickerName: tickerName || '',
-          quantity: Number(quantity) || 0,
-          averageCost: Number(avgCost) || 0,
-          currentPrice: Number(currentPrice) || 0,
-          unrealizedPnl: Number(unrealizedPnl) || 0,
-          currency: currency || 'USD',
+          ticker_name: tickerName || ticker || '',
+          total_shares: Number(totalShares) || 0,
+          average_cost: Number(avgCost) || 0,
+          current_market_price: Number(currentPrice) || 0,
+          unrealized_pnl: Number(unrealizedPnl) || 0,
         };
       }) || [];
 
       return {
-        strategyId: Number(row.strategy_id),
-        strategyName: row.strategy_name || 'Unknown',
-        strategyDescription: row.strategy_description || 'No description available',
-        positionCount: Number(row.position_count) || 0,
+        strategy_code: row.strategy || 'UNKNOWN',
+        strategy_name: row.strategy_name || 'Unknown Strategy',
+        description: row.strategy_description || 'No description available',
+        position_count: Number(row.position_count) || 0,
         positions: positionsData,
       };
     });

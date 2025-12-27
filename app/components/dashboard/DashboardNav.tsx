@@ -11,16 +11,16 @@ export function DashboardNav({ menuItems }: DashboardNavProps) {
   const pathname = usePathname();
 
   return (
-    <nav className="hidden md:flex items-center gap-2">
+    <nav className="hidden md:flex items-stretch gap-2 h-full">
       {menuItems.map((item) => {
         const isActive = pathname === item.href;
         return (
           <Link
             key={item.href}
             href={item.href}
-            className={`px-4 py-2 rounded-xl font-medium transition-all ${
+            className={`px-6 py-3 rounded-xl font-medium transition-all flex items-center ${
               isActive
-                ? 'bg-white/20 backdrop-blur-xl text-white shadow-lg border border-white/30'
+                ? 'bg-gradient-to-b from-white/20 to-white/10 backdrop-blur-xl text-white shadow-lg border border-white/30'
                 : 'text-blue-200 hover:bg-white/10 hover:text-white'
             }`}
           >

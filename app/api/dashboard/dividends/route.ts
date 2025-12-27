@@ -14,7 +14,7 @@ export async function GET() {
     const currentYear = new Date().getFullYear();
     const currentDate = new Date().toISOString().split('T')[0];
 
-    // Get ALL-TIME summary by ticker - filtered by current date
+    // Get ALL-TIME summary by ticker - filtered by ex_dividend_date
     const allTimeTickerSummary = await db.$client.execute({
       sql: `
         SELECT 
@@ -23,19 +23,19 @@ export async function GET() {
           COUNT(*) as total_dividend_payments,
           ROUND(SUM(d.dividend_per_share * d.shares_owned), 4) as total_dividends_received,
           ROUND(AVG(d.dividend_per_share), 4) as avg_dividend_per_share,
-          MAX(CASE WHEN d.ex_dividend_date IS NOT NULL THEN d.ex_dividend_date END) as latest_ex_div_date,
-          MAX(CASE WHEN d.payment_date IS NOT NULL THEN d.payment_date END) as latest_payment_date
+          MAX(d.ex_dividend_date) as latest_ex_div_date,
+          MAX(d.payment_date) as latest_payment_date
         FROM dividends d
         LEFT JOIN positions p ON d.ticker = p.ticker AND d.user_id = p.user_id
         WHERE d.user_id = ? 
-          AND (d.payment_date IS NULL OR d.payment_date <= ?)
+          AND d.ex_dividend_date <= ?
         GROUP BY d.ticker, p.ticker_name
         ORDER BY total_dividends_received DESC
       `,
       args: [userId, currentDate],
     });
 
-    // Get YTD summary by ticker - filtered by current year and current date
+    // Get YTD summary by ticker - filtered by ex_dividend_date in current year
     const ytdTickerSummary = await db.$client.execute({
       sql: `
         SELECT 
@@ -44,19 +44,17 @@ export async function GET() {
           COUNT(*) as total_dividend_payments,
           ROUND(SUM(d.dividend_per_share * d.shares_owned), 4) as total_dividends_received,
           ROUND(AVG(d.dividend_per_share), 4) as avg_dividend_per_share,
-          MAX(CASE WHEN d.ex_dividend_date IS NOT NULL THEN d.ex_dividend_date END) as latest_ex_div_date,
-          MAX(CASE WHEN d.payment_date IS NOT NULL THEN d.payment_date END) as latest_payment_date
+          MAX(d.ex_dividend_date) as latest_ex_div_date,
+          MAX(d.payment_date) as latest_payment_date
         FROM dividends d
         LEFT JOIN positions p ON d.ticker = p.ticker AND d.user_id = p.user_id
         WHERE d.user_id = ? 
-          AND (
-            (d.payment_date IS NOT NULL AND CAST(strftime('%Y', d.payment_date) AS INTEGER) = ? AND d.payment_date <= ?)
-            OR (d.payment_date IS NULL AND CAST(strftime('%Y', d.ex_dividend_date) AS INTEGER) = ?)
-          )
+          AND CAST(strftime('%Y', d.ex_dividend_date) AS INTEGER) = ?
+          AND d.ex_dividend_date <= ?
         GROUP BY d.ticker, p.ticker_name
         ORDER BY total_dividends_received DESC
       `,
-      args: [userId, currentYear, currentDate, currentYear],
+      args: [userId, currentYear, currentDate],
     });
 
     // Get year-to-date dividends
@@ -68,12 +66,10 @@ export async function GET() {
           ROUND(SUM(dividend_per_share * shares_owned), 4) as total_dividends_received
         FROM dividends
         WHERE user_id = ? 
-          AND (
-            (payment_date IS NOT NULL AND CAST(strftime('%Y', payment_date) AS INTEGER) = ? AND payment_date <= ?)
-            OR (payment_date IS NULL AND CAST(strftime('%Y', ex_dividend_date) AS INTEGER) = ?)
-          )
+          AND CAST(strftime('%Y', ex_dividend_date) AS INTEGER) = ?
+          AND ex_dividend_date <= ?
       `,
-      args: [userId, currentYear, currentDate, currentYear],
+      args: [userId, currentYear, currentDate],
     });
 
     // Get all-time total
@@ -84,10 +80,25 @@ export async function GET() {
           ROUND(SUM(dividend_per_share * shares_owned), 4) as total_dividends
         FROM dividends
         WHERE user_id = ?
-          AND payment_date <= ?
+          AND ex_dividend_date <= ?
       `,
       args: [userId, currentDate],
     });
+
+    // Get upcoming dividends
+    const upcomingResult = await db.$client.execute({
+      sql: `
+        SELECT 
+          COUNT(*) as total_upcoming_payments,
+          ROUND(SUM(dividend_per_share * shares_owned), 4) as total_upcoming_dividends
+        FROM dividends
+        WHERE user_id = ?
+          AND ex_dividend_date > ?
+      `,
+      args: [userId, currentDate],
+    });
+
+    const upcomingData = upcomingResult.rows[0];
 
     const allTimeData = allTimeResult.rows[0];
     const ytdData = ytdResult.rows[0];
@@ -119,10 +130,13 @@ export async function GET() {
         ytdDividends: Number(ytdData?.total_dividends_received) || 0,
         ytdStocks: Number(ytdData?.stocks_paid_dividends) || 0,
         ytdPayments: Number(ytdData?.total_dividend_payments) || 0,
+        upcomingDividends: Number(upcomingData?.total_upcoming_dividends) || 0,
+        upcomingPayments: Number(upcomingData?.total_upcoming_payments) || 0,
       },
       allTimeBreakdown,
       ytdBreakdown,
     });
+
   } catch (error: any) {
     console.error('Dashboard dividends error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

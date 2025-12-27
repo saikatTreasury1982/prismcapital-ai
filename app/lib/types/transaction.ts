@@ -24,7 +24,7 @@ export interface CreateTransactionInput {
   fees?: number;
   transaction_currency?: string;
   notes?: string;
-  strategy_id: number;
+  strategy_code: string;
   ticker_name?: string;
 }
 

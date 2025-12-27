@@ -17,7 +17,7 @@ export interface Position {
   is_active: boolean;
   opened_date?: string;
   closed_date?: string;
-  strategy_id?: number;
+  strategy?: string; // ✅ Changed from strategy_id to strategy
   position_currency: string;
 }
 
@@ -31,7 +31,7 @@ export async function aggregateToPositionTx(tx: any, transaction: {
   quantity: number;
   price: number;
   transaction_date: string;
-  strategy_id: number;
+  strategy_code: string; // ✅ Changed from strategy_id to strategy_code
   transaction_currency: string;
   ticker_name: string;
 }) {
@@ -44,7 +44,7 @@ export async function aggregateToPositionTx(tx: any, transaction: {
         eq(positions.user_id, transaction.user_id),
         eq(positions.ticker, transaction.ticker),
         eq(positions.is_active, 1),
-        eq(positions.strategy_id, transaction.strategy_id)
+        eq(positions.strategy, transaction.strategy_code) // ✅ Changed from strategy_id
       )
     )
     .limit(1);
@@ -79,7 +79,7 @@ export async function aggregateToPositionTx(tx: any, transaction: {
       total_shares: transaction.quantity,
       average_cost: transaction.price,
       current_market_price: currentMarketPrice,
-      strategy_id: transaction.strategy_id,
+      strategy: transaction.strategy_code, // ✅ Changed from strategy_id
       opened_date: transaction.transaction_date,
       position_currency: transaction.transaction_currency,
       ticker_name: sanitizedTickerName,
@@ -101,7 +101,7 @@ export async function reducePositionTx(tx: any, transaction: {
   quantity: number;
   price: number;
   transaction_date: string;
-  strategy_id: number;
+  strategy_code: string; // ✅ Changed from strategy_id to strategy_code
 }) {
   const existingPosition = await tx
     .select()
@@ -111,7 +111,7 @@ export async function reducePositionTx(tx: any, transaction: {
         eq(positions.user_id, transaction.user_id),
         eq(positions.ticker, transaction.ticker),
         eq(positions.is_active, 1),
-        eq(positions.strategy_id, transaction.strategy_id)
+        eq(positions.strategy, transaction.strategy_code) // ✅ Changed from strategy_id
       )
     )
     .limit(1);
@@ -186,7 +186,7 @@ export async function aggregateToPosition(transaction: {
   quantity: number;
   price: number;
   transaction_date: string;
-  strategy_id: number;
+  strategy_code: string; // ✅ Changed from strategy_id to strategy_code
   transaction_currency: string;
   ticker_name: string;
 }) {
@@ -203,7 +203,7 @@ export async function reducePosition(transaction: {
   quantity: number;
   price: number;
   transaction_date: string;
-  strategy_id: number;
+  strategy_code: string; // ✅ Changed from strategy_id to strategy_code
 }) {
   return await reducePositionTx(db, transaction);
 }

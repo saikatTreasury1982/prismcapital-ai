@@ -181,8 +181,7 @@ export const planningScenarios = sqliteTable('planning_scenarios', {
 
 // POSITIONS
 export const tradeStrategies = sqliteTable('trade_strategies', {
-  strategy_id: integer('strategy_id').primaryKey({ autoIncrement: true }),
-  strategy_code: text('strategy_code').notNull().unique(),
+  strategy_code: text('strategy_code').primaryKey(),
   strategy_name: text('strategy_name').notNull(),
   description: text('description'),
   created_at: text('created_at').default(sql`(datetime('now'))`),
@@ -191,20 +190,20 @@ export const tradeStrategies = sqliteTable('trade_strategies', {
 export const positions = sqliteTable('positions', {
   position_id: integer('position_id').primaryKey({ autoIncrement: true }),
   user_id: text('user_id').notNull().references(() => users.user_id),
-  ticker: text('ticker').notNull(),
+  ticker: text('ticker').notNull().unique(),
   total_shares: real('total_shares').default(0),
   average_cost: real('average_cost').notNull(),
   current_market_price: real('current_market_price'),
   is_active: integer('is_active').default(1),
   opened_date: text('opened_date'),
-  created_at: text('created_at').default(sql`(datetime('now'))`),
-  updated_at: text('updated_at').default(sql`(datetime('now'))`),
-  strategy_id: integer('strategy_id').references(() => tradeStrategies.strategy_id),
+  created_at: text('created_at').default("datetime('now')"),
+  updated_at: text('updated_at').default("datetime('now')"),
   position_currency: text('position_currency').default('USD'),
   ticker_name: text('ticker_name'),
   current_value: real('current_value'),
   unrealized_pnl: real('unrealized_pnl'),
   realized_pnl: real('realized_pnl').default(0),
+  strategy: text('strategy').references(() => tradeStrategies.strategy_code), // ADD THIS LINE
 });
 
 export const realizedPnlHistory = sqliteTable('realized_pnl_history', {

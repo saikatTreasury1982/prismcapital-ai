@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { Fingerprint, Lock, Key } from 'lucide-react';
+import { Fingerprint, Lock, Key, ArrowLeft } from 'lucide-react';
 import GlassButton from '@/app/lib/ui/GlassButton';
 
 export default function LoginPage() {
@@ -334,17 +334,7 @@ export default function LoginPage() {
                 <div className="space-y-4">
                   {isSettingPassword ? (
                     <>
-                      <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-lg font-semibold text-white">Set Your Password</h2>
-                        <GlassButton
-                          icon={Key}
-                          onClick={handleSetupPassword}
-                          disabled={loading || !password || !confirmPassword}
-                          tooltip={loading ? 'Setting Password...' : 'Set Password & Sign In'}
-                          variant="primary"
-                          size="md"
-                        />
-                      </div>
+                      <h2 className="text-lg font-semibold text-white mb-4">Set Your Password</h2>
                       
                       <input
                         type="password"
@@ -359,22 +349,36 @@ export default function LoginPage() {
                         placeholder="Confirm Password"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 mb-6"
                       />
+                      
+                      <div className="flex items-center justify-center gap-3">
+                        <GlassButton
+                          icon={Key}
+                          onClick={handleSetupPassword}
+                          disabled={loading || !password || !confirmPassword}
+                          tooltip={loading ? 'Setting Password...' : 'Set Password & Sign In'}
+                          variant="primary"
+                          size="lg"
+                        />
+                        <GlassButton
+                          icon={ArrowLeft}
+                          onClick={() => {
+                            setShowPasswordForm(false);
+                            setIsSettingPassword(false);
+                            setPassword('');
+                            setConfirmPassword('');
+                            setError(null);
+                          }}
+                          tooltip="Back"
+                          variant="secondary"
+                          size="lg"
+                        />
+                      </div>
                     </>
                   ) : (
                     <>
-                      <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-lg font-semibold text-white">Enter Your Password</h2>
-                        <GlassButton
-                          icon={Lock}
-                          onClick={handlePasswordLogin}
-                          disabled={loading || !password}
-                          tooltip={loading ? 'Signing In...' : 'Sign In'}
-                          variant="primary"
-                          size="md"
-                        />
-                      </div>
+                      <h2 className="text-lg font-semibold text-white mb-4">Enter Your Password</h2>
                       
                       <input
                         type="password"
@@ -382,23 +386,34 @@ export default function LoginPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handlePasswordLogin()}
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 mb-6"
                       />
+                      
+                      <div className="flex items-center justify-center gap-3">
+                        <GlassButton
+                          icon={Lock}
+                          onClick={handlePasswordLogin}
+                          disabled={loading || !password}
+                          tooltip={loading ? 'Signing In...' : 'Sign In'}
+                          variant="primary"
+                          size="lg"
+                        />
+                        <GlassButton
+                          icon={ArrowLeft}
+                          onClick={() => {
+                            setShowPasswordForm(false);
+                            setIsSettingPassword(false);
+                            setPassword('');
+                            setConfirmPassword('');
+                            setError(null);
+                          }}
+                          tooltip="Back"
+                          variant="secondary"
+                          size="lg"
+                        />
+                      </div>
                     </>
                   )}
-
-                  <button
-                    onClick={() => {
-                      setShowPasswordForm(false);
-                      setIsSettingPassword(false);
-                      setPassword('');
-                      setConfirmPassword('');
-                      setError(null);
-                    }}
-                    className="w-full text-blue-300 text-sm hover:text-white transition-colors"
-                  >
-                    ← Back
-                  </button>
                 </div>
               )}
             </div>
