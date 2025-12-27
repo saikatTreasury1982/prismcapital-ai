@@ -4,7 +4,14 @@ import { db } from '@/app/lib/db';
 export async function GET() {
   try {
     const result = await db.$client.execute({
-      sql: 'SELECT strategy_id, strategy_code, strategy_name, description FROM trade_strategies ORDER BY strategy_id',
+      sql: `
+        SELECT 
+          strategy_code,
+          strategy_name,
+          description
+        FROM trade_strategies
+        ORDER BY strategy_name
+      `,
       args: [],
     });
 

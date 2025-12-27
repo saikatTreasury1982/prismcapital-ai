@@ -12,7 +12,7 @@ export interface TransactionInput {
   fees?: number;
   notes?: string;
   transaction_currency?: string;
-  strategy_id?: number;
+  strategy_code?: string;
 }
 
 export interface Transaction {

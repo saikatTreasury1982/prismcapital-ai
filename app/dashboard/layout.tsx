@@ -69,20 +69,21 @@ export default function DashboardLayout({
     <div className="min-h-screen">
       {/* Navigation Header */}
       <header className="bg-white/5 backdrop-blur-xl border-b border-white/10 sticky top-0 z-10">
-        <div className="container mx-auto px-4 sm:px-6 py-4">
-          <div className="flex items-center w-full">
-            {/* Logo - Not clickable */}
+        <div className="container mx-auto px-4 sm:px-6 py-3">
+          {/* Top Row: Logo + Menu + Actions */}
+          <div className="flex items-center justify-between w-full mb-2">
+            {/* Logo */}
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg"></div>
               <span className="text-xl sm:text-2xl font-bold text-white">Prism Capital</span>
             </div>
             
-            {/* Desktop Menu - Centered */}
+            {/* Center: Navigation Menu */}
             <div className="flex-1 flex justify-center">
               <DashboardNav menuItems={menuItems} />
             </div>
             
-            {/* Action Buttons - Extreme Right */}
+            {/* Right: Action Buttons */}
             <div className="flex items-center gap-2">
               <GlassButton
                 icon={Settings}
@@ -102,6 +103,20 @@ export default function DashboardLayout({
                 size="md"
               />
             </div>
+          </div>
+          
+          {/* Bottom Row: User Info + Date - Aligned with Logo */}
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-white font-medium">{session?.user?.name || 'User'}</span>
+            <span className="text-blue-300">•</span>
+            <span className="text-blue-200">
+              {new Date().toLocaleDateString('en-US', { 
+                weekday: 'short', 
+                month: 'short', 
+                day: 'numeric',
+                year: 'numeric'
+              })}
+            </span>
           </div>
         </div>
       </header>

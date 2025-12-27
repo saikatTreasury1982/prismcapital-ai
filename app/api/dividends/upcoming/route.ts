@@ -1,27 +1,21 @@
 import { NextResponse } from 'next/server';
 import { db, schema } from '@/app/lib/db';
-import { eq, gte, and } from 'drizzle-orm';
+import { and, sql } from 'drizzle-orm';
+import { auth } from '@/app/lib/auth';
 
 const { dividends } = schema;
 
 export async function GET(request: Request) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get('userId');
+    const userId = session.user.id;
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
 
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID required' }, { status: 400 });
-    }
-
-    // Get today's date in YYYY-MM-DD format
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayStr = today.toISOString().split('T')[0];
-
-    console.log('Fetching upcoming dividends for user:', userId);
-    console.log('Today date:', todayStr);
-
-    // Get all dividends where ex_dividend_date >= today
+    // Fetch upcoming dividends where ex_dividend_date is today or in the future
     const upcomingDividends = await db
       .select({
         dividend_id: dividends.dividend_id,
@@ -35,29 +29,32 @@ export async function GET(request: Request) {
       .from(dividends)
       .where(
         and(
-          eq(dividends.user_id, userId),
-          gte(dividends.ex_dividend_date, todayStr)
+          sql`${dividends.user_id} = ${userId}`,
+          sql`${dividends.ex_dividend_date} > ${today}`
         )
       )
-      .orderBy(dividends.ex_dividend_date)
+      .orderBy(sql`${dividends.ex_dividend_date} ASC`)
       .limit(20);
 
-    console.log('Found dividends:', upcomingDividends.length);
+    // Calculate days until ex-dividend for each dividend
+    const dividendsWithDays = upcomingDividends.map((div) => {
+      const exDivDate = new Date(div.ex_dividend_date);
+      const todayDate = new Date(today);
+      const diffTime = exDivDate.getTime() - todayDate.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    // Calculate days until for each dividend
-    const dividendsWithDays = upcomingDividends.map(d => {
-      const exDivDate = new Date(d.ex_dividend_date);
-      const daysUntil = Math.ceil((exDivDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-      
       return {
-        ...d,
-        days_until: daysUntil
+        ...div,
+        days_until: diffDays,
       };
     });
 
     return NextResponse.json({ dividends: dividendsWithDays });
   } catch (e: any) {
-    console.error('Upcoming dividends error:', e);
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    console.error('Error fetching upcoming dividends:', e);
+    return NextResponse.json(
+      { error: e.message || 'Failed to fetch upcoming dividends' },
+      { status: 500 }
+    );
   }
 }

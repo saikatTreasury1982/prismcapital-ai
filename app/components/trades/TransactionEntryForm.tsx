@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
-import { Transaction, CreateTransactionInput } from '../../lib/types/transaction';
+import { Transaction } from '../../lib/types/transaction';
 import { createTransaction, updateTransaction } from '../../services/transactionServiceClient';
 import { useDebounce } from '../../lib/hooks/useDebounce';
 import GlassButton from '@/app/lib/ui/GlassButton';
@@ -16,7 +16,6 @@ interface TransactionEntryFormProps {
 }
 
 interface Strategy {
-  strategy_id: number;
   strategy_code: string;
   strategy_name: string;
   description: string;
@@ -27,7 +26,7 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
   const [formData, setFormData] = useState({
     ticker: '',
     transaction_type_id: 1, // Default to Buy
-    strategy_id: 1, // Default to strategy 1
+    strategy_code: 'LONG_TERM', // Default to Long Term strategy
     transaction_date: new Date().toISOString().split('T')[0],
     quantity: '',
     price: '',
@@ -111,18 +110,13 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
           
           if (positionRes.ok) {
             const positionData = await positionRes.json();
-            console.log('Position data:', positionData);
-            console.log('Available strategies:', strategies);
             
-            if (positionData.data && positionData.data.strategy_id) {
-              console.log('Position strategy_id:', positionData.data.strategy_id);
+            if (positionData.data && positionData.data.strategy) {
               // Find strategy name from strategies list
-              const strategy = strategies.find(s => s.strategy_id === positionData.data.strategy_id);
-              console.log('Found strategy:', strategy);
+              const strategy = strategies.find(s => s.strategy_code === positionData.data.strategy);
               
               if (strategy) {
-                const strategyText = `${strategy.strategy_id} - ${strategy.strategy_name}`;
-                console.log('Setting position strategy to:', strategyText);
+                const strategyText = `${strategy.strategy_name}`;
                 setPositionStrategy(strategyText);
               } else {
                 console.log('Strategy not found in strategies list');
@@ -178,7 +172,7 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
       setFormData({
         ticker: editingTransaction.ticker,
         transaction_type_id: editingTransaction.transaction_type_id,
-        strategy_id: 1, // Default strategy
+        strategy_code: 'LONG TERM', // Default strategy
         transaction_date: editingTransaction.transaction_date,
         quantity: editingTransaction.quantity.toString(),
         price: editingTransaction.price.toString(),
@@ -212,7 +206,7 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
         await createTransaction({
           ticker: formData.ticker.toUpperCase(),
           transaction_type_id: formData.transaction_type_id,
-          strategy_id: formData.strategy_id,
+          strategy_code: formData.strategy_code, // ✅ Correct
           transaction_date: formData.transaction_date,
           quantity: parseFloat(formData.quantity),
           price: parseFloat(formData.price),
@@ -227,7 +221,7 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
       setFormData({
         ticker: '',
         transaction_type_id: 1,
-        strategy_id: 1,
+        strategy_code: '',
         transaction_date: new Date().toISOString().split('T')[0],
         quantity: '',
         price: '',
@@ -252,7 +246,7 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
     setFormData({
       ticker: '',
       transaction_type_id: 1,
-      strategy_id: 1,
+      strategy_code: 'LONG_TERM', // ✅ Or use the first strategy from your strategies array
       transaction_date: new Date().toISOString().split('T')[0],
       quantity: '',
       price: '',
@@ -396,14 +390,14 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
         <div>
           <label className="text-blue-200 text-sm mb-2 block font-medium">Strategy *</label>
           <select
-            value={formData.strategy_id}
-            onChange={(e) => setFormData({ ...formData, strategy_id: parseInt(e.target.value) })}
+            value={formData.strategy_code}
+            onChange={(e) => setFormData({ ...formData, strategy_code: e.target.value })}
             className={`w-full funding-input rounded-xl px-4 py-3 ${editingTransaction ? 'bg-white/5 cursor-not-allowed' : ''}`}
             disabled={!!editingTransaction}
           >
             {strategies.map(strategy => (
-              <option key={strategy.strategy_id} value={strategy.strategy_id} className="bg-slate-800 text-white">
-                {strategy.strategy_id} - {strategy.strategy_name}
+              <option key={strategy.strategy_code} value={strategy.strategy_code} className="bg-slate-800 text-white">
+                {strategy.strategy_name}
               </option>
             ))}
           </select>
