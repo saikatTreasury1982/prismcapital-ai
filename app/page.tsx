@@ -270,26 +270,26 @@ export default function LoginPage() {
       </nav>
 
       {/* Hero Section */}
-      <div className="container mx-auto px-4 sm:px-6 flex items-center min-h-[calc(100vh-100px)]">
+      <div className="container mx-auto px-4 sm:px-6 flex items-center min-h-[calc(100vh-120px)]">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           
           {/* LEFT SIDE - Hero Text */}
           <div>
-            <h1 className="text-4xl sm:text-5xl md:text-5xl font-bold text-white mb-4 sm:mb-6 leading-tight">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4 sm:mb-6 leading-tight">
               Smart Portfolio Tracker
-              <span className="block bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent md:text-4xl">
+              <span className="block bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent text-2xl sm:text-3xl md:text-4xl">
                 Trades and Investments
               </span>
             </h1>
             
-            <p className="text-base sm:text-xl text-gray-300">
+            <p className="text-sm sm:text-base md:text-xl text-gray-300">
               application created by vibe coding with Claude.
             </p>
           </div>
 
           {/* RIGHT SIDE - Login Card */}
           <div className="flex justify-center lg:justify-end">  
-            <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 sm:p-12 border border-white/20 max-w-md w-full shadow-2xl">
+            <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-6 sm:p-8 md:p-12 border border-white/20 max-w-md w-full shadow-2xl">
               <h1 className="text-3xl font-bold text-white mb-2 text-center">Welcome</h1>
               <p className="text-blue-200 text-center mb-8">Sign in to your account</p>
 
@@ -301,16 +301,16 @@ export default function LoginPage() {
 
               {!showPasswordForm ? (
                 <div className="space-y-4">
-                  <div className="flex gap-2 items-center">
-                    <input
-                      type="text"
-                      placeholder="User ID or Email"
-                      value={identifier}
-                      onChange={(e) => setIdentifier(e.target.value)}
-                      className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
-                      suppressHydrationWarning={true}
-                    />
-                    
+                  <input
+                    type="text"
+                    placeholder="User ID or Email"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
+                    suppressHydrationWarning={true}
+                  />
+                  
+                  <div className="flex gap-3 justify-center">
                     <GlassButton
                       icon={Fingerprint}
                       onClick={handlePasskey}
