@@ -1,13 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus } from 'lucide-react';
 import { Transaction } from '../../lib/types/transaction';
 import { createTransaction, updateTransaction } from '../../services/transactionServiceClient';
 import { useDebounce } from '../../lib/hooks/useDebounce';
 import GlassButton from '@/app/lib/ui/GlassButton';
 import SegmentedControl from '@/app/lib/ui/SegmentedControl';
-import { Save, XCircle, TrendingUp, TrendingDown } from 'lucide-react';
+import { Plus, Save, XCircle, TrendingUp, TrendingDown } from 'lucide-react';
 
 interface TransactionEntryFormProps {
   onSuccess: () => void;
@@ -268,11 +267,14 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
 
   return (
     <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-6 sm:p-8 border border-white/20">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-3">
-          <Plus className="w-6 h-6" />
-          {editingTransaction ? 'Edit Transaction' : 'Quick Transaction Entry'}
-        </h2>
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-3">
+            <Plus className="w-6 h-6" />
+            {editingTransaction ? 'Edit Transaction' : 'Quick Transaction Entry'}
+          </h2>
+          <p className="text-xs text-blue-300 mt-1">* Required fields</p>
+        </div>
         <div className="flex gap-2">
           <GlassButton
             icon={XCircle}
@@ -510,10 +512,6 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
             className="w-full funding-input rounded-xl px-4 py-3 resize-none"
           />
         </div>
-      </div>
-
-      <div className="mt-3 text-center text-xs text-blue-300">
-        * Required fields
       </div>
     </div>
   );

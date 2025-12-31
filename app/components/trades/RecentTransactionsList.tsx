@@ -44,10 +44,13 @@ export function RecentTransactionsList({ refreshKey = 0 }: RecentTransactionsLis
 
   return (
     <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-6 sm:p-8 border border-white/20">
-      <h2 className="text-xl sm:text-2xl font-bold text-white mb-6 flex items-center gap-3">
-        <Clock className="w-6 h-6" />
-        Recent Transactions
-      </h2>
+      <div className="mb-4">
+        <h2 className="text-xl sm:text-2xl font-bold text-white mb-6 flex items-center gap-3">
+          <Clock className="w-6 h-6" />
+          Recent Transactions
+        </h2>
+        <p className="text-xs text-blue-300 mt-3">Showing {transactions.length} most recent transaction{transactions.length !== 1 ? 's' : ''}</p>
+      </div>
 
       {transactions.length === 0 ? (
         <div className="text-center py-12">
@@ -100,12 +103,6 @@ export function RecentTransactionsList({ refreshKey = 0 }: RecentTransactionsLis
           ))}
         </div>
       )}
-
-      <div className="mt-4 pt-4 border-t border-white/10">
-        <p className="text-blue-300 text-xs text-center">
-          Showing {transactions.length} most recent transaction{transactions.length !== 1 ? 's' : ''}
-        </p>
-      </div>
     </div>
   );
 }
