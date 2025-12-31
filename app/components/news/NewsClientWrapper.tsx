@@ -71,6 +71,7 @@ export function NewsClientWrapper({ newsTypes }: NewsClientWrapperProps) {
         {activeTab === 'ticker' && (
           <ByTickerView 
             key={refreshKey}
+            newsTypes={newsTypes}
             onEdit={handleEdit}
             onDelete={handleDelete}
           />
@@ -79,6 +80,7 @@ export function NewsClientWrapper({ newsTypes }: NewsClientWrapperProps) {
         {activeTab === 'category' && (
           <ByCategoryView 
             key={refreshKey}
+            newsTypes={newsTypes}
             onEdit={handleEdit}
             onDelete={handleDelete}
           />

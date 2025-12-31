@@ -7,6 +7,8 @@ import { DashboardNav } from '../components/dashboard/DashboardNav';
 import { Settings, LogOut, Menu, X as CloseIcon } from 'lucide-react';
 import GlassButton from '@/app/lib/ui/GlassButton';
 import { X } from 'lucide-react';
+import { AlertBell } from '../components/alerts/AlertBell';
+import { AlertPanel } from '../components/alerts/AlertPanel';
 
 export default function DashboardLayout({
   children,
@@ -21,6 +23,7 @@ export default function DashboardLayout({
   const [loadingPreferences, setLoadingPreferences] = useState(false);
   const [loadingSignOff, setLoadingSignOff] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [alertPanelOpen, setAlertPanelOpen] = useState(false);
 
   const menuItems = [
     { href: '/dashboard', label: 'Dashboard' },
@@ -105,6 +108,8 @@ export default function DashboardLayout({
                 size="md"
               />
               
+              <AlertBell onClick={() => setAlertPanelOpen(true)} />
+              
               <GlassButton
                 icon={LogOut}
                 onClick={handleSignOff}
@@ -122,7 +127,7 @@ export default function DashboardLayout({
               {session?.user?.name || 'User'}
             </span>
             <span className="text-blue-300">•</span>
-            <span className="text-blue-200 whitespace-nowrap">
+            <span className="text-blue-200 whitespace-nowrap" suppressHydrationWarning>
               {new Date().toLocaleDateString('en-US', { 
                 weekday: 'short', 
                 month: 'short', 
@@ -225,6 +230,12 @@ export default function DashboardLayout({
           </div>
         </div>
       )}
+
+      {/* Alert Panel */}
+      <AlertPanel 
+        isOpen={alertPanelOpen} 
+        onClose={() => setAlertPanelOpen(false)} 
+      />
     </div>
   );
 }
