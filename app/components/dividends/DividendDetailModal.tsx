@@ -1,6 +1,6 @@
 'use client';
 
-import { X, Edit2, Save } from 'lucide-react';
+import { X, Edit2, Save, Trash2 } from 'lucide-react';
 import { useState, useEffect  } from 'react';
 import { Dividend } from '../../lib/types/dividend';
 import GlassButton from '@/app/lib/ui/GlassButton';
@@ -12,10 +12,12 @@ interface DividendDetailModalProps {
   onDelete?: (dividendId: number) => void;
 }
 
-export function DividendDetailModal({ dividend, onClose, onEdit }: DividendDetailModalProps) {
+export function DividendDetailModal({ dividend, onClose, onEdit, onDelete }: DividendDetailModalProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [editFormData, setEditFormData] = useState({
     ex_dividend_date: '',
     payment_date: '',
@@ -155,6 +157,15 @@ export function DividendDetailModal({ dividend, onClose, onEdit }: DividendDetai
                 disabled={isSaving}
                 tooltip={isSaving ? 'Saving...' : 'Save Changes'}
                 variant="primary"
+                size="md"
+              />
+            )}
+            {!isEditing && onDelete && (
+              <GlassButton
+                icon={Trash2}
+                onClick={() => setShowDeleteConfirm(true)}
+                tooltip="Delete Dividend"
+                variant="secondary"
                 size="md"
               />
             )}
@@ -333,6 +344,47 @@ export function DividendDetailModal({ dividend, onClose, onEdit }: DividendDetai
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-6 max-w-md w-full border border-rose-500/30">
+            <h3 className="text-xl font-bold text-white mb-3">Delete Dividend?</h3>
+            <p className="text-blue-200 mb-6">
+              Are you sure you want to delete this dividend entry for <strong>{dividend.ticker}</strong>? This action cannot be undone.
+            </p>
+            <div className="flex justify-center gap-3">
+              <GlassButton
+                icon={X}
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={isDeleting}
+                tooltip="Cancel"
+                variant="secondary"
+                size="lg"
+              />
+              <GlassButton
+                icon={Trash2}
+                onClick={async () => {
+                  setIsDeleting(true);
+                  try {
+                    if (onDelete) {
+                      await onDelete(dividend.dividend_id);
+                    }
+                    onClose();
+                  } catch (err) {
+                    console.error('Delete failed:', err);
+                    setIsDeleting(false);
+                  }
+                }}
+                disabled={isDeleting}
+                tooltip={isDeleting ? 'Deleting...' : 'Confirm Delete'}
+                variant="secondary"
+                size="lg"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

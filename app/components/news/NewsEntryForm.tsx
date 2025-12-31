@@ -8,6 +8,7 @@ import { NewsListItem } from '../../lib/types/newsViews';
 import { createNews, updateNews } from '../../services/newsServiceClient';
 import { useSession } from 'next-auth/react';
 import GlassButton from '@/app/lib/ui/GlassButton';
+import { BulletTextarea } from '@/app/lib/ui/BulletTextarea';
 import { Save, XCircle } from 'lucide-react';
 
 interface NewsEntryFormProps {
@@ -25,12 +26,11 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
     
   const [formData, setFormData] = useState({
     ticker: '',
-    exchange_id: 1, // Default to first exchange
+    exchange_id: 1,
     company_name: '',
     news_type_id: newsTypes[0]?.news_type_id || 1,
     news_description: '',
     news_date: '',
-    alert_date: '',
     alert_notes: '',
     news_source: '',
     news_url: '',
@@ -61,7 +61,6 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
       news_type_id: newsTypes[0]?.news_type_id || 1,
       news_description: '',
       news_date: new Date().toISOString().split('T')[0],
-      alert_date: '',
       alert_notes: '',
       news_source: '',
       news_url: '',
@@ -92,18 +91,19 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
       if (editingNews) {
         // Update existing news
         await updateNews(editingNews.news_id, {
-        ticker: formData.ticker.toUpperCase(),
-        exchange_id: formData.exchange_id,
-        company_name: formData.company_name || undefined,
-        news_type_id: formData.news_type_id,
-        news_description: formData.news_description,
-        news_date: formData.news_date,
-        alert_date: showAlert && formData.alert_date ? formData.alert_date : undefined,
-        alert_notes: showAlert && formData.alert_notes ? formData.alert_notes : undefined,
-        news_source: formData.news_source || undefined,
-        news_url: formData.news_url || undefined,
-        tags: tagsArray.length > 0 ? tagsArray : undefined
-      });
+          ticker: formData.ticker.toUpperCase(),
+          exchange_id: formData.exchange_id,
+          company_name: formData.company_name || undefined,
+          news_type_id: formData.news_type_id,
+          news_description: formData.news_description,
+          news_date: formData.news_date,
+          alert_date: showAlert ? formData.news_date : undefined,
+          alert_notes: showAlert && formData.alert_notes ? formData.alert_notes : undefined,
+          news_source: formData.news_source || undefined,
+          news_url: formData.news_url || undefined,
+          tags: tagsArray.length > 0 ? tagsArray : undefined
+        });
+
       } else {
         // Create new news
         if (!session?.user?.id) {
@@ -116,7 +116,7 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
           news_type_id: formData.news_type_id,
           news_description: formData.news_description,
           news_date: formData.news_date,
-          alert_date: showAlert && formData.alert_date ? formData.alert_date : undefined,
+          alert_date: showAlert ? formData.news_date : undefined,
           alert_notes: showAlert && formData.alert_notes ? formData.alert_notes : undefined,
           news_source: formData.news_source || undefined,
           news_url: formData.news_url || undefined,
@@ -132,7 +132,6 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
         news_type_id: newsTypes[0]?.news_type_id || 1,
         news_description: '',
         news_date: new Date().toISOString().split('T')[0],
-        alert_date: '',
         alert_notes: '',
         news_source: '',
         news_url: '',
@@ -173,11 +172,12 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
               news_type_id: fullNews.news_type_id,
               news_description: fullNews.news_description,
               news_date: fullNews.news_date,
-              alert_date: fullNews.alert_date || '',
               alert_notes: fullNews.alert_notes || '',
               news_source: fullNews.news_source || '',
               news_url: fullNews.news_url || '',
-              tags: fullNews.tags ? fullNews.tags.join(', ') : '',
+              tags: fullNews.tags 
+                ? (Array.isArray(fullNews.tags) ? fullNews.tags.join(', ') : fullNews.tags)
+                : '',
             });
             setShowAlert(!!fullNews.alert_date);
           }
@@ -376,13 +376,12 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
 
         {/* Description */}
         <div className="md:col-span-2">
-          <label className="text-blue-200 text-sm mb-2 block font-medium">Description of the News *</label>
-          <textarea
+          <BulletTextarea
             value={formData.news_description}
-            onChange={(e) => setFormData({...formData, news_description: e.target.value})}
-            placeholder="Enter news details..."
+            onChange={(value) => setFormData({...formData, news_description: value})}
+            placeholder="Enter news details (each line becomes a bullet point)..."
             rows={4}
-            className="w-full funding-input rounded-xl px-4 py-3 resize-none"
+            label="Description of the News"
             required
           />
         </div>
@@ -417,27 +416,16 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
 
         {/* Alert Fields (conditional) */}
         {showAlert && (
-          <>
-            <div>
-              <label className="text-emerald-200 text-sm mb-2 block font-medium">Alert Date</label>
-              <input
-                type="date"
-                value={formData.alert_date}
-                onChange={(e) => setFormData({...formData, alert_date: e.target.value})}
-                className="w-full funding-input rounded-xl px-4 py-3 border-emerald-400/30"
-              />
-            </div>
-            <div>
-              <label className="text-emerald-200 text-sm mb-2 block font-medium">Alert Notes</label>
-              <input
-                type="text"
+            <div className="md:col-span-2">
+              <BulletTextarea
                 value={formData.alert_notes}
-                onChange={(e) => setFormData({...formData, alert_notes: e.target.value})}
-                placeholder="Reminder notes..."
-                className="w-full funding-input rounded-xl px-4 py-3 border-emerald-400/30"
+                onChange={(value) => setFormData({...formData, alert_notes: value})}
+                placeholder="Reminder notes (each line becomes a bullet point)..."
+                rows={3}
+                label="Alert Notes"
+                className="border-emerald-400/30"
               />
             </div>
-          </>
         )}
       </div>
 

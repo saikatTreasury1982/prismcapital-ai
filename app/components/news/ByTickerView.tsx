@@ -8,13 +8,16 @@ import { NewsDetailModal } from './NewsDetailModal';
 import { useSession } from 'next-auth/react';
 import GlassButton from '@/app/lib/ui/GlassButton';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { BulletDisplay } from '@/app/lib/ui/BulletTextarea';
+import { NewsType } from '../../lib/types/news';
 
 interface ByTickerViewProps {
+  newsTypes: NewsType[];
   onEdit?: (news: NewsListItem) => void;
   onDelete?: () => void;
 }
 
-export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
+export function ByTickerView({ newsTypes, onEdit, onDelete }: ByTickerViewProps) {
   const { data: session } = useSession();
   const [summaries, setSummaries] = useState<NewsSummaryByTicker[]>([]);
   const [expandedTickers, setExpandedTickers] = useState<Set<string>>(new Set());
@@ -171,7 +174,7 @@ export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
                 )}
                 {summary.other_news_count > 0 && (
                   <div className="text-purple-300">
-                    📰 Other: {summary.other_news_count}
+                    📰 Market News: {summary.other_news_count}
                   </div>
                 )}
               </div>
@@ -202,7 +205,9 @@ export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
                               {news.news_type.type_name}
                             </span>
                           </div>
-                          <p className="text-white line-clamp-2">{news.news_description}</p>
+                          <div className="line-clamp-2">
+                            <BulletDisplay text={news.news_description} className="text-sm" />
+                          </div>
                         </div>
                       </div>
                     </button>
@@ -242,11 +247,15 @@ export function ByTickerView({ onEdit, onDelete }: ByTickerViewProps) {
       <NewsDetailModal 
         news={selectedNews} 
         onClose={() => setSelectedNews(null)}
+        newsTypes={newsTypes}
         onEdit={(news) => {
           if (onEdit) {
             onEdit(news);
           }
           setSelectedNews(null);
+          if (onDelete) {
+            onDelete();
+          }
         }}
         onDelete={async (newsId) => {
           await deleteNews(newsId);

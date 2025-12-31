@@ -8,13 +8,16 @@ import { NewsDetailModal } from './NewsDetailModal';
 import { useSession } from 'next-auth/react';
 import GlassButton from '@/app/lib/ui/GlassButton';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { BulletDisplay } from '@/app/lib/ui/BulletTextarea';
+import { NewsType } from '../../lib/types/news';
 
 interface ByCategoryViewProps {
+  newsTypes: NewsType[];
   onEdit?: (news: NewsListItem) => void;
   onDelete?: () => void;
 }
 
-export function ByCategoryView({ onEdit, onDelete }: ByCategoryViewProps) {
+export function ByCategoryView({ newsTypes, onEdit, onDelete }: ByCategoryViewProps) {
   const { data: session } = useSession();
   const [summaries, setSummaries] = useState<NewsSummaryByType[]>([]);
   const [expandedTypes, setExpandedTypes] = useState<Set<string>>(new Set());
@@ -216,7 +219,9 @@ export function ByCategoryView({ onEdit, onDelete }: ByCategoryViewProps) {
                                 })}
                             </span>
                           </div>
-                          <p className="text-white line-clamp-2">{news.news_description}</p>
+                          <div className="line-clamp-2">
+                            <BulletDisplay text={news.news_description} className="text-sm" />
+                          </div>
                         </div>
                       </div>
                     </button>
@@ -256,11 +261,15 @@ export function ByCategoryView({ onEdit, onDelete }: ByCategoryViewProps) {
       <NewsDetailModal 
         news={selectedNews} 
         onClose={() => setSelectedNews(null)}
+        newsTypes={newsTypes}
         onEdit={(news) => {
           if (onEdit) {
             onEdit(news);
           }
           setSelectedNews(null);
+          if (onDelete) {
+            onDelete();
+          }
         }}
         onDelete={async (newsId) => {
           await deleteNews(newsId);
