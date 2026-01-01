@@ -4,6 +4,8 @@ import { X, Edit2, Save, Trash2 } from 'lucide-react';
 import { useState, useEffect  } from 'react';
 import { Dividend } from '../../lib/types/dividend';
 import GlassButton from '@/app/lib/ui/GlassButton';
+import { BulletTextarea } from '@/app/lib/ui/BulletTextarea';
+import BulletDisplay from '@/app/lib/ui/BulletDisplay';
 
 interface DividendDetailModalProps {
   dividend: Dividend | null;
@@ -243,7 +245,9 @@ export function DividendDetailModal({ dividend, onClose, onEdit, onDelete }: Div
               {dividend.notes && (
                 <div>
                   <h3 className="text-sm font-semibold text-blue-200 mb-2">Notes</h3>
-                  <p className="text-white">{dividend.notes}</p>
+                  <div className="text-white">
+                    <BulletDisplay text={dividend.notes} />
+                  </div>
                 </div>
               )}
 
@@ -332,12 +336,12 @@ export function DividendDetailModal({ dividend, onClose, onEdit, onDelete }: Div
               {/* Notes */}
               <div>
                 <label className="text-blue-200 text-sm mb-2 block font-medium">Notes</label>
-                <textarea
+                <BulletTextarea
                   value={editFormData.notes}
-                  onChange={(e) => setEditFormData({ ...editFormData, notes: e.target.value })}
-                  className="w-full funding-input rounded-xl px-4 py-3 resize-none"
-                  rows={3}
+                  onChange={(value) => setEditFormData({ ...editFormData, notes: value })}
                   disabled={isSaving}
+                  rows={4}
+                  placeholder="Optional notes (use • for bullet points)..."
                 />
               </div>
             </div>

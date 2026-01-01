@@ -7,6 +7,7 @@ import { useDebounce } from '../../lib/hooks/useDebounce';
 import GlassButton from '@/app/lib/ui/GlassButton';
 import SegmentedControl from '@/app/lib/ui/SegmentedControl';
 import { Plus, Save, XCircle, TrendingUp, TrendingDown } from 'lucide-react';
+import { BulletTextarea } from '@/app/lib/ui/BulletTextarea';
 
 interface TransactionEntryFormProps {
   onSuccess: () => void;
@@ -504,12 +505,11 @@ export function TransactionEntryForm({ onSuccess, editingTransaction, onCancelEd
         {/* Notes */}
         <div className="md:col-span-2">
           <label className="text-blue-200 text-sm mb-2 block font-medium">Notes</label>
-          <textarea
+          <BulletTextarea
             value={formData.notes}
-            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-            placeholder="Optional notes..."
-            rows={3}
-            className="w-full funding-input rounded-xl px-4 py-3 resize-none"
+            onChange={(value) => setFormData({ ...formData, notes: value })}
+            rows={4}
+            placeholder="Optional notes (use • for bullet points)..."
           />
         </div>
       </div>

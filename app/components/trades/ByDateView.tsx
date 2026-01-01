@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Calendar } from 'lucide-react';
 import GlassButton from '@/app/lib/ui/GlassButton';
 import SegmentedControl from '@/app/lib/ui/SegmentedControl';
-import { X, ChevronLeft, ChevronRight, TrendingUp, TrendingDown } from 'lucide-react';
+import { Calendar, List, Save, Edit2, Filter, FilterX, X, ChevronLeft, ChevronRight,ChevronUp, ChevronDown, ChevronsUpDown, TrendingUp, TrendingDown } from 'lucide-react';
+import { BulletTextarea } from '@/app/lib/ui/BulletTextarea';
+import BulletDisplay from '@/app/lib/ui/BulletDisplay';
 
 interface RealizedTrade {
   realization_id: number;
@@ -31,6 +32,7 @@ interface OpenPosition {
   current_market_price: number;
   current_value: number;
   unrealized_pnl: number;
+  is_active?: number;
 }
 
 interface CombinedView {
@@ -61,8 +63,18 @@ export function ByDateView() {
   const [filters, setFilters] = useState({
     dateType: 'entry', // 'entry' or 'exit'
     dateFrom: '',
-    dateTo: ''
+    dateTo: '',
+    ticker: 'all'
   });
+
+  // Sort state
+  type SortField = 'ticker' | 'entry_date' | 'exit_date' | 'quantity' | 'avg_cost' | 'exit_price' | 'fees' | 'pnl' | 'status';
+  type SortDirection = 'asc' | 'desc';
+  const [sortField, setSortField] = useState<SortField>('entry_date');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [uniqueTickers, setUniqueTickers] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchAllData = async () => {
@@ -72,8 +84,8 @@ export function ByDateView() {
         const historyData = await historyResponse.json();
         setClosedTrades(historyData.history);
 
-        // Fetch open positions
-        const positionsResponse = await fetch('/api/positions');
+        // Fetch open positions (only active ones)
+        const positionsResponse = await fetch('/api/positions?isActive=true');
         const positionsResult = await positionsResponse.json();
         const positionsData = positionsResult.data || [];
         setOpenPositions(positionsData);
@@ -117,6 +129,12 @@ export function ByDateView() {
 
         setCombinedData(combined);
         setFilteredData(combined);
+
+        // Extract unique tickers
+        const uniqueTickersSet = new Set(combined.map(item => item.ticker));
+        const tickersArray = Array.from(uniqueTickersSet).sort();
+        setUniqueTickers(tickersArray);
+
       } catch (err) {
         console.error('Failed to fetch data:', err);
       } finally {
@@ -131,7 +149,12 @@ export function ByDateView() {
   useEffect(() => {
     let filtered = [...combinedData];
 
-    const { dateType, dateFrom, dateTo } = filters;
+    const { dateType, dateFrom, dateTo, ticker } = filters;
+
+    // Filter by ticker
+    if (ticker !== 'all') {
+      filtered = filtered.filter(item => item.ticker === ticker);
+    }
 
     if (dateFrom) {
       if (dateTo) {
@@ -160,9 +183,93 @@ export function ByDateView() {
       }
     }
 
+    // Filter by search term (notes)
+    if (searchTerm) {
+      filtered = filtered.filter(item => 
+        item.notes?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Sort
+    filtered.sort((a, b) => {
+      let aVal: any, bVal: any;
+
+      switch (sortField) {
+        case 'ticker':
+          aVal = a.ticker;
+          bVal = b.ticker;
+          break;
+        case 'entry_date':
+          aVal = new Date(a.entryDate).getTime();
+          bVal = new Date(b.entryDate).getTime();
+          break;
+        case 'exit_date':
+          aVal = a.exitDate ? new Date(a.exitDate).getTime() : 0;
+          bVal = b.exitDate ? new Date(b.exitDate).getTime() : 0;
+          break;
+        case 'quantity':
+          aVal = a.quantity;
+          bVal = b.quantity;
+          break;
+        case 'avg_cost':
+          aVal = a.avgCost;
+          bVal = b.avgCost;
+          break;
+        case 'exit_price':
+          aVal = a.exitPrice || 0;
+          bVal = b.exitPrice || 0;
+          break;
+        case 'fees':
+          aVal = a.fees;
+          bVal = b.fees;
+          break;
+        case 'pnl':
+          aVal = a.pnl;
+          bVal = b.pnl;
+          break;
+        case 'status':
+          aVal = a.isClosed ? 1 : 0;
+          bVal = b.isClosed ? 1 : 0;
+          break;
+      }
+
+      if (sortDirection === 'asc') {
+        return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+      } else {
+        return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
+      }
+    });
+
     setFilteredData(filtered);
     setCurrentPage(1);
-  }, [filters, combinedData]);
+  }, [filters, searchTerm, sortField, sortDirection, combinedData]);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
+    }
+  };
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return <ChevronsUpDown className="w-4 h-4 inline ml-1 opacity-40" />;
+    }
+    return sortDirection === 'asc' ? (
+      <ChevronUp className="w-4 h-4 inline ml-1" />
+    ) : (
+      <ChevronDown className="w-4 h-4 inline ml-1" />
+    );
+  };
+
+  const clearAllFilters = () => {
+    setFilters({ dateType: 'entry', dateFrom: '', dateTo: '', ticker: 'all' });
+    setSearchTerm('');
+  };
+
+  const hasActiveFilters = filters.dateFrom || filters.dateTo || filters.ticker !== 'all' || searchTerm;
 
   const totalPages = Math.ceil(filteredData.length / pageSize);
   const paginatedData = filteredData.slice(
@@ -217,72 +324,7 @@ export function ByDateView() {
 
   return (
     <div className="space-y-6">
-      {/* Filters */}
-      <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-6 border border-white/20">
-        <div className="flex items-center gap-3 mb-4">
-          <Calendar className="w-5 h-5 text-blue-300" />
-          <h3 className="text-lg font-bold text-white">Filter Trades</h3>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-          {/* Date Type Toggle */}
-          <div>
-            <label className="text-blue-200 text-sm mb-2 block font-medium">Filter By</label>
-            <SegmentedControl
-              options={[
-                { value: 1, label: 'Entry Date', icon: <TrendingUp className="w-4 h-4" /> },
-                { value: 2, label: 'Exit Date', icon: <TrendingDown className="w-4 h-4" /> },
-              ]}
-              value={filters.dateType === 'entry' ? 1 : 2}
-              onChange={(value) => setFilters({ ...filters, dateType: value === 1 ? 'entry' : 'exit', dateFrom: '', dateTo: '' })}
-            />
-          </div>
-
-          {/* From Date */}
-          <div>
-            <label className="text-blue-200 text-sm mb-2 block font-medium">Date From</label>
-            <input
-              type="date"
-              value={filters.dateFrom}
-              onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
-              className="w-full funding-input rounded-xl px-4 py-3"
-              suppressHydrationWarning
-            />
-          </div>
-
-          {/* To Date */}
-          <div>
-            <label className="text-blue-200 text-sm mb-2 block font-medium">Date To (Optional)</label>
-            <input
-              type="date"
-              value={filters.dateTo}
-              onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
-              className="w-full funding-input rounded-xl px-4 py-3"
-              suppressHydrationWarning
-              disabled={!filters.dateFrom}
-            />
-          </div>
-
-          {/* Clear Button */}
-          <div className="flex items-end">
-            {(filters.dateFrom || filters.dateTo) && (
-              <GlassButton
-                icon={X}
-                onClick={() => setFilters({ dateType: 'entry', dateFrom: '', dateTo: '' })}
-                tooltip="Clear Filters"
-                variant="secondary"
-                size="lg"
-              />
-            )}
-          </div>
-        </div>
-
-        <p className="text-blue-300 text-xs mt-3">
-          💡 Leave "Date To" empty for exact date match, or fill both for date range
-        </p>
-      </div>
-
-      {/* Summary Stats */}
+      {/* Summary Stats - At Top */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div className="backdrop-blur-xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-2xl p-6 border border-blue-400/20">
           <p className="text-blue-300 text-sm mb-1">Total Trades</p>
@@ -314,62 +356,220 @@ export function ByDateView() {
         </div>
       </div>
 
-      {/* Transactions Table */}
-      <div className="backdrop-blur-xl bg-white/10 rounded-3xl border border-white/20 overflow-hidden">
+      {/* Main Table with Filters */}
+      <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-6 sm:p-8 border border-white/20">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-bold text-white">All Transactions by Date</h2>
+            <p className="text-xs text-blue-300 mt-1">
+              Showing {filteredData.length > 0 ? ((currentPage - 1) * pageSize + 1) : 0}-{Math.min(currentPage * pageSize, filteredData.length)} of {filteredData.length} transactions
+            </p>
+          </div>
+          <GlassButton
+            icon={showFilters ? X : Filter}
+            onClick={() => setShowFilters(!showFilters)}
+            tooltip={showFilters ? 'Hide Filters' : 'Show Filters'}
+            variant="primary"
+            size="sm"
+          />
+        </div>
+
+        {/* Filters */}
+        {showFilters && (
+          <div className="mb-6 p-4 bg-white/5 rounded-xl border border-white/10 space-y-4">
+            {/* First Row: Ticker and Search Notes */}
+            <div className="flex items-end gap-4">
+              <div className="flex-1">
+                <label className="text-blue-200 text-sm mb-2 block font-medium">Ticker</label>
+                <select
+                  value={filters.ticker}
+                  onChange={(e) => setFilters({ ...filters, ticker: e.target.value })}
+                  className="w-full funding-input rounded-xl px-4 py-2 text-sm"
+                >
+                  <option value="all" className="bg-slate-800 text-white">All Tickers</option>
+                  {uniqueTickers.map(ticker => (
+                    <option key={ticker} value={ticker} className="bg-slate-800 text-white">
+                      {ticker}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex-1">
+                <label className="text-blue-200 text-sm mb-2 block font-medium">Search Notes</label>
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search in notes..."
+                  className="w-full funding-input rounded-xl px-4 py-2 text-sm"
+                />
+              </div>
+
+              <div className="flex items-end">
+                <GlassButton
+                  icon={FilterX}
+                  onClick={clearAllFilters}
+                  disabled={!hasActiveFilters}
+                  tooltip="Clear All Filters"
+                  variant="secondary"
+                  size="sm"
+                />
+              </div>
+            </div>
+
+            {/* Second Row: Filter By Toggle and Dates */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+              {/* Date Type Toggle */}
+              <div>
+                <label className="text-blue-200 text-sm mb-2 block font-medium">Filter By</label>
+                <SegmentedControl
+                  options={[
+                    { value: 1, label: 'Entry Date', icon: <TrendingUp className="w-4 h-4" /> },
+                    { value: 2, label: 'Exit Date', icon: <TrendingDown className="w-4 h-4" /> },
+                  ]}
+                  value={filters.dateType === 'entry' ? 1 : 2}
+                  onChange={(value) => setFilters({ ...filters, dateType: value === 1 ? 'entry' : 'exit', dateFrom: '', dateTo: '' })}
+                />
+              </div>
+
+              {/* From Date */}
+              <div>
+                <label className="text-blue-200 text-sm mb-2 block font-medium">Date From</label>
+                <input
+                  type="date"
+                  value={filters.dateFrom}
+                  onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
+                  className="w-full funding-input rounded-xl px-4 py-2 text-sm"
+                  suppressHydrationWarning
+                />
+              </div>
+
+              {/* To Date */}
+              <div>
+                <label className="text-blue-200 text-sm mb-2 block font-medium">Date To (Optional)</label>
+                <input
+                  type="date"
+                  value={filters.dateTo}
+                  onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
+                  className="w-full funding-input rounded-xl px-4 py-2 text-sm"
+                  suppressHydrationWarning
+                  disabled={!filters.dateFrom}
+                />
+              </div>
+            </div>
+
+            {/* Help Text */}
+            <p className="text-blue-300 text-xs">
+              💡 Leave "Date To" empty for exact date match, or fill both for date range
+            </p>
+          </div>
+        )}
+
+        {/* Table */}
         {paginatedData.length === 0 ? (
           <div className="p-8 text-center">
-            <p className="text-blue-200">
-              No transactions found for the selected filters.
-            </p>
+            <p className="text-blue-200">No transactions found for the selected filters.</p>
           </div>
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-xs">
                 <thead>
-                  <tr className="border-b border-white/10 bg-white/5">
-                    <th className="text-left text-blue-300 p-4">Ticker</th>
-                    <th className="text-left text-blue-300 p-4">Entry Date</th>
-                    <th className="text-left text-blue-300 p-4">Exit Date</th>
-                    <th className="text-right text-blue-300 p-4">Quantity</th>
-                    <th className="text-right text-blue-300 p-4">Avg Cost</th>
-                    <th className="text-right text-blue-300 p-4">Exit/Current Price</th>
-                    <th className="text-right text-blue-300 p-4">Fees</th>
-                    <th className="text-right text-blue-300 p-4">P/L</th>
-                    <th className="text-center text-blue-300 p-4">Status</th>
-                    <th className="text-left text-blue-300 p-4">Notes</th>
+                  <tr className="border-b border-white/20">
+                    <th 
+                      className="text-left text-blue-200 p-2 font-semibold cursor-pointer hover:text-white transition-colors"
+                      onClick={() => handleSort('ticker')}
+                    >
+                      Ticker {getSortIcon('ticker')}
+                    </th>
+                    <th 
+                      className="text-left text-blue-200 p-2 font-semibold cursor-pointer hover:text-white transition-colors"
+                      onClick={() => handleSort('entry_date')}
+                    >
+                      Entry Date {getSortIcon('entry_date')}
+                    </th>
+                    <th 
+                      className="text-left text-blue-200 p-2 font-semibold cursor-pointer hover:text-white transition-colors"
+                      onClick={() => handleSort('exit_date')}
+                    >
+                      Exit Date {getSortIcon('exit_date')}
+                    </th>
+                    <th 
+                      className="text-right text-blue-200 p-2 font-semibold cursor-pointer hover:text-white transition-colors"
+                      onClick={() => handleSort('quantity')}
+                    >
+                      Quantity {getSortIcon('quantity')}
+                    </th>
+                    <th 
+                      className="text-right text-blue-200 p-2 font-semibold cursor-pointer hover:text-white transition-colors"
+                      onClick={() => handleSort('avg_cost')}
+                    >
+                      Avg Cost {getSortIcon('avg_cost')}
+                    </th>
+                    <th 
+                      className="text-right text-blue-200 p-2 font-semibold cursor-pointer hover:text-white transition-colors"
+                      onClick={() => handleSort('exit_price')}
+                    >
+                      Exit/Current Price {getSortIcon('exit_price')}
+                    </th>
+                    <th 
+                      className="text-right text-blue-200 p-2 font-semibold cursor-pointer hover:text-white transition-colors"
+                      onClick={() => handleSort('fees')}
+                    >
+                      Fees {getSortIcon('fees')}
+                    </th>
+                    <th 
+                      className="text-right text-blue-200 p-2 font-semibold cursor-pointer hover:text-white transition-colors"
+                      onClick={() => handleSort('pnl')}
+                    >
+                      P/L {getSortIcon('pnl')}
+                    </th>
+                    <th 
+                      className="text-center text-blue-200 p-2 font-semibold cursor-pointer hover:text-white transition-colors"
+                      onClick={() => handleSort('status')}
+                    >
+                      Status {getSortIcon('status')}
+                    </th>
+                    <th className="text-left text-blue-200 p-2 font-semibold">
+                      Notes <ChevronsUpDown className="w-4 h-4 inline ml-1 opacity-40" />
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginatedData.map((item) => (
-                    <tr key={item.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                      <td className="p-4 text-white font-semibold">{item.ticker}</td>
-                      <td className="p-4 text-white">
-                        {new Date(item.entryDate).toLocaleDateString('en-US', { 
-                          year: 'numeric', 
-                          month: 'short', 
-                          day: 'numeric' 
+                    <tr key={item.id} className="border-b border-white/10 hover:bg-white/5 transition-colors">
+                      <td className="p-2 text-white font-semibold">{item.ticker}</td>
+                      <td className="p-2 text-white">
+                        {new Date(item.entryDate).toLocaleDateString('en-GB', { 
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric' 
                         })}
                       </td>
-                      <td className="p-4 text-white">
-                        {item.exitDate ? new Date(item.exitDate).toLocaleDateString('en-US', { 
-                          year: 'numeric', 
-                          month: 'short', 
-                          day: 'numeric' 
+                      <td className="p-2 text-white">
+                        {item.exitDate ? new Date(item.exitDate).toLocaleDateString('en-GB', { 
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric' 
                         }) : '-'}
                       </td>
-                      <td className="p-4 text-right text-white">{item.quantity.toFixed(2)}</td>
-                      <td className="p-4 text-right text-white">${item.avgCost.toFixed(2)}</td>
-                      <td className="p-4 text-right text-white">
+                      <td className="p-2 text-right text-white">{item.quantity.toFixed(2)}</td>
+                      <td className="p-2 text-right text-white">${item.avgCost.toFixed(2)}</td>
+                      <td className="p-2 text-right text-white">
                         {item.exitPrice ? `$${item.exitPrice.toFixed(2)}` : '-'}
                       </td>
-                      <td className="p-4 text-right text-white">${item.fees.toFixed(2)}</td>
-                      <td className={`p-4 text-right font-bold text-lg ${
-                        item.pnl >= 0 ? 'text-green-400' : 'text-red-400'
-                      }`}>
-                        ${item.pnl.toFixed(2)}
+                      <td className="p-2 text-right text-white">${item.fees.toFixed(2)}</td>
+                      <td className="p-2 text-right">
+                        <div className={`font-bold ${item.pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          ${item.pnl.toFixed(2)}
+                        </div>
+                        <div className="text-xs text-blue-200 mt-0.5">
+                          {item.pnlType === 'realized' ? 'Realized' : 'Unrealized'}
+                        </div>
                       </td>
-                      <td className="p-4 text-center">
+                      <td className="p-2 text-center">
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                           item.isClosed
                             ? 'bg-slate-500/20 text-slate-300 border border-slate-400/30'
@@ -377,13 +577,11 @@ export function ByDateView() {
                         }`}>
                           {item.isClosed ? 'Closed' : 'Open'}
                         </span>
-                        <br />
-                        <span className="text-xs text-blue-200 mt-1">
-                          {item.pnlType === 'realized' ? 'Realized' : 'Unrealized'}
-                        </span>
                       </td>
-                      <td className="p-4 text-white text-xs truncate max-w-[150px]">
-                        {item.notes || '-'}
+                      <td className="p-2 text-white text-xs max-w-[150px]">
+                        <div className="line-clamp-2">
+                          {item.notes ? <BulletDisplay text={item.notes} /> : <span className="text-blue-300 italic">No notes</span>}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -393,31 +591,24 @@ export function ByDateView() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="p-4 border-t border-white/10 flex items-center justify-between">
-                <p className="text-blue-200 text-sm">
-                  Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, filteredData.length)} of {filteredData.length} trades
-                </p>
-                <div className="flex gap-2 items-center">
-                  <GlassButton
-                    icon={ChevronLeft}
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                    disabled={currentPage === 1}
-                    tooltip="Previous Page"
-                    variant="primary"
-                    size="md"
-                  />
-                  <span className="px-4 py-2 text-white font-medium">
-                    Page {currentPage} of {totalPages}
-                  </span>
-                  <GlassButton
-                    icon={ChevronRight}
-                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                    disabled={currentPage === totalPages}
-                    tooltip="Next Page"
-                    variant="primary"
-                    size="md"
-                  />
-                </div>
+              <div className="flex items-center justify-center gap-4 mt-6">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Previous
+                </button>
+                <span className="text-white">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Next
+                </button>
               </div>
             )}
           </>

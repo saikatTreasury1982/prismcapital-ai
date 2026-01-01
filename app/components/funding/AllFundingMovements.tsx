@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Edit2, TrendingUp, TrendingDown, ChevronUp, ChevronDown, ChevronsUpDown, Filter, X } from 'lucide-react';
+import { Edit2, TrendingUp, TrendingDown, ChevronUp, ChevronDown, ChevronsUpDown, Filter, X, FilterX } from 'lucide-react';
 import { CashMovementWithDirection } from '../../lib/types/funding';
 import { EditFundingModal } from './EditFundingModal';
 import GlassButton from '@/app/lib/ui/GlassButton';
@@ -12,7 +12,7 @@ interface AllFundingMovementsProps {
   tradingCurrency: string;
 }
 
-type SortField = 'date' | 'type' | 'amount_home' | 'amount_trading' | 'rate';
+type SortField = 'date' | 'type' | 'period' | 'amount_home' | 'amount_trading' | 'rate';
 type SortDirection = 'asc' | 'desc';
 
 export function AllFundingMovements({ homeCurrency, tradingCurrency }: AllFundingMovementsProps) {
@@ -100,6 +100,7 @@ export function AllFundingMovements({ homeCurrency, tradingCurrency }: AllFundin
     // Sort
     filtered.sort((a, b) => {
       let aVal: any, bVal: any;
+      let primaryResult = 0;
 
       switch (sortField) {
         case 'date':
@@ -109,6 +110,10 @@ export function AllFundingMovements({ homeCurrency, tradingCurrency }: AllFundin
         case 'type':
           aVal = a.direction.direction_name;
           bVal = b.direction.direction_name;
+          break;
+        case 'period':
+          aVal = a.period_from ? new Date(a.period_from).getTime() : 0;
+          bVal = b.period_from ? new Date(b.period_from).getTime() : 0;
           break;
         case 'amount_home':
           aVal = Math.abs(a.home_currency_value);
@@ -124,11 +129,23 @@ export function AllFundingMovements({ homeCurrency, tradingCurrency }: AllFundin
           break;
       }
 
+      // Primary sort
       if (sortDirection === 'asc') {
-        return aVal > bVal ? 1 : -1;
+        primaryResult = aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
       } else {
-        return aVal < bVal ? 1 : -1;
+        primaryResult = aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
       }
+
+      // Secondary sort by transaction date when sorting by period
+      if (sortField === 'period' && primaryResult === 0) {
+        const dateA = new Date(a.transaction_date).getTime();
+        const dateB = new Date(b.transaction_date).getTime();
+        return sortDirection === 'asc' 
+          ? (dateA > dateB ? 1 : -1)
+          : (dateB > dateA ? 1 : -1);
+      }
+
+      return primaryResult;
     });
 
     setFilteredMovements(filtered);
@@ -195,21 +212,21 @@ export function AllFundingMovements({ homeCurrency, tradingCurrency }: AllFundin
             onClick={() => setShowFilters(!showFilters)}
             tooltip={showFilters ? 'Hide Filters' : 'Show Filters'}
             variant="primary"
-            size="md"
+            size="sm"
           />
         </div>
 
         {/* Filters */}
         {showFilters && (
           <div className="mb-6 p-4 bg-white/5 rounded-xl border border-white/10 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="flex flex-col md:flex-row gap-4 items-end">
               {/* Filter by Type */}
-              <div>
+              <div className="flex-1">
                 <label className="text-blue-200 text-sm mb-2 block font-medium">Filter by Type</label>
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value as 'all' | 'deposit' | 'withdrawal')}
-                  className="w-full funding-input rounded-xl px-4 py-3"
+                  className="w-full funding-input rounded-xl px-4 py-2 text-sm"
                 >
                   <option value="all">All Transactions</option>
                   <option value="deposit">Deposits Only</option>
@@ -218,26 +235,27 @@ export function AllFundingMovements({ homeCurrency, tradingCurrency }: AllFundin
               </div>
 
               {/* Search Notes */}
-              <div>
+              <div className="flex-1">
                 <label className="text-blue-200 text-sm mb-2 block font-medium">Search Notes</label>
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search in notes..."
-                  className="w-full funding-input rounded-xl px-4 py-3"
+                  className="w-full funding-input rounded-xl px-4 py-2 text-sm"
                 />
               </div>
 
-              {/* Clear All Filters */}
+              {/* Clear All Filters - Smaller Button */}
               <div className="flex items-end">
-                <button
+                <GlassButton
+                  icon={FilterX}
                   onClick={clearAllFilters}
                   disabled={!hasActiveFilters}
-                  className="w-full px-4 py-3 bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
-                >
-                  Clear All Filters
-                </button>
+                  tooltip="Clear All Filters"
+                  variant="secondary"
+                  size="sm"
+                />
               </div>
             </div>
 
@@ -335,69 +353,74 @@ export function AllFundingMovements({ homeCurrency, tradingCurrency }: AllFundin
 
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-white/20">
                 <th 
-                  className="text-left text-blue-200 text-sm font-semibold p-3 cursor-pointer hover:text-white transition-colors"
+                  className="text-left text-blue-200 font-semibold p-2 cursor-pointer hover:text-white transition-colors"
                   onClick={() => handleSort('date')}
                 >
                   Date {getSortIcon('date')}
                 </th>
                 <th 
-                  className="text-left text-blue-200 text-sm font-semibold p-3 cursor-pointer hover:text-white transition-colors"
+                  className="text-left text-blue-200 font-semibold p-2 cursor-pointer hover:text-white transition-colors"
                   onClick={() => handleSort('type')}
                 >
                   Type {getSortIcon('type')}
                 </th>
-                <th className="text-left text-blue-200 text-sm font-semibold p-3">Period</th>
                 <th 
-                  className="text-right text-blue-200 text-sm font-semibold p-3 cursor-pointer hover:text-white transition-colors"
+                  className="text-left text-blue-200 font-semibold p-2 w-56 cursor-pointer hover:text-white transition-colors"
+                  onClick={() => handleSort('period')}
+                >
+                  Period {getSortIcon('period')}
+                </th>
+                <th 
+                  className="text-right text-blue-200 font-semibold p-2 w-40 cursor-pointer hover:text-white transition-colors"
                   onClick={() => handleSort('amount_home')}
                 >
                   Amount ({homeCurrency}) {getSortIcon('amount_home')}
                 </th>
                 <th 
-                  className="text-right text-blue-200 text-sm font-semibold p-3 cursor-pointer hover:text-white transition-colors"
+                  className="text-right text-blue-200 font-semibold p-2 w-40 cursor-pointer hover:text-white transition-colors"
                   onClick={() => handleSort('amount_trading')}
                 >
                   Amount ({tradingCurrency}) {getSortIcon('amount_trading')}
                 </th>
                 <th 
-                  className="text-center text-blue-200 text-sm font-semibold p-3 cursor-pointer hover:text-white transition-colors"
+                  className="text-center text-blue-200 font-semibold p-2 cursor-pointer hover:text-white transition-colors"
                   onClick={() => handleSort('rate')}
                 >
                   Rate {getSortIcon('rate')}
                 </th>
-                <th className="text-left text-blue-200 text-sm font-semibold p-3">Notes</th>
-                <th className="text-center text-blue-200 text-sm font-semibold p-3">Action</th>
+                <th className="text-left text-blue-200 font-semibold p-2">Notes</th>
+                <th className="text-center text-blue-200 font-semibold p-2">Action</th>
               </tr>
             </thead>
             <tbody>
               {paginatedMovements.map((movement) => (
                 <tr key={movement.cash_movement_id} className="border-b border-white/10 hover:bg-white/5 transition-colors">
-                  <td className="p-3 text-white text-sm">
+                  <td className="p-2 text-white">
                     {new Date(movement.transaction_date).toLocaleDateString('en-GB', {
                       day: '2-digit',
                       month: 'short',
                       year: 'numeric'
                     })}
                   </td>
-                  <td className="p-3">
+                  <td className="p-2">
                     <div className="flex items-center gap-2">
                       {movement.direction.direction_code === 'IN' ? (
                         <TrendingUp className="w-4 h-4 text-emerald-400" />
                       ) : (
                         <TrendingDown className="w-4 h-4 text-rose-400" />
                       )}
-                      <span className={`text-sm font-medium ${
+                      <span className={`font-medium ${
                         movement.direction.direction_code === 'IN' ? 'text-emerald-300' : 'text-rose-300'
                       }`}>
                         {movement.direction.direction_name}
                       </span>
                     </div>
                   </td>
-                  <td className="p-3 text-blue-200 text-sm">
+                  <td className="p-2 text-blue-200">
                     {movement.period_from ? (
                       <>
                         {new Date(movement.period_from).toLocaleDateString('en-GB', { 
@@ -417,22 +440,22 @@ export function AllFundingMovements({ homeCurrency, tradingCurrency }: AllFundin
                       'No period'
                     )}
                   </td>
-                  <td className={`p-3 text-right text-sm font-semibold ${
+                  <td className={`p-2 text-right font-semibold ${
                     movement.direction.direction_code === 'IN' ? 'text-emerald-300' : 'text-rose-300'
                   }`}>
                     {movement.direction.direction_code === 'IN' ? '+' : '-'}
                     {Math.abs(movement.home_currency_value).toFixed(2)}
                   </td>
-                  <td className={`p-3 text-right text-sm font-semibold ${
+                  <td className={`p-2 text-right font-semibold ${
                     movement.direction.direction_code === 'IN' ? 'text-emerald-300' : 'text-rose-300'
                   }`}>
                     {movement.direction.direction_code === 'IN' ? '+' : '-'}
-                    {Math.abs(movement.trading_currency_value).toFixed(4)}
+                    {Math.abs(movement.trading_currency_value).toFixed(2)}
                   </td>
-                  <td className="p-3 text-center text-white text-sm">
-                    {movement.spot_rate.toFixed(6)}
+                  <td className="p-2 text-center text-white">
+                    {movement.spot_rate.toFixed(5)}
                   </td>
-                  <td className="p-3 text-white text-sm max-w-xs">
+                  <td className="p-2 text-white max-w-xs">
                     {movement.notes ? (
                       <div className="line-clamp-2">
                         <BulletDisplay text={movement.notes} className="text-xs" />
@@ -441,12 +464,12 @@ export function AllFundingMovements({ homeCurrency, tradingCurrency }: AllFundin
                       <span className="text-blue-300 italic text-xs">No notes</span>
                     )}
                   </td>
-                  <td className="p-3">
+                  <td className="p-2">
                     <div className="flex items-center justify-center">
                       <button
                         onClick={() => setEditingMovement(movement)}
                         className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                        title="View/Edit"
+                        title="View/Edit/Delete"
                       >
                         <Edit2 className="w-4 h-4 text-blue-300" />
                       </button>

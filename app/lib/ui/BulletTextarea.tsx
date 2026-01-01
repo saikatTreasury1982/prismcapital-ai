@@ -45,14 +45,6 @@ export function BulletTextarea({
         className={`w-full funding-input rounded-xl px-4 py-3 resize-none ${className}`}
         required={required}
       />
-
-      {/* Live Preview */}
-      {isFocused && value && (
-        <div className="mt-2 p-4 bg-white/5 rounded-xl border border-white/10">
-          <p className="text-xs text-blue-300 mb-2 font-semibold">Preview:</p>
-          <BulletDisplay text={value} />
-        </div>
-      )}
     </div>
   );
 }

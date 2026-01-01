@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Flag, Trash2, Edit, Archive, TrendingUp, TrendingDown } from 'lucide-react';
 import { TradeAnalysis } from '@/app/lib/types/tradeAnalysis';
 import { updateTradeAnalysis } from '@/app/services/tradeAnalysisServiceClient';
+import { BulletTextarea } from '@/app/lib/ui/BulletTextarea';
+import BulletDisplay from '@/app/lib/ui/BulletDisplay';
 
 interface TradeAnalysisCardProps {
   analysis: TradeAnalysis;
@@ -51,15 +53,8 @@ export function TradeAnalysisCard({ analysis, onEdit, onDelete, onUpdate }: Trad
     return 'text-rose-400';
   };
 
-  const getRRBgColor = () => {
-    const ratio = analysis.risk_reward_ratio || 0;
-    if (ratio >= 2) return 'from-green-500/10 to-emerald-500/10 border-green-400/30';
-    if (ratio >= 1) return 'from-yellow-500/10 to-orange-500/10 border-yellow-400/30';
-    return 'from-rose-500/10 to-red-500/10 border-rose-400/30';
-  };
-
   return (
-    <div className={`backdrop-blur-xl bg-gradient-to-br ${getRRBgColor()} rounded-3xl p-6 border transition-all ${
+    <div className={`backdrop-blur-xl bg-white/10 rounded-3xl p-6 border border-white/20 transition-all ${
       analysis.is_flagged === 1 ? 'ring-2 ring-blue-400 shadow-lg shadow-blue-500/20' : ''
     }`}>
       {/* Header */}
@@ -179,11 +174,13 @@ export function TradeAnalysisCard({ analysis, onEdit, onDelete, onUpdate }: Trad
 
       {/* Notes */}
       {analysis.notes && (
-        <div className="mt-4 pt-4 border-t border-white/20">
-          <p className="text-blue-200 text-xs mb-1">Notes</p>
-          <p className="text-white text-sm">{analysis.notes}</p>
+      <div className="mt-4 pt-4 border-t border-white/20">
+        <p className="text-blue-200 text-xs mb-1">Notes</p>
+        <div className="text-white text-sm">
+          <BulletDisplay text={analysis.notes} />
         </div>
-      )}
+      </div>
+    )}
     </div>
   );
 }

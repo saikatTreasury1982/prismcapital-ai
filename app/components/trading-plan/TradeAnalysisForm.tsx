@@ -5,6 +5,7 @@ import { TradeAnalysis } from '@/app/lib/types/tradeAnalysis';
 import { createTradeAnalysis, updateTradeAnalysis } from '@/app/services/tradeAnalysisServiceClient';
 import GlassButton from '@/app/lib/ui/GlassButton';
 import { Save, XCircle, RotateCcw } from 'lucide-react';
+import { BulletTextarea } from '@/app/lib/ui/BulletTextarea';
 
 interface TradeAnalysisFormProps {
   editingAnalysis?: TradeAnalysis | null;
@@ -176,9 +177,14 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
     <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-white">
-          {editingAnalysis ? 'Edit Trade Analysis' : 'New Trade Analysis'}
-        </h2>
+        <div>
+          <h2 className="text-2xl font-bold text-white">
+            {editingAnalysis ? 'Edit Trade Analysis' : 'New Trade Analysis'}
+          </h2>
+          <div className="mt-3 text-left text-xs text-blue-300">
+          * Required fields
+          </div>
+        </div>
         <div className="flex gap-2">
           <GlassButton
             icon={RotateCcw}
@@ -306,12 +312,11 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
         {/* Notes */}
         <div className="md:col-span-2">
           <label className="text-blue-200 text-sm mb-2 block font-medium">Notes</label>
-          <textarea
+          <BulletTextarea
             value={formData.notes}
-            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-            placeholder="Analysis notes..."
-            rows={3}
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 resize-none"
+            onChange={(value) => setFormData({ ...formData, notes: value })}
+            rows={4}
+            placeholder="Analysis notes (use • for bullet points)..."
           />
         </div>
       </div>
@@ -354,10 +359,6 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
             </p>
           </div>
         </div>
-      </div>
-
-      <div className="mt-3 text-center text-xs text-blue-300">
-        * Required fields
       </div>
     </div>
   );

@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { X, Edit2 } from 'lucide-react';
 import { Position, AssetClass, AssetType } from '../../lib/types/transaction';
 import { getAssetClasses, getAssetTypes, getAssetClassification, saveAssetClassification } from '../../services/assetClassificationServiceClient';
 import GlassButton from '@/app/lib/ui/GlassButton';
-import { Save, XCircle, Sliders } from 'lucide-react';
+import { Save, XCircle, Sliders, X, Edit2 } from 'lucide-react';
+
 
 interface AssignAttributesModalProps {
   position: Position | null;
