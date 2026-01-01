@@ -243,10 +243,13 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
   return (
     <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-6 sm:p-8 border border-white/20">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-3">
-          <Plus className="w-6 h-6" />
-          {editingNews ? 'Edit News Entry' : 'Quick News Entry'}
-        </h2>
+        <div>
+          <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-3">
+            <Plus className="w-6 h-6" />
+            {editingNews ? 'Edit News Entry' : 'Quick News Entry'}
+          </h2>
+          <p className="text-xs text-blue-300 mt-1">* Required fields</p>
+        </div>
         <div className="flex gap-2">
           <GlassButton
             icon={XCircle}
@@ -427,10 +430,6 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
               />
             </div>
         )}
-      </div>
-
-      <div className="mt-3 text-center text-xs text-blue-300">
-        * Required fields
       </div>
     </div>
   );

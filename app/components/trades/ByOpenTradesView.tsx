@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Sliders, List, Save } from 'lucide-react';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Sliders, List, Save, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Position, Transaction } from '../../lib/types/transaction';
 import { getPositions } from '../../services/positionServiceClient';
 import { getTransactions } from '../../services/transactionServiceClient';
 import { AssignAttributesModal } from './AssignAttributesModal';
 import GlassButton from '@/app/lib/ui/GlassButton';
-
+import { BulletTextarea } from '@/app/lib/ui/BulletTextarea';
+import BulletDisplay from '@/app/lib/ui/BulletDisplay';
 
 interface RealizedTrade {
   realization_id: number;
@@ -483,7 +483,7 @@ export function ByOpenTradesView() {
                                   <td className="p-4 text-right text-white">${transaction.fees.toFixed(2)}</td>
                                   <td className="p-4 text-right text-white">${(transaction.trade_value || 0).toFixed(2)}</td>
                                   <td className="p-4 text-white text-sm">
-                                    {transaction.notes || '-'}
+                                    {transaction.notes ? <BulletDisplay text={transaction.notes} /> : '-'}
                                   </td>
                                   <td className="p-4 text-center">
                                     <button
@@ -654,12 +654,12 @@ export function ByOpenTradesView() {
                 {/* Notes */}
                 <div>
                   <label className="text-blue-200 text-sm mb-2 block font-medium">Notes</label>
-                  <textarea
+                  <BulletTextarea
                     value={editFormData.notes}
-                    onChange={(e) => setEditFormData({ ...editFormData, notes: e.target.value })}
-                    className="w-full funding-input rounded-xl px-4 py-3 resize-none"
-                    rows={3}
+                    onChange={(value) => setEditFormData({ ...editFormData, notes: value })}
                     disabled={isSaving}
+                    rows={4}
+                    placeholder="Optional notes (use • for bullet points)..."
                   />
                 </div>
               </div>

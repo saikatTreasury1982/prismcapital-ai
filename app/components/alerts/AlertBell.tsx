@@ -46,7 +46,7 @@ export function AlertBell({ onClick }: AlertBellProps) {
         onClick={onClick}
         tooltip="Alerts"
         variant="secondary"
-        size="md"
+        size="sm"
       />
       
       {/* Badge */}

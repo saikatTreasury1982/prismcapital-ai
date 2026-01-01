@@ -1,4 +1,4 @@
-import { TrendingUp, TrendingDown } from 'lucide-react';
+import { Clock, TrendingUp, TrendingDown } from 'lucide-react';
 import { CashMovementWithDirection } from '../../lib/types/funding';
 
 interface RecentTransactionsProps {
@@ -13,7 +13,13 @@ export function RecentTransactions({ movements, homeCurrency }: RecentTransactio
 
   return (
     <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-6 border border-white/20">
-      <h3 className="text-white font-semibold mb-4">Recent Transactions</h3>
+      <div className="mb-4">
+        <h2 className="text-xl sm:text-2xl font-bold text-white mb-6 flex items-center gap-3">
+          <Clock className="w-6 h-6" />
+          Recent Transactions
+        </h2>
+        <p className="text-xs text-blue-300 mt-1">Showing {Math.min(5, movements.length)} most recent transactions</p>
+      </div>
       <div className="space-y-2">
         {movements.map(txn => (
           <div key={txn.cash_movement_id} className="bg-white/5 rounded-xl p-4 border border-white/10 flex justify-between items-center">

@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { DollarSign, TrendingUp, Wallet, Save } from 'lucide-react';
+import { DollarSign, TrendingUp, Wallet, Save,XCircle } from 'lucide-react';
 import { Position } from '@/app/lib/types/transaction';
 import { convertCurrency, createPositionActionPlan, updatePositionActionPlan } from '@/app/services/positionActionPlanServiceClient';
 import GlassButton from '@/app/lib/ui/GlassButton';
-import { XCircle } from 'lucide-react';
 import SegmentedControl from '@/app/lib/ui/SegmentedControl';
+import { BulletTextarea } from '@/app/lib/ui/BulletTextarea';
+import BulletDisplay from '@/app/lib/ui/BulletDisplay';
 
 interface ReducePositionPlannerProps {
   position: Position;
@@ -524,12 +525,11 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
       {/* Notes */}
       <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-6 border border-white/20">
         <label className="text-blue-200 text-sm mb-2 block font-medium">Notes</label>
-        <textarea
+        <BulletTextarea
           value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          placeholder="Add any notes about this scenario..."
-          rows={3}
-          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 resize-none"
+          onChange={(value) => setNotes(value)}
+          rows={4}
+          placeholder="Add any notes about this scenario (use • for bullet points)..."
         />
       </div>
 
@@ -642,9 +642,11 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
 
             {/* Notes */}
             {viewingScenario.notes && (
-              <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-6 border border-white/20 mb-4">
+              <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-6 border border-white/20">
                 <h3 className="text-lg font-bold text-white mb-2">Notes</h3>
-                <p className="text-blue-200 text-sm">{viewingScenario.notes}</p>
+                <div className="text-blue-200 text-sm">
+                  <BulletDisplay text={viewingScenario.notes} />
+                </div>
               </div>
             )}
 

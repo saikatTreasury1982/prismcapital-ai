@@ -105,7 +105,7 @@ export default function DashboardLayout({
                 disabled={loadingPreferences}
                 tooltip="User Preferences"
                 variant="secondary"
-                size="md"
+                size="sm"
               />
               
               <AlertBell onClick={() => setAlertPanelOpen(true)} />
@@ -116,7 +116,7 @@ export default function DashboardLayout({
                 disabled={loadingSignOff}
                 tooltip={loadingSignOff ? 'Signing off...' : 'Sign Off'}
                 variant="secondary"
-                size="md"
+                size="sm"
               />
             </div>
           </div>

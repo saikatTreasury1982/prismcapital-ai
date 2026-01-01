@@ -6,6 +6,7 @@ import { getPositions } from '@/app/services/positionServiceClient';
 import { ReducePositionPlanner } from './ReducePositionPlanner';
 import { IncreasePositionPlanner } from './IncreasePositionPlanner';
 import SegmentedControl from '@/app/lib/ui/SegmentedControl';
+import BulletDisplay from '@/app/lib/ui/BulletDisplay';
 
 export function PositionActions() {
   const [positions, setPositions] = useState<Position[]>([]);
@@ -711,7 +712,9 @@ export function PositionActions() {
               {viewingPlan.notes && (
                 <div className="backdrop-blur-xl bg-white/5 rounded-2xl p-4 border border-white/10">
                   <h3 className="text-lg font-bold text-white mb-2">Notes</h3>
-                  <p className="text-blue-200 text-sm">{viewingPlan.notes}</p>
+                  <div className="text-blue-200 text-sm">
+                    <BulletDisplay text={viewingPlan.notes} />
+                  </div>
                 </div>
               )}
 
@@ -728,13 +731,6 @@ export function PositionActions() {
                 </p>
               </div>
             </div>
-
-            <button
-              onClick={() => setViewingPlan(null)}
-              className="w-full mt-6 bg-slate-600 hover:bg-slate-700 text-white py-3 rounded-xl font-bold transition-all"
-            >
-              Close
-            </button>
           </div>
         </div>
       )}
