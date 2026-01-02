@@ -25,7 +25,7 @@ interface FundingCardProps {
 }
 
 export default function FundingCard({ summary, details }: FundingCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false); // Default collapsed
 
   const formatCurrency = (value: number, currency: string = 'USD') => {
     return new Intl.NumberFormat('en-US', {
@@ -50,7 +50,9 @@ export default function FundingCard({ summary, details }: FundingCardProps) {
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xl font-semibold text-white flex items-center gap-2">
-            <Wallet className="w-5 h-5 text-emerald-400" />
+            <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
+              <Wallet className="w-5 h-5 text-emerald-400" />
+            </div>
             Funding Overview
           </h3>
           <button

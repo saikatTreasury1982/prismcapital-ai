@@ -76,7 +76,7 @@ export function AlertGroup({ title, alerts, variant, defaultExpanded = false }: 
         className="w-full p-4 hover:bg-white/5 transition-colors text-left flex items-center justify-between"
       >
         <div className="flex items-center gap-3">
-          <h3 className="text-lg font-bold text-white">{title}</h3>
+          <h3 className="text-md text-white">{title}</h3>
           <span className="px-2 py-1 bg-white/20 text-white rounded-full text-xs font-semibold">
             {alerts.length}
           </span>

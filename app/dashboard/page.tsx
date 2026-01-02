@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import InvestmentCard from '../components/dashboard/InvestmentCard';
 import FundingCard from '../components/dashboard/FundingCard';
-import InvestmentCharts from '../components/dashboard/InvestmentCharts';
 import DividendCard from '../components/dashboard/DividendCard';
-import TradeStrategyCard from '../components/dashboard/TradeStrategyCard';
-import GlassButton from '../lib/ui/GlassButton';
-import { BarChart3 } from 'lucide-react';
+import CapitalByAssetChart from '../components/dashboard/CapitalByAssetChart';
+import CapitalVsValueChart from '../components/dashboard/CapitalVsValueChart';
+import PositionDetailsStandard from '../components/dashboard/PositionDetailsStandard';
+import PositionDetailsByStrategy from '../components/dashboard/PositionDetailsByStrategy';
+import DividendBreakdownTable from '../components/dashboard/DividendBreakdownTable';
 
 interface StrategyData {
   strategies: any[];
@@ -59,6 +60,9 @@ interface DividendData {
   ytdBreakdown: any[];
 }
 
+type InvestmentView = 'standard' | 'strategy' | null;
+type DividendView = 'alltime' | 'ytd' | null;
+
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const [chartData, setChartData] = useState<ChartData[]>([]);
@@ -70,6 +74,10 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [isRefreshingPrices, setIsRefreshingPrices] = useState(false);
   const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
+  
+  // View states
+  const [investmentView, setInvestmentView] = useState<InvestmentView>(null);
+  const [dividendView, setDividendView] = useState<DividendView>(null);
 
   useEffect(() => {
     if (status === 'authenticated') {
@@ -97,12 +105,10 @@ export default function DashboardPage() {
       const result = await response.json();
       setRefreshMessage(`Updated ${result.updated} of ${result.total} positions`);
       
-      // Refresh dashboard data after price update
       await fetchInvestmentData();
       await fetchChartData();
       await fetchStrategyData();
       
-      // Clear message after 5 seconds
       setTimeout(() => setRefreshMessage(null), 5000);
     } catch (error: any) {
       console.error('Error refreshing prices:', error);
@@ -112,20 +118,34 @@ export default function DashboardPage() {
       setIsRefreshingPrices(false);
     }
   };
+
+  const handleInvestmentViewChange = (view: InvestmentView) => {
+    setInvestmentView(view);
+    if (view) {
+      setDividendView(null); // Clear dividend view
+    }
+  };
+
+  const handleDividendViewChange = (view: DividendView) => {
+    setDividendView(view);
+    if (view) {
+      setInvestmentView(null); // Clear investment view
+    }
+  };
   
   const fetchStrategyData = async () => {
-  try {
-    const response = await fetch('/api/dashboard/strategies');
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch strategy data');
-    }
+    try {
+      const response = await fetch('/api/dashboard/strategies');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch strategy data');
+      }
 
-    const data = await response.json();
-    setStrategyData(data);
-  } catch (err: any) {
-    console.error('Error fetching strategy data:', err);
-  }
+      const data = await response.json();
+      setStrategyData(data);
+    } catch (err: any) {
+      console.error('Error fetching strategy data:', err);
+    }
   };
 
   const fetchDividendData = async () => {
@@ -220,51 +240,88 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Charts Section */}
-      {chartData.length > 0 && (
-        <div className="mb-6">
-          <InvestmentCharts data={chartData} />
-        </div>
-      )}
-
-      {/* Cards Section */}
-      <div className="grid grid-cols-1 xl:grid-cols-5 gap-6 max-w-8xl items-start">
-        {investmentData && (
-          <div className="xl:col-span-3">
+      {/* 40/60 Split Layout */}
+      <div className="flex flex-col lg:flex-row gap-6 max-w-[2000px] mx-auto">
+        {/* LEFT SECTION - 40% */}
+        <div className="w-full lg:w-[40%] space-y-6">
+          {/* Investment Overview - Non-collapsible */}
+          {investmentData && (
             <InvestmentCard
               summary={investmentData.summary}
-              positions={investmentData.positions}
               onRefresh={handleRefreshPrices}
               isRefreshing={isRefreshingPrices}
               refreshMessage={refreshMessage}
+              onViewChange={handleInvestmentViewChange}
+              activeView={investmentView}
             />
-          </div>
-        )}
-        
-        {fundingData && (
-          <div className="xl:col-span-2">
+          )}
+
+          {/* Dividend Overview - Non-collapsible */}
+          {dividendData && (
+            <DividendCard
+              summary={dividendData.summary}
+              onViewChange={handleDividendViewChange}
+              activeView={dividendView}
+            />
+          )}
+
+          {/* Funding Overview - Collapsible */}
+          {fundingData && (
             <FundingCard
               summary={fundingData.summary}
               details={fundingData.details}
             />
-          </div>
-        )}
+          )}
+        </div>
+
+        {/* GRADIENT DIVIDER */}
+        <div className="hidden lg:block w-px bg-gradient-to-b from-transparent via-white/20 to-transparent" />
+
+        {/* RIGHT SECTION - 60% */}
+        <div className="w-full lg:w-[60%] space-y-6">
+          {/* Show charts by default when no views are active */}
+          {!investmentView && !dividendView && chartData.length > 0 && (
+            <>
+              <CapitalByAssetChart data={chartData} />
+              <CapitalVsValueChart data={chartData} />
+            </>
+          )}
+
+          {/* Investment Standard View */}
+          {investmentView === 'standard' && investmentData && (
+            <PositionDetailsStandard 
+              positions={investmentData.positions}
+              chartData={chartData}
+            />
+          )}
+
+          {/* Investment By Strategy View */}
+          {investmentView === 'strategy' && strategyData && (
+            <PositionDetailsByStrategy 
+              strategies={strategyData.strategies}
+              chartData={chartData}
+            />
+          )}
+
+          {/* Dividend All-Time View */}
+          {dividendView === 'alltime' && dividendData && (
+            <DividendBreakdownTable 
+              data={dividendData.allTimeBreakdown}
+              chartData={chartData}
+              title="All-Time Dividend Breakdown"
+            />
+          )}
+
+          {/* Dividend YTD View */}
+          {dividendView === 'ytd' && dividendData && (
+            <DividendBreakdownTable 
+              data={dividendData.ytdBreakdown}
+              chartData={chartData}
+              title="YTD Dividend Breakdown"
+            />
+          )}
+        </div>
       </div>
-      
-      {/* Dividend and Strategy Cards */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 max-w-8xl mt-6 items-start">
-        {dividendData && (
-          <DividendCard
-            summary={dividendData.summary}
-            allTimeBreakdown={dividendData.allTimeBreakdown}
-            ytdBreakdown={dividendData.ytdBreakdown}
-          />
-        )}
-        
-        {strategyData && (
-          <TradeStrategyCard strategies={strategyData.strategies} />
-        )}
-      </div>    
     </div>
   );
 }

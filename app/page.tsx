@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { Fingerprint, Lock, Key, ArrowLeft } from 'lucide-react';
+import { Fingerprint, Lock, Key, ArrowLeft, Check } from 'lucide-react';
 import GlassButton from '@/app/lib/ui/GlassButton';
 
 export default function LoginPage() {
@@ -391,14 +391,6 @@ export default function LoginPage() {
                       
                       <div className="flex items-center justify-center gap-3">
                         <GlassButton
-                          icon={Lock}
-                          onClick={handlePasswordLogin}
-                          disabled={loading || !password}
-                          tooltip={loading ? 'Signing In...' : 'Sign In'}
-                          variant="primary"
-                          size="lg"
-                        />
-                        <GlassButton
                           icon={ArrowLeft}
                           onClick={() => {
                             setShowPasswordForm(false);
@@ -409,6 +401,14 @@ export default function LoginPage() {
                           }}
                           tooltip="Back"
                           variant="secondary"
+                          size="lg"
+                        />
+                        <GlassButton
+                          icon={Check}
+                          onClick={handlePasswordLogin}
+                          disabled={loading || !password}
+                          tooltip={loading ? 'Signing In...' : 'Sign In'}
+                          variant="primary"
                           size="lg"
                         />
                       </div>
