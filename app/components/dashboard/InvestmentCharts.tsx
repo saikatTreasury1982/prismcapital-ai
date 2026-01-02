@@ -178,12 +178,12 @@ const InvestmentCharts = memo(function InvestmentCharts({ data }: InvestmentChar
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
             <XAxis 
               dataKey="type" 
-              stroke="rgba(255,255,255,0.5)"
-              tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 12 }}
+              stroke="white"
+              tick={{ fill: 'white', fontSize: 12 }}
             />
             <YAxis 
-              stroke="rgba(255,255,255,0.5)"
-              tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 12 }}
+              stroke="white"
+              tick={{ fill: 'white', fontSize: 12 }}
               tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
             />
             <Tooltip content={<CustomTooltip />} />

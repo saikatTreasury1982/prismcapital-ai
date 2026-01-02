@@ -36,6 +36,8 @@ export async function PUT(
         quantity,
         price,
         trade_value,
+        fees: fees || 0,          
+        notes: notes || null,
         updated_at: new Date().toISOString(),
       })
       .where(eq(transactions.transaction_id, transactionId));
