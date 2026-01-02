@@ -103,15 +103,17 @@ export default function PositionDetailsStandard({ positions, chartData }: Positi
         <h3 className="text-lg font-semibold text-white mb-4">Position Details - Standard View</h3>
         
         {/* Mini Charts */}
-        <MiniCharts data={chartData} />
+        <div className="mb-8">
+          <MiniCharts data={chartData} />
+        </div>
 
         {/* Sortable Table */}
         <div className="overflow-x-auto">
           <table className="w-full table-fixed">
             <thead>
-              <tr className="border-b border-white/10">
+              <tr className="border-b border-white/10 bg-white/5">
                 <th 
-                  className="text-left text-blue-200 text-sm font-medium pb-3 w-[10%] cursor-pointer hover:text-white transition-colors"
+                  className="text-left text-blue-200 text-sm font-medium py-3 w-[5%] cursor-pointer hover:text-white transition-colors align-middle"
                   onClick={() => handleSort('ticker')}
                 >
                   <div className="flex items-center gap-1">
@@ -120,7 +122,7 @@ export default function PositionDetailsStandard({ positions, chartData }: Positi
                   </div>
                 </th>
                 <th 
-                  className="text-right text-blue-200 text-sm font-medium pb-3 w-[10%] cursor-pointer hover:text-white transition-colors"
+                  className="text-left text-blue-200 text-sm font-medium py-3 w-[10%] cursor-pointer hover:text-white transition-colors align-middle"
                   onClick={() => handleSort('quantity')}
                 >
                   <div className="flex items-center justify-end gap-1">
@@ -129,7 +131,7 @@ export default function PositionDetailsStandard({ positions, chartData }: Positi
                   </div>
                 </th>
                 <th 
-                  className="text-right text-blue-200 text-sm font-medium pb-3 w-[12%] cursor-pointer hover:text-white transition-colors"
+                  className="text-left text-blue-200 text-sm font-medium py-3 w-[10%] cursor-pointer hover:text-white transition-colors align-middle"
                   onClick={() => handleSort('averageCost')}
                 >
                   <div className="flex items-center justify-end gap-1">
@@ -138,7 +140,7 @@ export default function PositionDetailsStandard({ positions, chartData }: Positi
                   </div>
                 </th>
                 <th 
-                  className="text-right text-blue-200 text-sm font-medium pb-3 w-[14%] cursor-pointer hover:text-white transition-colors"
+                  className="text-left text-blue-200 text-sm font-medium py-3 w-[10%] cursor-pointer hover:text-white transition-colors align-middle"
                   onClick={() => handleSort('capitalInvested')}
                 >
                   <div className="flex items-center justify-end gap-1">
@@ -147,7 +149,7 @@ export default function PositionDetailsStandard({ positions, chartData }: Positi
                   </div>
                 </th>
                 <th 
-                  className="text-right text-blue-200 text-sm font-medium pb-3 w-[12%] cursor-pointer hover:text-white transition-colors"
+                  className="text-left text-blue-200 text-sm font-medium py-3 w-[10%] cursor-pointer hover:text-white transition-colors align-middle"
                   onClick={() => handleSort('daysHeld')}
                 >
                   <div className="flex items-center justify-end gap-1">
@@ -156,7 +158,7 @@ export default function PositionDetailsStandard({ positions, chartData }: Positi
                   </div>
                 </th>
                 <th 
-                  className="text-right text-blue-200 text-sm font-medium pb-3 w-[16%] cursor-pointer hover:text-white transition-colors"
+                  className="text-left text-blue-200 text-sm font-medium py-3 w-[10%] cursor-pointer hover:text-white transition-colors align-middle"
                   onClick={() => handleSort('currentValue')}
                 >
                   <div className="flex items-center justify-end gap-1">
@@ -165,7 +167,7 @@ export default function PositionDetailsStandard({ positions, chartData }: Positi
                   </div>
                 </th>
                 <th 
-                  className="text-right text-blue-200 text-sm font-medium pb-3 w-[16%] cursor-pointer hover:text-white transition-colors"
+                  className="text-left text-blue-200 text-sm font-medium py-3 w-[10%] cursor-pointer hover:text-white transition-colors align-middle"
                   onClick={() => handleSort('moneyness')}
                 >
                   <div className="flex items-center justify-end gap-1">
