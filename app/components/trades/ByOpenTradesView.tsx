@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Sliders, List, Save, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Sliders, Edit2, List, Save, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Position, Transaction } from '../../lib/types/transaction';
 import { getPositions } from '../../services/positionServiceClient';
 import { getTransactions } from '../../services/transactionServiceClient';
@@ -488,9 +488,10 @@ export function ByOpenTradesView() {
                                   <td className="p-4 text-center">
                                     <button
                                       onClick={() => handleEditClick(transaction)}
-                                      className="text-blue-400 hover:text-blue-300 transition-colors text-sm font-medium underline"
+                                      className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                                      title="Edit"
                                     >
-                                      Edit
+                                      <Edit2 className="w-4 h-4 text-blue-300" />
                                     </button>
                                   </td>
                                 </tr>

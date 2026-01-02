@@ -98,6 +98,8 @@ export async function POST(request: Request) {
           price: transactionData.price,
           transaction_currency: transactionData.transaction_currency || 'USD',
           trade_value: transactionData.quantity * transactionData.price,
+          fees: transactionData.fees || 0,           
+          notes: transactionData.notes || null,
         })
         .returning();
 
