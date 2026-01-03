@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Sliders, Edit2, List, Save, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, ChevronDown, ChevronUp, Sliders, Edit2, List, Save, X, FilterX, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Position, Transaction } from '../../lib/types/transaction';
 import { getPositions } from '../../services/positionServiceClient';
 import { getTransactions } from '../../services/transactionServiceClient';
@@ -261,7 +261,7 @@ export function ByOpenTradesView() {
           
           {selectedTicker !== 'all' && (
             <GlassButton
-              icon={X}
+              icon={FilterX}
               onClick={() => setSelectedTicker('all')}
               tooltip="Clear Filter"
               variant="secondary"

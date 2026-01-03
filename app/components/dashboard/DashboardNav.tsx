@@ -46,7 +46,7 @@ export function DashboardNav({ menuItems, mobile = false, onNavigate }: Dashboar
             href={item.href}
             className={`px-6 py-3 rounded-xl font-medium transition-all flex items-center ${
               isActive
-                ? 'bg-gradient-to-b from-white/20 to-white/10 backdrop-blur-xl text-white shadow-lg border border-white/30'
+                ? 'bg-gradient-to-b from-white/20 to-white/10 backdrop-blur-xl text-white shadow-lg shadow-blue-500/20 border border-white/10'
                 : 'text-blue-200 hover:bg-white/10 hover:text-white'
             }`}
           >
