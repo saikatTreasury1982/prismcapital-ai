@@ -25,15 +25,12 @@ export const users = sqliteTable('users', {
 
 export const userPreferences = sqliteTable('user_preferences', {
   user_id: text('user_id').primaryKey().references(() => users.user_id),
-  default_currency: text('default_currency'),
-  decimal_places: integer('decimal_places').default(2),
   date_format: text('date_format').default('YYYY-MM-DD'),
   theme: text('theme').default('light'),
-  dashboard_layout: text('dashboard_layout'),
-  notifications_enabled: integer('notifications_enabled').default(1),
   updated_at: text('updated_at').default(sql`(datetime('now'))`),
-  default_trading_currency: text('default_trading_currency').default('USD'),
   pnl_strategy_id: integer('pnl_strategy_id'),
+  default_trading_currency: text('default_trading_currency').default('USD'),
+  moomoo_import_cutoff_date: text('moomoo_import_cutoff_date'),
 });
 
 // API SERVICES

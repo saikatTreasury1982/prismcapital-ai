@@ -32,3 +32,45 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+// Add PATCH handler
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json();
+    const { userId, moomoo_import_cutoff_date } = body;
+
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID required' }, { status: 400 });
+    }
+
+    // Update only moomoo_import_cutoff_date
+    await db.$client.execute({
+      sql: `
+        UPDATE user_preferences 
+        SET 
+          moomoo_import_cutoff_date = ?,
+          updated_at = datetime('now')
+        WHERE user_id = ?
+      `,
+      args: [moomoo_import_cutoff_date || null, userId],
+    });
+
+    // Fetch updated preferences
+    const result = await db.$client.execute({
+      sql: `
+        SELECT 
+          up.*,
+          ps.strategy_name as pnl_strategy_name
+        FROM user_preferences up
+        LEFT JOIN pnl_strategies ps ON up.pnl_strategy_id = ps.strategy_id
+        WHERE up.user_id = ?
+      `,
+      args: [userId],
+    });
+
+    return NextResponse.json(result.rows[0]);
+  } catch (error: any) {
+    console.error('Error updating preferences:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
