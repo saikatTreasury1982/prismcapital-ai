@@ -87,7 +87,7 @@ export function TradeAnalyzer() {
       {/* Top Bar */}
       <div className="flex items-center justify-between">
         <GlassButton
-          icon={BarChart3}
+          icon={Plus}
           onClick={() => {
             setEditingAnalysis(null);
             setShowForm(true);

@@ -1,17 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, List, BarChart2, Calendar } from 'lucide-react';
+import { Plus, List, BarChart2, Calendar, Download } from 'lucide-react';
 import { RecentTransactionsList } from './RecentTransactionsList';
 import { Transaction } from '../../lib/types/transaction';
 import { TransactionEntryForm } from './TransactionEntryForm';
 import { ByClosedTradesView } from './ByClosedTradesView';
 import { ByOpenTradesView } from './ByOpenTradesView';
 import { ByDateView } from './ByDateView';
+import { ImportTradesTab } from './ImportTradesTab';
 import UnderlineTabs from '@/app/lib/ui/UnderlineTabs';
 
 export function TradesClientWrapper() {
-  const [activeTab, setActiveTab] = useState<'entry' | 'ticker' | 'status' | 'date'>('entry');
+  const [activeTab, setActiveTab] = useState<'entry' | 'ticker' | 'status' | 'date' | 'import'>('entry');
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -39,6 +40,7 @@ export function TradesClientWrapper() {
       <div className="max-w-7xl mx-auto mb-6">
         <UnderlineTabs
           tabs={[
+            { id: 'import', label: 'Import Trades', icon: <Download className="w-5 h-5" /> },
             { id: 'entry', label: 'Quick Entry', icon: <Plus className="w-5 h-5" /> },
             { id: 'ticker', label: 'Closed Trades', icon: <List className="w-5 h-5" /> },
             { id: 'status', label: 'Open Trades', icon: <BarChart2 className="w-5 h-5" /> },
@@ -46,7 +48,7 @@ export function TradesClientWrapper() {
           ]}
           activeTab={activeTab}
           onChange={(tabId) => {
-            setActiveTab(tabId as 'entry' | 'ticker' | 'status' | 'date');
+            setActiveTab(tabId as 'entry' | 'ticker' | 'status' | 'date' | 'import');
             if (tabId === 'entry') {
               setEditingTransaction(null);
             }
@@ -90,6 +92,10 @@ export function TradesClientWrapper() {
           <ByDateView 
             key={refreshKey}
           />
+        )}
+
+        {activeTab === 'import' && (
+          <ImportTradesTab />
         )}
       </div>
     </div>
