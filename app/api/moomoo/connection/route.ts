@@ -11,7 +11,7 @@ export async function GET() {
   try {
     // Fetch Moomoo API key from database
     const apiKeyResult = await db.$client.execute({
-      sql: `SELECT api_key FROM system_api_keys WHERE key_name = 'Moomoo API Key' AND is_active = 1`,
+      sql: `SELECT api_key FROM system_api_keys WHERE key_name = 'MOOMOO_OPEND'`,
       args: []
     });
 

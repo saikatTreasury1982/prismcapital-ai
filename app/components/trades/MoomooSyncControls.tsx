@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Download, RefreshCw, ChevronDown, ChevronUp, Clock, Calendar, CalendarDays, CalendarRange } from 'lucide-react';
 import GlassButton from '@/app/lib/ui/GlassButton';
-import { MoomooService, getMoomooMarketCurrency, getMoomooTransactionType } from '@/app/services/moomooService';
 
 interface MoomooSyncControlsProps {
   onSyncComplete: () => void;
@@ -12,7 +11,7 @@ interface MoomooSyncControlsProps {
 export function MoomooSyncControls({ onSyncComplete }: MoomooSyncControlsProps) {
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
-  const [isFetching, setIsFetching] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showControls, setShowControls] = useState(true);
 
@@ -25,7 +24,9 @@ export function MoomooSyncControls({ onSyncComplete }: MoomooSyncControlsProps) 
     setStartDate(start.toISOString().split('T')[0]);
   };
 
-  const handleFetchTrades = async () => {
+  const handleSync = async () => {
+    if (syncing) return;
+
     // Validate dates
     if (!startDate || !endDate) {
       setError('Both From and To dates are required');
@@ -37,86 +38,36 @@ export function MoomooSyncControls({ onSyncComplete }: MoomooSyncControlsProps) 
       return;
     }
 
+    setSyncing(true);
     setError(null);
-    setIsFetching(true);
 
     try {
-      // Step 1: Fetch Moomoo API key from database
-      const configResponse = await fetch('/api/moomoo/connection');
-      const configData = await configResponse.json();
-      
-      if (!configData.connected) {
-        throw new Error('Moomoo API not configured. Please add API key in system settings.');
-      }
+      // Format dates for Moomoo API (YYYY-MM-DD HH:MM:SS)
+      const beginTime = `${startDate} 00:00:00`;
+      const endTime = `${endDate} 23:59:59`;
 
-      // Step 2: Connect to Moomoo OpenD
-      const moomooService = new MoomooService({
-        ip: '127.0.0.1',
-        port: 33333,
-        apiKey: 'pk_5a8f9c2b4e3d1' // This should come from API
-      });
-
-      await moomooService.connect();
-
-      // Step 3: Fetch trades
-      const deals = await moomooService.fetchTrades(startDate, endDate);
-      
-      if (deals.length === 0) {
-        alert('No trades found for the selected date range.');
-        moomooService.disconnect();
-        setIsFetching(false);
-        return;
-      }
-
-      // Step 4: Fetch fees
-      const orderIds = deals.map(d => d.order_id);
-      const fees = await moomooService.fetchFees(orderIds);
-      
-      // Create fee lookup map
-      const feeMap = new Map(fees.map(f => [f.order_id, f.fee_amount]));
-
-      // Step 5: Map to staging format
-      const stagingRecords = deals.map(deal => ({
-        moomoo_fill_id: deal.deal_id,
-        moomoo_order_id: deal.order_id,
-        ticker: deal.code,
-        ticker_name: deal.name,
-        transaction_type_id: getMoomooTransactionType(deal.trd_side),
-        transaction_date: deal.create_time.split('T')[0], // Extract date only
-        quantity: deal.qty,
-        price: deal.price,
-        fees: feeMap.get(deal.order_id) || 0,
-        transaction_currency: getMoomooMarketCurrency(deal.trd_market),
-        strategy_code: null,
-        notes: null
-      }));
-
-      // Step 6: Insert into staging table
-      const insertResponse = await fetch('/api/moomoo/staging', {
+      const response = await fetch('/api/moomoo/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ trades: stagingRecords })
+        body: JSON.stringify({ beginTime, endTime }),
       });
 
-      if (!insertResponse.ok) {
-        throw new Error('Failed to insert trades into staging');
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Sync failed');
       }
 
-      const insertData = await insertResponse.json();
-      
-      alert(`✅ Successfully imported ${insertData.insertedCount} trade(s) to staging table!\n\nPlease review and assign strategies before releasing.`);
-      
-      // Disconnect
-      moomooService.disconnect();
-      
-      // Refresh staging table
-      onSyncComplete();
+      // Show success message
+      alert(`✅ ${data.message}\n\nImported ${data.count} trades to staging table.\n\nPlease review and assign strategies before releasing.`);
 
+      // Refresh the staging table
+      onSyncComplete();
     } catch (err: any) {
-      console.error('Fetch error:', err);
-      setError(err.message || 'Failed to fetch trades from Moomoo');
+      console.error('Sync error:', err);
+      setError(err.message || 'Failed to sync trades');
     } finally {
-      setIsFetching(false);
+      setSyncing(false);
     }
   };
 
@@ -135,92 +86,92 @@ export function MoomooSyncControls({ onSyncComplete }: MoomooSyncControlsProps) 
 
       {showControls && (
         <div className="space-y-4">
-            {error && (
+          {error && (
             <div className="p-3 bg-rose-500/20 border border-rose-400/30 rounded-lg text-rose-200 text-sm">
-                {error}
+              {error}
             </div>
-            )}
+          )}
 
-            {/* Single-line layout */}
-            <div className="flex items-end gap-3 flex-wrap">
+          {/* Single-line layout */}
+          <div className="flex items-end gap-3 flex-wrap">
             {/* Quick Select Buttons */}
             <div className="flex items-center gap-2">
-                <span className="text-blue-200 text-sm font-medium">Quick Select:</span>
-                <GlassButton
+              <span className="text-blue-200 text-sm font-medium">Quick Select:</span>
+              <GlassButton
                 icon={Clock}
                 onClick={() => handleQuickSelect(0)}
                 tooltip="Today"
                 variant="secondary"
                 size="sm"
-                />
-                <GlassButton
+              />
+              <GlassButton
                 icon={Calendar}
                 onClick={() => handleQuickSelect(7)}
                 tooltip="Last 7 Days"
                 variant="secondary"
                 size="sm"
-                />
-                <GlassButton
+              />
+              <GlassButton
                 icon={CalendarDays}
                 onClick={() => handleQuickSelect(30)}
                 tooltip="Last 30 Days"
                 variant="secondary"
                 size="sm"
-                />
-                <GlassButton
+              />
+              <GlassButton
                 icon={CalendarRange}
                 onClick={() => handleQuickSelect(90)}
                 tooltip="Last 90 Days"
                 variant="secondary"
                 size="sm"
-                />
+              />
             </div>
 
             {/* From Date */}
             <div className="flex-shrink-0">
-                <label className="text-blue-200 text-xs mb-1 block">From Date</label>
-                <input
+              <label className="text-blue-200 text-xs mb-1 block">From Date</label>
+              <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 className="funding-input rounded-xl px-3 py-2 text-sm w-40"
-                />
+              />
             </div>
 
             {/* To Date */}
             <div className="flex-shrink-0">
-                <label className="text-blue-200 text-xs mb-1 block">To Date</label>
-                <input
+              <label className="text-blue-200 text-xs mb-1 block">To Date</label>
+              <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 className="funding-input rounded-xl px-3 py-2 text-sm w-40"
-                />
+              />
             </div>
 
-            {/* Fetch Button */}
+            {/* Sync Button */}
             <div className="relative">
-                <GlassButton
+              <GlassButton
                 icon={Download}
-                onClick={handleFetchTrades}
-                disabled={isFetching}
-                tooltip={isFetching ? 'Fetching trades from Moomoo...' : 'Fetch Trades from Moomoo'}
+                onClick={handleSync}
+                disabled={syncing}
+                tooltip={syncing ? 'Syncing trades from Moomoo...' : 'Sync Trades from Moomoo'}
                 variant="primary"
                 size="md"
-                />
-                {isFetching && (
+              />
+              {syncing && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <RefreshCw className="w-5 h-5 text-white animate-spin" />
+                  <RefreshCw className="w-5 h-5 text-white animate-spin" />
                 </div>
-                )}
+              )}
             </div>
-            </div>
+          </div>
 
-            <p className="text-blue-300 text-xs">
+          <p className="text-blue-300 text-xs">
             ℹ️ Trades will be imported to staging table for review before release.
-            </p>
+          </p>
         </div>
-        )}
+      )}
     </div>
   );
 }
