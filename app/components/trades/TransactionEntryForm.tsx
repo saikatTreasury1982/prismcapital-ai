@@ -214,48 +214,62 @@ export function TransactionEntryForm({
   }, [editingTransaction, mode, stagingRecord]);
 
   const handleSubmit = async () => {
+
     // Validation
     if (!formData.ticker || !formData.transaction_date || !formData.quantity || !formData.price) {
       setError('Ticker, Date, Quantity, and Price are required');
       return;
     }
 
-    // Strategy validation for staging mode
-    if (mode === 'staging' && !formData.strategy_code) {
-      setError('Strategy is required before releasing');
-      return;
-    }
+    // Note: Strategy is NOT required for staging edits
+    // Strategy will be validated when releasing to transactions
+      setError(null);
+      setIsSubmitting(true);
 
-    setError(null);
-    setIsSubmitting(true);
-
-    try {
-      if (mode === 'staging' && stagingRecord?.staging_id) {
+    try {    
+      if (mode === 'staging' && stagingRecord?.staging_id) {        
+        const requestBody = {
+          strategy_code: formData.strategy_code,
+          quantity: parseFloat(formData.quantity),
+          price: parseFloat(formData.price),
+          fees: parseFloat(formData.fees),
+          transaction_currency: formData.transaction_currency,
+          notes: formData.notes || null,
+          transaction_date: formData.transaction_date,
+          status: 'edited'
+        };
+        
         // Update staging record
         const response = await fetch(`/api/moomoo/staging/${stagingRecord.staging_id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            strategy_code: formData.strategy_code,
-            quantity: parseFloat(formData.quantity),
-            price: parseFloat(formData.price),
-            fees: parseFloat(formData.fees),
-            transaction_currency: formData.transaction_currency,
-            notes: formData.notes || undefined,
-            transaction_date: formData.transaction_date,
-            status: 'edited' // Mark as edited
-          })
+          body: JSON.stringify(requestBody)
         });
 
         if (!response.ok) {
-          throw new Error('Failed to update staging record');
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to update staging record');
         }
 
-        // ✅ Add this: Exit edit mode and refresh
-      setIsStagingEditMode(false);
-      onSuccess(); // This triggers refresh
+        const responseData = await response.json();
 
-      } else if (editingTransaction) {
+        // Exit edit mode
+        setIsStagingEditMode(false);
+        
+        if (onCancelEdit) {
+          onCancelEdit();
+          console.log('✅ onCancelEdit called');
+        } else {
+          console.log('⚠️ onCancelEdit is not defined!');
+        }
+        
+        // Then trigger refresh
+        onSuccess();
+
+        return;
+      
+      } 
+      else if (editingTransaction) {
         // Update existing transaction (only fees and notes)
         await updateTransaction(editingTransaction.transaction_id, {
           fees: parseFloat(formData.fees),
@@ -297,6 +311,7 @@ export function TransactionEntryForm({
       }
 
       onSuccess();
+        
     } catch (err: any) {
       setError(err.message || 'Failed to save transaction');
     } finally {
@@ -494,8 +509,8 @@ export function TransactionEntryForm({
               placeholder="AAPL"
               className={`flex-1 funding-input rounded-xl px-4 py-3 uppercase max-w-[70%] ${
                 tickerError ? 'border-2 border-rose-400' : ''
-              } ${editingTransaction ? 'bg-white/5 cursor-not-allowed' : ''}`}
-              disabled={!!editingTransaction || (mode === 'staging' && !isStagingEditMode)}
+              } ${editingTransaction || mode === 'staging' ? 'bg-white/5 cursor-not-allowed' : ''}`}
+              disabled={!!editingTransaction || mode === 'staging'}
               required
             />
             {isLoadingTicker ? (
