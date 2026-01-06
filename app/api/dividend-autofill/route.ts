@@ -19,10 +19,8 @@ export async function GET(request: Request) {
       .from(systemApiKeys)
       .where(
         and(
-          eq(systemApiKeys.service_id, 1),
-          eq(systemApiKeys.environment, 'PRODUCTION'),
-          eq(systemApiKeys.is_active, 1),
-          eq(systemApiKeys.is_primary, 1)
+          eq(systemApiKeys.service_code, 'ALPHAVANTAGE'),
+          eq(systemApiKeys.environment, 'PRODUCTION')
         )
       )
       .limit(1);
