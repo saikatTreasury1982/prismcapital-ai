@@ -46,18 +46,35 @@ export const apiServices = sqliteTable('api_services', {
 });
 
 export const systemApiKeys = sqliteTable('system_api_keys', {
-  api_key_id: text('api_key_id').primaryKey(),
-  service_id: integer('service_id').notNull(),
+  api_key_id: integer('api_key_id').primaryKey({ autoIncrement: true }),
+  user_id: text('user_id').notNull(),
+  service_code: text('service_code').notNull(),
   api_key: text('api_key').notNull(),
-  api_secret: text('api_secret'),
-  key_name: text('key_name'),
+  key_name: text('key_name').notNull(),
   environment: text('environment').default('PRODUCTION'),
-  is_active: integer('is_active').default(1),
-  is_primary: integer('is_primary').default(0),
   daily_request_limit: integer('daily_request_limit'),
   notes: text('notes'),
   created_at: text('created_at').default(sql`datetime('now')`),
   updated_at: text('updated_at').default(sql`datetime('now')`),
+});
+
+export const moomooImportStaging = sqliteTable('moomoo_import_staging', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  user_id: text('user_id').notNull(),
+  ticker: text('ticker').notNull(),
+  company_name: text('company_name'),
+  transaction_type: text('transaction_type').notNull(), // 'BUY' or 'SELL'
+  strategy_code: text('strategy_code'),
+  transaction_date: text('transaction_date').notNull(),
+  quantity: real('quantity').notNull(),
+  price: real('price').notNull(),
+  fees: real('fees').notNull().default(0),
+  currency: text('currency').notNull(),
+  notes: text('notes'),
+  moomoo_order_id: text('moomoo_order_id'),
+  moomoo_fill_id: text('moomoo_fill_id').notNull(),
+  imported_at: text('imported_at').notNull().default(sql`(datetime('now'))`),
+  released_at: text('released_at'),
 });
 
 // EXCHANGES
