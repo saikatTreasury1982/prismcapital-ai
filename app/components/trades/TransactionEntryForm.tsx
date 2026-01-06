@@ -586,7 +586,7 @@ export function TransactionEntryForm({
             value={formData.strategy_code}
             onChange={(e) => setFormData({ ...formData, strategy_code: e.target.value })}
             className={`w-full funding-input rounded-xl px-4 py-3 ${editingTransaction ? 'bg-white/5 cursor-not-allowed' : ''}`}
-            disabled={!!editingTransaction}
+            disabled={mode === 'staging' && !isStagingEditMode}
           >
             {strategies.map(strategy => (
               <option key={strategy.strategy_code} value={strategy.strategy_code} className="bg-slate-800 text-white">
@@ -599,7 +599,7 @@ export function TransactionEntryForm({
         {/* Transaction Type */}
         <div>
           <label className="text-blue-200 text-sm mb-2 block font-medium">Transaction Type *</label>
-          <div className={editingTransaction ? 'opacity-50 pointer-events-none' : ''}>
+          <div className={editingTransaction || mode === 'staging' ? 'opacity-50 pointer-events-none' : ''}>
             <SegmentedControl
               options={[
                 { value: 1, label: 'Buy', icon: <TrendingUp className="w-5 h-5" /> },
@@ -619,7 +619,7 @@ export function TransactionEntryForm({
             value={formData.transaction_date}
             onChange={(e) => setFormData({ ...formData, transaction_date: e.target.value })}
             className={`w-full funding-input rounded-xl px-4 py-3 ${editingTransaction ? 'bg-white/5 cursor-not-allowed' : ''}`}
-            disabled={!!editingTransaction}
+            disabled={mode === 'staging' && !isStagingEditMode}
             required
           />
         </div>
@@ -634,7 +634,7 @@ export function TransactionEntryForm({
             onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
             placeholder="100"
             className={`w-full funding-input rounded-xl px-4 py-3 ${editingTransaction ? 'bg-white/5 cursor-not-allowed' : ''}`}
-            disabled={!!editingTransaction}
+            disabled={mode === 'staging' && !isStagingEditMode}
             required
           />
         </div>
@@ -649,7 +649,7 @@ export function TransactionEntryForm({
             onChange={(e) => setFormData({ ...formData, price: e.target.value })}
             placeholder="150.00"
             className={`w-full funding-input rounded-xl px-4 py-3 ${editingTransaction ? 'bg-white/5 cursor-not-allowed' : ''}`}
-            disabled={!!editingTransaction}
+            disabled={mode === 'staging' && !isStagingEditMode}
             required
           />
         </div>
@@ -664,6 +664,7 @@ export function TransactionEntryForm({
             onChange={(e) => setFormData({ ...formData, fees: e.target.value })}
             placeholder="0.00"
             className="w-full funding-input rounded-xl px-4 py-3"
+            disabled={mode === 'staging' && !isStagingEditMode}
           />
         </div>
 
@@ -687,7 +688,7 @@ export function TransactionEntryForm({
             onChange={(e) => setFormData({ ...formData, transaction_currency: e.target.value.toUpperCase() })}
             placeholder="USD"
             className={`w-full funding-input rounded-xl px-4 py-3 uppercase ${editingTransaction ? 'bg-white/5 cursor-not-allowed' : ''}`}
-            disabled={!!editingTransaction}
+            disabled={!!editingTransaction || mode === 'staging'}
             maxLength={3}
           />
         </div>
@@ -700,6 +701,7 @@ export function TransactionEntryForm({
             onChange={(value) => setFormData({ ...formData, notes: value })}
             rows={4}
             placeholder="Optional notes (use • for bullet points)..."
+            disabled={mode === 'staging' && !isStagingEditMode}
           />
         </div>
       </div>

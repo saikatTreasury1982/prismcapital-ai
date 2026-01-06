@@ -382,29 +382,6 @@ export function ImportTradesTab() {
                     />
                   </div>
                 </div>
-
-                {/* Active Filters */}
-                {hasActiveFilters && (
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-blue-300 text-sm font-medium">Active filters:</span>
-                    {selectedStatus !== 'all' && (
-                      <span className="px-3 py-1 bg-blue-500/20 text-blue-200 rounded-full text-sm flex items-center gap-2">
-                        Status: {selectedStatus}
-                        <button onClick={() => setSelectedStatus('all')}>
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
-                    )}
-                    {selectedTicker !== 'all' && (
-                      <span className="px-3 py-1 bg-blue-500/20 text-blue-200 rounded-full text-sm flex items-center gap-2">
-                        Ticker: {selectedTicker}
-                        <button onClick={() => setSelectedTicker('all')}>
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
-                    )}
-                  </div>
-                )}
               </div>
             )}
 
@@ -588,8 +565,12 @@ export function ImportTradesTab() {
 
       {/* Edit Modal */}
       {viewingRecord && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="backdrop-blur-xl bg-white/10 rounded-3xl border border-white/20 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Dark overlay with gradient and blur */}
+          <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-black/70 to-black/80 backdrop-blur-md" />
+          
+          {/* Glass modal */}
+          <div className="relative backdrop-blur-2xl bg-gradient-to-br from-white/[0.08] to-white/[0.02] rounded-3xl border border-white/30 shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <TransactionEntryForm
               mode="staging"
               stagingRecord={viewingRecord}
