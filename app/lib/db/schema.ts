@@ -51,11 +51,17 @@ export const systemApiKeys = sqliteTable('system_api_keys', {
   service_code: text('service_code').notNull(),
   api_key: text('api_key').notNull(),
   key_name: text('key_name').notNull(),
-  environment: text('environment').default('PRODUCTION'),
+  environment: text('environment').notNull().default('PRODUCTION'),
   daily_request_limit: integer('daily_request_limit'),
   notes: text('notes'),
-  created_at: text('created_at').default(sql`datetime('now')`),
-  updated_at: text('updated_at').default(sql`datetime('now')`),
+  
+  // Multi-user Moomoo support (optional fields)
+  custom_host: text('custom_host'), // NULL = use default (127.0.0.1)
+  custom_port: integer('custom_port'), // NULL = use default (33333)
+  enable_ssl: integer('enable_ssl').default(0), // 0 = false, 1 = true
+  
+  created_at: text('created_at').notNull().default(sql`(datetime('now'))`),
+  updated_at: text('updated_at').notNull().default(sql`(datetime('now'))`),
 });
 
 export const moomooImportStaging = sqliteTable('moomoo_import_staging', {

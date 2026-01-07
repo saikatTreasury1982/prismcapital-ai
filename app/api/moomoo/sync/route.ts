@@ -46,28 +46,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const websocketKey = apiKeyRecord[0].api_key;
+    const record = apiKeyRecord[0];
 
-    console.log('🔧 Environment Check:', {
-      host: process.env.MOOMOO_OPEND_HOST,
-      port: process.env.MOOMOO_OPEND_PORT,
-      websocketKey: websocketKey ? `${websocketKey.substring(0, 8)}...` : 'MISSING'
-    });
-
-    // Step 2: Build config
+    // Smart config resolution: User-specific > Environment > Defaults
     const config = {
-      host: process.env.MOOMOO_OPEND_HOST || '127.0.0.1',
-      port: parseInt(process.env.MOOMOO_OPEND_PORT || '33333'),
-      enableSSL: false,
-      websocketKey,
+      host: record.custom_host || 
+            process.env.MOOMOO_OPEND_HOST || 
+            '127.0.0.1',
+      
+      port: record.custom_port || 
+            parseInt(process.env.MOOMOO_OPEND_PORT || '33333'),
+      
+      enableSSL: record.enable_ssl === 1,
+      
+      websocketKey: record.api_key,
     };
 
-    console.log('📋 Final config:', {
-      host: config.host,
-      port: config.port,
-      enableSSL: config.enableSSL,
-      websocketKey: config.websocketKey ? `${config.websocketKey.substring(0, 8)}...` : 'MISSING'
-    });
+    console.log('🔧 Moomoo config for user:', userId);
+    console.log('   Host:', config.host, record.custom_host ? '(user-specific)' : '(default)');
+    console.log('   Port:', config.port, record.custom_port ? '(user-specific)' : '(default)');
+    console.log('   SSL:', config.enableSSL);
+    console.log('   Key:', config.websocketKey ? `${config.websocketKey.substring(0, 8)}...` : 'MISSING');
     
     // Step 3: Create service and fetch trades
     const service = new MoomooService(config);
