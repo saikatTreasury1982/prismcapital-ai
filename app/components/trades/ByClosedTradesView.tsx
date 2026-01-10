@@ -5,6 +5,7 @@ import { List, Save, Edit2, Filter, FilterX, X, ChevronLeft, ChevronRight,Chevro
 import GlassButton from '@/app/lib/ui/GlassButton';
 import { BulletTextarea } from '@/app/lib/ui/BulletTextarea';
 import BulletDisplay from '@/app/lib/ui/BulletDisplay';
+import { NotesPopover } from '@/app/lib/ui/NotesPopover';
 
 interface RealizedTrade {
   realization_id: number;
@@ -560,10 +561,11 @@ export function ByClosedTradesView() {
                         ${trade.realized_pnl.toFixed(2)}
                       </span>
                     </td>
-                    <td className="p-2 text-white text-xs max-w-[150px]">
-                      <div className="line-clamp-2">
-                        {trade.notes ? <BulletDisplay text={trade.notes} /> : <span className="text-blue-300 italic">No notes</span>}
-                      </div>
+                    <td className="p-2 text-center">
+                      <NotesPopover 
+                        notes={trade.notes}
+                        title={`Notes - ${trade.ticker} • Sale: ${new Date(trade.sale_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}`}
+                      />
                     </td>
                     <td className="p-2">
                       <div className="flex items-center justify-center">
@@ -741,7 +743,7 @@ export function ByClosedTradesView() {
                   onChange={(value) => setEditFormData({ ...editFormData, notes: value })}
                   disabled={isSaving}
                   rows={4}
-                  placeholder="Optional notes (use • for bullet points)..."
+                  placeholder="Optional notes..."
                 />
               </div>
             </div>

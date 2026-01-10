@@ -6,6 +6,7 @@ import SegmentedControl from '@/app/lib/ui/SegmentedControl';
 import { Calendar, List, Save, Edit2, Filter, FilterX, X, ChevronLeft, ChevronRight,ChevronUp, ChevronDown, ChevronsUpDown, TrendingUp, TrendingDown } from 'lucide-react';
 import { BulletTextarea } from '@/app/lib/ui/BulletTextarea';
 import BulletDisplay from '@/app/lib/ui/BulletDisplay';
+import { NotesPopover } from '@/app/lib/ui/NotesPopover';
 
 interface RealizedTrade {
   realization_id: number;
@@ -578,10 +579,11 @@ export function ByDateView() {
                           {item.isClosed ? 'Closed' : 'Open'}
                         </span>
                       </td>
-                      <td className="p-2 text-white text-xs max-w-[150px]">
-                        <div className="line-clamp-2">
-                          {item.notes ? <BulletDisplay text={item.notes} /> : <span className="text-blue-300 italic">No notes</span>}
-                        </div>
+                      <td className="p-2 text-center">
+                        <NotesPopover 
+                          notes={item.notes}
+                          title={`Notes - ${item.ticker} • ${item.isClosed ? 'Sale' : 'Position'}: ${new Date(item.entryDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}`}
+                        />
                       </td>
                     </tr>
                   ))}

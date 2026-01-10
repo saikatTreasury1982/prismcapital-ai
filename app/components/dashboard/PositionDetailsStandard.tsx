@@ -17,7 +17,9 @@ interface Position {
 }
 
 interface ChartData {
-  type: string;
+  typeCode: string;
+  typeName: string;
+  description: string;
   capitalInvested: number;
   currentValue: number;
   tickers: {

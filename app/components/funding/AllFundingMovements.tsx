@@ -6,6 +6,7 @@ import { CashMovementWithDirection } from '../../lib/types/funding';
 import { EditFundingModal } from './EditFundingModal';
 import GlassButton from '@/app/lib/ui/GlassButton';
 import { BulletDisplay } from '@/app/lib/ui/BulletTextarea';
+import { NotesPopover } from '@/app/lib/ui/NotesPopover';
 
 interface AllFundingMovementsProps {
   homeCurrency: string;
@@ -458,7 +459,10 @@ export function AllFundingMovements({ homeCurrency, tradingCurrency }: AllFundin
                   <td className="p-2 text-white max-w-xs">
                     {movement.notes ? (
                       <div className="line-clamp-2">
-                        <BulletDisplay text={movement.notes} className="text-xs" />
+                        <NotesPopover 
+                          notes={movement.notes || null}
+                          title={`Notes - ${movement.direction.direction_name} • ${movement.home_currency_value} ${movement.home_currency_code}: ${new Date(movement.transaction_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}`}
+                        />
                       </div>
                     ) : (
                       <span className="text-blue-300 italic text-xs">No notes</span>
@@ -469,7 +473,7 @@ export function AllFundingMovements({ homeCurrency, tradingCurrency }: AllFundin
                       <button
                         onClick={() => setEditingMovement(movement)}
                         className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                        title="View/Edit/Delete"
+                        title="Edit/Delete"
                       >
                         <Edit2 className="w-4 h-4 text-blue-300" />
                       </button>

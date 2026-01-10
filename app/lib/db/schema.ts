@@ -243,6 +243,7 @@ export const realizedPnlHistory = sqliteTable('realized_pnl_history', {
   fees: real('fees').default(0),
   notes: text('notes'),
   created_at: text('created_at').default(sql`(datetime('now'))`),
+  transaction_id: integer('transaction_id').references(() => transactions.transaction_id),
 });
 
 export const tradeAnalyses = sqliteTable('trade_analyses', {

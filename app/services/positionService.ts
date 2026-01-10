@@ -102,6 +102,9 @@ export async function reducePositionTx(tx: any, transaction: {
   price: number;
   transaction_date: string;
   strategy_code: string; // ✅ Changed from strategy_id to strategy_code
+  notes?: string;        // ✅ ADD THIS
+  fees?: number;         // ✅ ADD THIS (it's also hardcoded to 0!)
+  transaction_id?: number;  // ✅ ADD: Link to the transaction record
 }) {
   const existingPosition = await tx
     .select()
@@ -146,8 +149,9 @@ export async function reducePositionTx(tx: any, transaction: {
     realized_pnl: parseFloat(realizedPnlFromSale.toFixed(3)),
     entry_date: pos.opened_date || null,
     position_currency: pos.position_currency || 'USD',
-    fees: 0,
-    notes: null,
+    fees: transaction.fees || 0,
+    notes: transaction.notes || null,
+    transaction_id: transaction.transaction_id || null,  // ✅ ADD: Link to transaction
   });
 
   if (newTotalShares === 0) {
@@ -204,6 +208,9 @@ export async function reducePosition(transaction: {
   price: number;
   transaction_date: string;
   strategy_code: string; // ✅ Changed from strategy_id to strategy_code
+  notes?: string;        // ✅ ADD: Pass notes from transaction
+  fees?: number;         // ✅ ADD: Pass fees from transaction
+  transaction_id?: number;  // ✅ ADD: For consistency
 }) {
   return await reducePositionTx(db, transaction);
 }

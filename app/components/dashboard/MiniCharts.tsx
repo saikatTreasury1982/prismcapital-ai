@@ -4,7 +4,9 @@ import { memo } from 'react';
 import { PieChart, Pie, LineChart, Line, XAxis, YAxis, Tooltip, Cell, ResponsiveContainer, Legend } from 'recharts';
 
 interface ChartData {
-  type: string;
+  typeCode: string;
+  typeName: string;
+  description: string;
   capitalInvested: number;
   currentValue: number;
   tickers: {
@@ -63,11 +65,14 @@ const MiniCharts = memo(function MiniCharts({ data }: MiniChartsProps) {
   // Prepare data for pie chart
   const totalInvestment = data.reduce((sum, item) => sum + item.capitalInvested, 0);
   const pieData = data.map(item => ({
-    name: item.type,
-    type: item.type,
+    name: item.typeCode,
+    typeCode: item.typeCode,
+    typeName: item.typeName,
+    description: item.description,
     value: item.capitalInvested,
     capitalInvested: item.capitalInvested,
     currentValue: item.currentValue,
+    tickers: item.tickers,
     percentage: ((item.capitalInvested / totalInvestment) * 100).toFixed(1)
   }));
 
@@ -153,13 +158,13 @@ const MiniCharts = memo(function MiniCharts({ data }: MiniChartsProps) {
         <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
           <LineChart data={data}>
             <XAxis 
-              dataKey="type" 
-              tick={{ fill: 'white', fontSize: 10 }}
+              dataKey="typeCode" 
+              tick={{ fill: 'white', fontSize: 9 }}
               stroke="white"
               height={20}
             />
             <YAxis 
-              tick={{ fill: 'white', fontSize: 8 }}
+              tick={{ fill: 'white', fontSize: 9 }}
               stroke="white"
               width={30}
               tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}

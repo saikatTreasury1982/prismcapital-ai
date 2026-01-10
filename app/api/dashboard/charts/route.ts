@@ -15,18 +15,20 @@ export async function GET() {
     // Query to get investment by asset type with ticker details
     const result = await db.$client.execute({
       sql: `
-        SELECT 
-          at.type_name,
-          p.ticker,
-          p.ticker_name,
-          (p.total_shares * p.average_cost) as capital_invested,
-          p.current_value
-        FROM positions p
-        JOIN asset_classifications ac ON p.ticker = ac.ticker AND p.user_id = ac.user_id
-        JOIN asset_types at ON ac.type_id = at.type_code
-        WHERE p.user_id = ? AND p.is_active = 1
-        ORDER BY at.type_name, capital_invested DESC
-      `,
+          SELECT 
+            at.type_code,
+            at.type_name,
+            at.description,
+            p.ticker,
+            p.ticker_name,
+            (p.total_shares * p.average_cost) as capital_invested,
+            p.current_value
+          FROM positions p
+          JOIN asset_classifications ac ON p.ticker = ac.ticker AND p.user_id = ac.user_id
+          JOIN asset_types at ON ac.type_id = at.type_code
+          WHERE p.user_id = ? AND p.is_active = 1
+          ORDER BY at.type_code, capital_invested DESC
+        `,
       args: [userId],
     });
 
@@ -34,23 +36,25 @@ export async function GET() {
     const groupedData: { [key: string]: any } = {};
 
     result.rows.forEach(row => {
-      const typeName = row.type_name as string;
-      
-      if (!groupedData[typeName]) {
-        groupedData[typeName] = {
-          type: typeName,
-          capitalInvested: 0,
-          currentValue: 0,
-          tickers: []
-        };
-      }
+    const typeCode = row.type_code as string;
+    
+    if (!groupedData[typeCode]) {
+      groupedData[typeCode] = {
+        typeCode: row.type_code,
+        typeName: row.type_name,
+        description: row.description,
+        capitalInvested: 0,
+        currentValue: 0,
+        tickers: []
+      };
+    }
 
       const capitalInvested = Number(row.capital_invested) || 0;
       const currentValue = Number(row.current_value) || 0;
 
-      groupedData[typeName].capitalInvested += capitalInvested;
-      groupedData[typeName].currentValue += currentValue;
-      groupedData[typeName].tickers.push({
+      groupedData[typeCode].capitalInvested += capitalInvested;
+      groupedData[typeCode].currentValue += currentValue;
+      groupedData[typeCode].tickers.push({
         ticker: row.ticker,
         tickerName: row.ticker_name,
         capitalInvested,
