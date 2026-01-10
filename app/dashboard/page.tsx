@@ -81,6 +81,7 @@ export default function DashboardPage() {
   // View states
   const [investmentView, setInvestmentView] = useState<InvestmentView>(null);
   const [dividendView, setDividendView] = useState<DividendView>(null);
+  const [chartView, setChartView] = useState<'pie' | 'line'>('pie');
 
   useEffect(() => {
     if (status === 'authenticated') {
@@ -285,13 +286,45 @@ export default function DashboardPage() {
           {/* Show charts by default when no views are active */}
           {!investmentView && !dividendView && chartData.length > 0 && (
             <>
-              {/* Desktop/Tablet: Show Charts (≥768px) */}
-              <div className="hidden md:block space-y-6">
-                <CapitalByAssetChart data={chartData} />
-                <CapitalVsValueChart data={chartData} />
+              {/* Desktop/Tablet: Tabbed Charts (≥768px) */}
+              <div className="hidden md:block">
+                <div className="backdrop-blur-xl bg-white/10 rounded-2xl border border-white/20 overflow-hidden">
+                  {/* Tab Navigation */}
+                  <div className="flex border-b border-white/20">
+                    <button
+                      onClick={() => setChartView('pie')}
+                      className={`flex-1 px-6 py-4 text-sm font-semibold transition-colors ${
+                        chartView === 'pie'
+                          ? 'text-white bg-white/10 border-b-2 border-blue-400'
+                          : 'text-blue-300 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      By Asset Type
+                    </button>
+                    <button
+                      onClick={() => setChartView('line')}
+                      className={`flex-1 px-6 py-4 text-sm font-semibold transition-colors ${
+                        chartView === 'line'
+                          ? 'text-white bg-white/10 border-b-2 border-blue-400'
+                          : 'text-blue-300 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      Capital vs Value
+                    </button>
+                  </div>
+
+                  {/* Chart Content */}
+                  <div className="px-10 py-15">
+                    {chartView === 'pie' ? (
+                      <CapitalByAssetChart data={chartData} />
+                    ) : (
+                      <CapitalVsValueChart data={chartData} />
+                    )}
+                  </div>
+                </div>
               </div>
               
-              {/* Mobile: Show Card Summary (<768px) */}
+              {/* Mobile: Card Summary (<768px) */}
               <div className="md:hidden">
                 <AssetTypeMobileCards data={chartData} />
               </div>

@@ -79,11 +79,11 @@ export function AlertPanel({ isOpen, onClose }: AlertPanelProps) {
       />
 
       {/* Panel */}
-      <div className={`fixed top-0 right-0 h-full w-full sm:w-[480px] backdrop-blur-xl bg-white/10 border-l border-white/20 z-50 overflow-y-auto transition-transform duration-300 ease-in-out ${
+      <div className={`fixed top-0 right-0 h-full w-full sm:w-[480px] backdrop-blur-xl bg-white/5 border-l border-white/20 z-50 overflow-y-auto transition-transform duration-300 ease-in-out ${
         isOpen ? 'translate-x-0' : 'translate-x-full'
       }`}>
         {/* Header */}
-        <div className="sticky top-0 backdrop-blur-xl bg-white/10 border-b border-white/20 p-6 flex items-center justify-between z-10">
+        <div className="sticky top-0 backdrop-blur-xl bg-white/5 border-b border-white/20 p-6 flex items-center justify-between z-10">
           <div>
             <h2 className="text-2xl font-bold text-white flex items-center gap-2">
               🔔 Alerts

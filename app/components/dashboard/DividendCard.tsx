@@ -74,9 +74,9 @@ export default function DividendCard({ summary, onViewChange, activeView }: Divi
           </div>
         </div>
 
-        {/* Action Buttons */}
+        {/* Action Buttons - Hidden on mobile */}
         {onViewChange && (
-          <div className="flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-3">
             <GlassButton
               icon={Calendar}
               onClick={() => onViewChange(activeView === 'alltime' ? null : 'alltime')}
