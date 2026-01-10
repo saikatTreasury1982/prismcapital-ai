@@ -10,6 +10,7 @@ import CapitalVsValueChart from '../components/dashboard/CapitalVsValueChart';
 import PositionDetailsStandard from '../components/dashboard/PositionDetailsStandard';
 import PositionDetailsByStrategy from '../components/dashboard/PositionDetailsByStrategy';
 import DividendBreakdownTable from '../components/dashboard/DividendBreakdownTable';
+import { AssetTypeMobileCards } from '../components/dashboard/AssetTypeMobileCards';
 
 interface StrategyData {
   strategies: any[];
@@ -284,8 +285,16 @@ export default function DashboardPage() {
           {/* Show charts by default when no views are active */}
           {!investmentView && !dividendView && chartData.length > 0 && (
             <>
-              <CapitalByAssetChart data={chartData} />
-              <CapitalVsValueChart data={chartData} />
+              {/* Desktop/Tablet: Show Charts (≥768px) */}
+              <div className="hidden md:block space-y-6">
+                <CapitalByAssetChart data={chartData} />
+                <CapitalVsValueChart data={chartData} />
+              </div>
+              
+              {/* Mobile: Show Card Summary (<768px) */}
+              <div className="md:hidden">
+                <AssetTypeMobileCards data={chartData} />
+              </div>
             </>
           )}
 
