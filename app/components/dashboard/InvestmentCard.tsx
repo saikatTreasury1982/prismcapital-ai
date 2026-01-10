@@ -101,8 +101,9 @@ export default function InvestmentCard({
             />
           )}
           
+          {/* Hide detail view buttons on mobile (md:flex) */}
           {onViewChange && (
-            <>
+            <div className="hidden md:flex items-center gap-3">
               <GlassButton
                 icon={Table2}
                 onClick={() => onViewChange(activeView === 'standard' ? null : 'standard')}
@@ -124,7 +125,7 @@ export default function InvestmentCard({
                   ? 'bg-blue-500/40 border-blue-400/80 ring-2 ring-blue-400/50 shadow-lg shadow-blue-500/50' 
                   : 'hover:bg-white/10'}
               />
-            </>
+            </div>
           )}
         </div>
       </div>
