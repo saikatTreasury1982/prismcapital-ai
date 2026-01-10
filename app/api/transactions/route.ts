@@ -130,6 +130,9 @@ export async function POST(request: Request) {
             price: transactionData.price,
             transaction_date: transactionData.transaction_date,
             strategy_code: transactionData.strategy_code,
+            notes: transactionData.notes,    // ✅ ADD: Pass notes to position service
+            fees: transactionData.fees,      // ✅ Already added in Fix #1
+            transaction_id: transaction.transaction_id,  // ✅ ADD: Pass the transaction ID
           });
         }
       }
@@ -159,6 +162,7 @@ export async function PATCH(request: Request) {
     if (transactionData.notes !== undefined) updateData.notes = transactionData.notes;
     if (transactionData.fees !== undefined) updateData.fees = transactionData.fees;
 
+    // Update transaction
     const data = await db
       .update(transactions)
       .set(updateData)
@@ -167,6 +171,23 @@ export async function PATCH(request: Request) {
 
     if (!data || data.length === 0) {
       return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
+    }
+
+    // Sync to realized_pnl_history if this transaction has a linked record
+    // Only update if notes or fees were provided
+    if (Object.keys(updateData).length > 0) {
+      const realizedUpdateData: any = {};
+      if (transactionData.notes !== undefined) realizedUpdateData.notes = transactionData.notes;
+      if (transactionData.fees !== undefined) realizedUpdateData.fees = transactionData.fees;
+
+      // Find and update matching realized_pnl_history record by transaction_id
+      await db
+        .update(schema.realizedPnlHistory)
+        .set(realizedUpdateData)
+        .where(eq(schema.realizedPnlHistory.transaction_id, parseInt(transactionId)));
+      
+      // Note: This update will silently do nothing if no matching record exists (historical data)
+      // That's fine - historical records without transaction_id won't be affected
     }
 
     return NextResponse.json({ data: data[0] });

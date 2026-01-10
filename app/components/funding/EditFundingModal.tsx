@@ -15,7 +15,6 @@ interface EditFundingModalProps {
 }
 
 export function EditFundingModal({ movement, onClose, onSuccess }: EditFundingModalProps) {
-  const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -49,29 +48,25 @@ export function EditFundingModal({ movement, onClose, onSuccess }: EditFundingMo
     fetchCurrencies();
   }, []);
 
-  // Reset state when modal opens/closes or movement changes
-  useEffect(() => {
-    setIsEditing(false);
-    setEditError(null);
-  }, [movement?.cash_movement_id]);
-
   if (!movement) return null;
 
-  const handleEditClick = () => {
-    setIsEditing(true);
-    setEditFormData({
-      home_currency_code: movement.home_currency_code,
-      home_currency_value: movement.home_currency_value.toString(),
-      trading_currency_code: movement.trading_currency_code,
-      spot_rate: movement.spot_rate.toString(),
-      direction_id: movement.direction_id,
-      transaction_date: movement.transaction_date,
-      period_from: movement.period_from || '',
-      period_to: movement.period_to || '',
-      notes: movement.notes || ''
-    });
-    setEditError(null);
-  };
+  // Initialize form data when modal opens
+  useEffect(() => {
+    if (movement) {
+      setEditFormData({
+        home_currency_code: movement.home_currency_code,
+        home_currency_value: movement.home_currency_value.toString(),
+        trading_currency_code: movement.trading_currency_code,
+        spot_rate: movement.spot_rate.toString(),
+        direction_id: movement.direction_id,
+        transaction_date: movement.transaction_date,
+        period_from: movement.period_from || '',
+        period_to: movement.period_to || '',
+        notes: movement.notes || ''
+      });
+      setEditError(null);
+    }
+  }, [movement]);
 
   const handleSaveEdit = async () => {
     // Validation
@@ -127,8 +122,7 @@ export function EditFundingModal({ movement, onClose, onSuccess }: EditFundingMo
   };
 
   const handleCancelEdit = () => {
-    setIsEditing(false);
-    setEditError(null);
+    onClose();
   };
 
   const handleDelete = async () => {
@@ -187,39 +181,26 @@ export function EditFundingModal({ movement, onClose, onSuccess }: EditFundingMo
           
           {/* Action Buttons */}
           <div className="flex items-center gap-2">
-            {!isEditing && (
-              <GlassButton
-                icon={Edit2}
-                onClick={handleEditClick}
-                tooltip="Edit Transaction"
-                variant="primary"
-                size="md"
-              />
-            )}
-            {isEditing && (
-              <GlassButton
-                icon={Save}
-                onClick={handleSaveEdit}
-                disabled={isSaving}
-                tooltip={isSaving ? 'Saving...' : 'Save Changes'}
-                variant="primary"
-                size="md"
-              />
-            )}
-            {!isEditing && (
-              <GlassButton
-                icon={Trash2}
-                onClick={() => setShowDeleteConfirm(true)}
-                tooltip="Delete Transaction"
-                variant="secondary"
-                size="md"
-              />
-            )}
+            <GlassButton
+              icon={Save}
+              onClick={handleSaveEdit}
+              disabled={isSaving}
+              tooltip={isSaving ? 'Saving...' : 'Save Changes'}
+              variant="primary"
+              size="md"
+            />
+            <GlassButton
+              icon={Trash2}
+              onClick={() => setShowDeleteConfirm(true)}
+              tooltip="Delete Transaction"
+              variant="secondary"
+              size="md"
+            />
             <GlassButton
               icon={X}
-              onClick={isEditing ? handleCancelEdit : onClose}
+              onClick={handleCancelEdit}
               disabled={isSaving}
-              tooltip={isEditing ? 'Cancel' : 'Close'}
+              tooltip="Cancel"
               variant="secondary"
               size="md"
             />
@@ -234,211 +215,142 @@ export function EditFundingModal({ movement, onClose, onSuccess }: EditFundingMo
             </div>
           )}
 
-          {!isEditing ? (
-            // View Mode
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h3 className="text-sm font-semibold text-blue-200 mb-2">Transaction Date</h3>
-                  <p className="text-white">
-                    {new Date(movement.transaction_date).toLocaleDateString('en-GB', {
-                      day: '2-digit',
-                      month: 'short',
-                      year: 'numeric'
-                    })}
-                  </p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-blue-200 mb-2">Period</h3>
-                  <p className="text-white">
-                    {movement.period_from ? (
-                      <>
-                        {new Date(movement.period_from).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                        {movement.period_to && (
-                          <> - {new Date(movement.period_to).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</>
-                        )}
-                      </>
-                    ) : (
-                      'No period'
-                    )}
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h3 className="text-sm font-semibold text-blue-200 mb-2">Amount ({movement.home_currency_code})</h3>
-                  <p className={`text-white text-2xl font-bold ${
-                    movement.direction.direction_code === 'IN' ? 'text-emerald-300' : 'text-rose-300'
-                  }`}>
-                    {movement.direction.direction_code === 'IN' ? '+' : '-'}
-                    {Math.abs(movement.home_currency_value).toFixed(2)}
-                  </p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-blue-200 mb-2">Amount ({movement.trading_currency_code})</h3>
-                  <p className={`text-white text-2xl font-bold ${
-                    movement.direction.direction_code === 'IN' ? 'text-emerald-300' : 'text-rose-300'
-                  }`}>
-                    {movement.direction.direction_code === 'IN' ? '+' : '-'}
-                    {Math.abs(movement.trading_currency_value).toFixed(4)}
-                  </p>
-                </div>
-              </div>
-
+          <div className="space-y-4">
+            {/* Direction */}
               <div>
-                <h3 className="text-sm font-semibold text-blue-200 mb-2">Exchange Rate</h3>
-                <p className="text-white text-xl font-semibold">
-                  {movement.spot_rate.toFixed(6)}
-                </p>
+              <label className="text-blue-200 text-sm mb-2 block font-medium">Transaction Type *</label>
+                  <div className={isSaving ? 'opacity-50 pointer-events-none' : ''}>
+                      <SegmentedControl
+                      options={[
+                          { value: 1, label: 'Deposit', icon: <TrendingUp className="w-5 h-5" /> },
+                          { value: 2, label: 'Withdrawal', icon: <TrendingDown className="w-5 h-5" /> },
+                      ]}
+                      value={editFormData.direction_id}
+                      onChange={(value) => setEditFormData({ ...editFormData, direction_id: value })}
+                      />
+                  </div>
               </div>
 
-              {movement.notes && (
-                <div>
-                  <h3 className="text-sm font-semibold text-blue-200 mb-2">Notes</h3>
-                  <BulletDisplay text={movement.notes} />
-                </div>
-              )}
-            </>
-          ) : (
-            // Edit Mode
-            <div className="space-y-4">
-              {/* Direction */}
-                <div>
-                <label className="text-blue-200 text-sm mb-2 block font-medium">Transaction Type *</label>
-                    <div className={isSaving ? 'opacity-50 pointer-events-none' : ''}>
-                        <SegmentedControl
-                        options={[
-                            { value: 1, label: 'Deposit', icon: <TrendingUp className="w-5 h-5" /> },
-                            { value: 2, label: 'Withdrawal', icon: <TrendingDown className="w-5 h-5" /> },
-                        ]}
-                        value={editFormData.direction_id}
-                        onChange={(value) => setEditFormData({ ...editFormData, direction_id: value })}
-                        />
-                    </div>
-                </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Home Currency */}
-                <div>
-                  <label className="text-blue-200 text-sm mb-2 block font-medium">Transaction Currency *</label>
-                  <select
-                    value={editFormData.home_currency_code}
-                    onChange={(e) => setEditFormData({ ...editFormData, home_currency_code: e.target.value })}
-                    className="w-full funding-input rounded-xl px-4 py-3"
-                    disabled={isSaving}
-                  >
-                    {currencies.map(curr => (
-                      <option key={curr} value={curr}>{curr}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Amount */}
-                <div>
-                  <label className="text-blue-200 text-sm mb-2 block font-medium">Amount *</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={editFormData.home_currency_value}
-                    onChange={(e) => setEditFormData({ ...editFormData, home_currency_value: e.target.value })}
-                    className="w-full funding-input rounded-xl px-4 py-3"
-                    disabled={isSaving}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Exchange Currency */}
-                <div>
-                  <label className="text-blue-200 text-sm mb-2 block font-medium">Exchange Currency *</label>
-                  <select
-                    value={editFormData.trading_currency_code}
-                    onChange={(e) => setEditFormData({ ...editFormData, trading_currency_code: e.target.value })}
-                    className="w-full funding-input rounded-xl px-4 py-3"
-                    disabled={isSaving}
-                  >
-                    {currencies.map(curr => (
-                      <option key={curr} value={curr}>{curr}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Exchange Rate */}
-                <div>
-                  <label className="text-blue-200 text-sm mb-2 block font-medium">Exchange Rate *</label>
-                  <input
-                    type="number"
-                    step="0.000001"
-                    value={editFormData.spot_rate}
-                    onChange={(e) => setEditFormData({ ...editFormData, spot_rate: e.target.value })}
-                    className="w-full funding-input rounded-xl px-4 py-3"
-                    disabled={isSaving}
-                  />
-                </div>
-              </div>
-
-              {/* Calculated Trading Value */}
-              {editFormData.home_currency_value && editFormData.spot_rate && (
-                <div className="bg-blue-500/20 rounded-xl p-4 border border-blue-400/30">
-                  <p className="text-blue-300 text-sm mb-2 font-medium">
-                    Exchange Value (Calculated): {editFormData.trading_currency_code}
-                  </p>
-                  <p className="text-white text-2xl font-bold">{calculateTradingValue()}</p>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Transaction Date */}
-                <div>
-                  <label className="text-blue-200 text-sm mb-2 block font-medium">Transaction Date *</label>
-                  <input
-                    type="date"
-                    value={editFormData.transaction_date}
-                    onChange={(e) => setEditFormData({ ...editFormData, transaction_date: e.target.value })}
-                    className="w-full funding-input rounded-xl px-4 py-3"
-                    disabled={isSaving}
-                  />
-                </div>
-
-                {/* Period From */}
-                <div>
-                  <label className="text-blue-200 text-sm mb-2 block font-medium">Period From</label>
-                  <input
-                    type="date"
-                    value={editFormData.period_from}
-                    onChange={(e) => setEditFormData({ ...editFormData, period_from: e.target.value })}
-                    className="w-full funding-input rounded-xl px-4 py-3"
-                    disabled={isSaving}
-                  />
-                </div>
-
-                {/* Period To */}
-                <div>
-                  <label className="text-blue-200 text-sm mb-2 block font-medium">Period To</label>
-                  <input
-                    type="date"
-                    value={editFormData.period_to}
-                    onChange={(e) => setEditFormData({ ...editFormData, period_to: e.target.value })}
-                    className="w-full funding-input rounded-xl px-4 py-3"
-                    disabled={isSaving}
-                  />
-                </div>
-              </div>
-
-              {/* Notes */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Home Currency */}
               <div>
-                <BulletTextarea
-                  value={editFormData.notes}
-                  onChange={(value) => setEditFormData({ ...editFormData, notes: value })}
-                  placeholder="Add any additional notes (each line becomes a bullet point)..."
-                  rows={4}
-                  label="Notes (Optional)"
+                <label className="text-blue-200 text-sm mb-2 block font-medium">Transaction Currency *</label>
+                <select
+                  value={editFormData.home_currency_code}
+                  onChange={(e) => setEditFormData({ ...editFormData, home_currency_code: e.target.value })}
+                  className="w-full funding-input rounded-xl px-4 py-3"
+                  disabled={isSaving}
+                >
+                  {currencies.map(curr => (
+                    <option key={curr} value={curr}>{curr}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Amount */}
+              <div>
+                <label className="text-blue-200 text-sm mb-2 block font-medium">Amount *</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={editFormData.home_currency_value}
+                  onChange={(e) => setEditFormData({ ...editFormData, home_currency_value: e.target.value })}
+                  className="w-full funding-input rounded-xl px-4 py-3"
                   disabled={isSaving}
                 />
               </div>
             </div>
-          )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Exchange Currency */}
+              <div>
+                <label className="text-blue-200 text-sm mb-2 block font-medium">Exchange Currency *</label>
+                <select
+                  value={editFormData.trading_currency_code}
+                  onChange={(e) => setEditFormData({ ...editFormData, trading_currency_code: e.target.value })}
+                  className="w-full funding-input rounded-xl px-4 py-3"
+                  disabled={isSaving}
+                >
+                  {currencies.map(curr => (
+                    <option key={curr} value={curr}>{curr}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Exchange Rate */}
+              <div>
+                <label className="text-blue-200 text-sm mb-2 block font-medium">Exchange Rate *</label>
+                <input
+                  type="number"
+                  step="0.000001"
+                  value={editFormData.spot_rate}
+                  onChange={(e) => setEditFormData({ ...editFormData, spot_rate: e.target.value })}
+                  className="w-full funding-input rounded-xl px-4 py-3"
+                  disabled={isSaving}
+                />
+              </div>
+            </div>
+
+            {/* Calculated Trading Value */}
+            {editFormData.home_currency_value && editFormData.spot_rate && (
+              <div className="bg-blue-500/20 rounded-xl p-4 border border-blue-400/30">
+                <p className="text-blue-300 text-sm mb-2 font-medium">
+                  Exchange Value (Calculated): {editFormData.trading_currency_code}
+                </p>
+                <p className="text-white text-2xl font-bold">{calculateTradingValue()}</p>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Transaction Date */}
+              <div>
+                <label className="text-blue-200 text-sm mb-2 block font-medium">Transaction Date *</label>
+                <input
+                  type="date"
+                  value={editFormData.transaction_date}
+                  onChange={(e) => setEditFormData({ ...editFormData, transaction_date: e.target.value })}
+                  className="w-full funding-input rounded-xl px-4 py-3"
+                  disabled={isSaving}
+                />
+              </div>
+
+              {/* Period From */}
+              <div>
+                <label className="text-blue-200 text-sm mb-2 block font-medium">Period From</label>
+                <input
+                  type="date"
+                  value={editFormData.period_from}
+                  onChange={(e) => setEditFormData({ ...editFormData, period_from: e.target.value })}
+                  className="w-full funding-input rounded-xl px-4 py-3"
+                  disabled={isSaving}
+                />
+              </div>
+
+              {/* Period To */}
+              <div>
+                <label className="text-blue-200 text-sm mb-2 block font-medium">Period To</label>
+                <input
+                  type="date"
+                  value={editFormData.period_to}
+                  onChange={(e) => setEditFormData({ ...editFormData, period_to: e.target.value })}
+                  className="w-full funding-input rounded-xl px-4 py-3"
+                  disabled={isSaving}
+                />
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div>
+              <BulletTextarea
+                value={editFormData.notes}
+                onChange={(value) => setEditFormData({ ...editFormData, notes: value })}
+                placeholder="Add any additional notes (each line becomes a bullet point)..."
+                rows={4}
+                label="Notes (Optional)"
+                disabled={isSaving}
+              />
+            </div>
+          </div>
         </div>
       </div>
 

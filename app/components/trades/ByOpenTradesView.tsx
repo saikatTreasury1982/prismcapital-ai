@@ -9,6 +9,7 @@ import { AssignAttributesModal } from './AssignAttributesModal';
 import GlassButton from '@/app/lib/ui/GlassButton';
 import { BulletTextarea } from '@/app/lib/ui/BulletTextarea';
 import BulletDisplay from '@/app/lib/ui/BulletDisplay';
+import { NotesPopover } from '@/app/lib/ui/NotesPopover';
 
 interface RealizedTrade {
   realization_id: number;
@@ -482,8 +483,11 @@ export function ByOpenTradesView() {
                                   <td className="p-4 text-right text-white">${transaction.price.toFixed(2)}</td>
                                   <td className="p-4 text-right text-white">${transaction.fees.toFixed(2)}</td>
                                   <td className="p-4 text-right text-white">${(transaction.trade_value || 0).toFixed(2)}</td>
-                                  <td className="p-4 text-white text-sm">
-                                    {transaction.notes ? <BulletDisplay text={transaction.notes} /> : '-'}
+                                  <td className="p-4 text-center">
+                                    <NotesPopover 
+                                      notes={transaction.notes || null}
+                                      title={`Notes - ${transaction.ticker} • ${transaction.transaction_type_id === 1 ? 'Buy' : 'Sell'}: ${new Date(transaction.transaction_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}`}
+                                    />
                                   </td>
                                   <td className="p-4 text-center">
                                     <button

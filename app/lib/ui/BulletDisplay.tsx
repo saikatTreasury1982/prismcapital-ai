@@ -28,8 +28,8 @@ export default function BulletDisplay({ text, className = '' }: BulletDisplayPro
         
         return (
           <div key={index} className="flex gap-2 mb-1">
-            <span className="text-blue-300 flex-shrink-0">•</span>
-            <span>{cleanLine}</span>
+            <span className="text-blue-300 flex-shrink-0 inline-block w-4 text-center mt-5">•</span>
+            <span className="flex-1">{cleanLine}</span>
           </div>
         );
       })}

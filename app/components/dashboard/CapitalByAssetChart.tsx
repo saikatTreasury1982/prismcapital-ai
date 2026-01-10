@@ -5,7 +5,9 @@ import { PieChart, Pie, Tooltip, Cell, ResponsiveContainer } from 'recharts';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface ChartData {
-  type: string;
+  typeCode: string;
+  typeName: string;
+  description: string;
   capitalInvested: number;
   currentValue: number;
   tickers: {
@@ -41,8 +43,11 @@ const CapitalByAssetChart = memo(function CapitalByAssetChart({ data }: CapitalB
       return (
         <div className="bg-gray-900 border border-white/20 rounded-lg p-3 shadow-lg max-w-xs">
           <p className="text-white font-semibold mb-2 border-b border-white/20 pb-2">
-            {dataPoint.type}
+            {dataPoint.typeCode} - {dataPoint.typeName}
           </p>
+          {dataPoint.description && (
+            <p className="text-blue-300 text-xs mb-2">{dataPoint.description}</p>
+          )}
           
           <div className="mb-2 space-y-1">
             <div className="flex justify-between text-sm">
@@ -93,8 +98,10 @@ const CapitalByAssetChart = memo(function CapitalByAssetChart({ data }: CapitalB
   // Prepare data for pie chart with percentages
   const totalInvestment = data.reduce((sum, item) => sum + item.capitalInvested, 0);
   const pieData = data.map(item => ({
-    name: item.type,
-    type: item.type,
+    name: item.typeCode,
+    typeCode: item.typeCode,
+    typeName: item.typeName,
+    description: item.description,
     value: item.capitalInvested,
     capitalInvested: item.capitalInvested,
     currentValue: item.currentValue,
@@ -148,7 +155,7 @@ const CapitalByAssetChart = memo(function CapitalByAssetChart({ data }: CapitalB
                           dominantBaseline="central"
                           style={{ fontSize: '14px' }}
                         >
-                          {`${props.name}: ${props.percentage}%`}
+                          {`${props.percentage}%`}
                         </text>
                       );
                     }}

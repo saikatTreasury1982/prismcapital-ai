@@ -5,7 +5,9 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface ChartData {
-  type: string;
+  typeCode: string;
+  typeName: string;
+  description: string;
   capitalInvested: number;
   currentValue: number;
   tickers: {
@@ -39,8 +41,11 @@ const CapitalVsValueChart = memo(function CapitalVsValueChart({ data }: CapitalV
       return (
         <div className="bg-gray-900 border border-white/20 rounded-lg p-3 shadow-lg max-w-xs">
           <p className="text-white font-semibold mb-2 border-b border-white/20 pb-2">
-            {dataPoint.type}
+            {dataPoint.typeCode} - {dataPoint.typeName}
           </p>
+          {dataPoint.description && (
+            <p className="text-blue-300 text-xs mb-2">{dataPoint.description}</p>
+          )}
           
           <div className="mb-2 space-y-1">
             <div className="flex justify-between text-sm">
@@ -110,7 +115,7 @@ const CapitalVsValueChart = memo(function CapitalVsValueChart({ data }: CapitalV
             <LineChart data={data}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
               <XAxis 
-                dataKey="type" 
+                dataKey="typeCode"
                 stroke="rgba(255,255,255,0.5)"
                 tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 12 }}
               />
