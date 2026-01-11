@@ -35,10 +35,10 @@ export function FundingClientWrapper({
       <div className="max-w-7xl mx-auto mb-6">
         <UnderlineTabs
           tabs={[
-            { id: 'entry', label: 'Record Entry', icon: <Edit3 className="w-5 h-5" /> },
-            { id: 'timeline', label: 'Visual Timeline', icon: <BarChart3 className="w-5 h-5" /> },
-            { id: 'compare', label: 'Period Compare', icon: <ArrowLeftRight className="w-5 h-5" /> },
-            { id: 'all', label: 'All Transactions', icon: <List className="w-5 h-5" /> },
+            { id: 'entry', label: 'Record Entry', icon: <Edit3 className="w-6 h-6 md:w-5 md:h-5" /> },
+            { id: 'timeline', label: 'Visual Timeline', icon: <BarChart3 className="w-6 h-6 md:w-5 md:h-5" /> },
+            { id: 'compare', label: 'Period Compare', icon: <ArrowLeftRight className="w-6 h-6 md:w-5 md:h-5" /> },
+            { id: 'all', label: 'All Transactions', icon: <List className="w-6 h-6 md:w-5 md:h-5" /> },
           ]}
           activeTab={viewMode}
           onChange={(tabId) => setViewMode(tabId as 'entry' | 'timeline' | 'compare' | 'all')}
