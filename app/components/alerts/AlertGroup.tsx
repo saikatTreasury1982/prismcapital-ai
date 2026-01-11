@@ -30,7 +30,7 @@ const ITEMS_PER_PAGE = 10;
 
 export function AlertGroup({ title, alerts, variant, defaultExpanded = false }: AlertGroupProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
-  const [isItemExpanded, setIsItemExpanded] = useState(defaultExpanded);
+  const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
 
   const totalPages = Math.ceil(alerts.length / ITEMS_PER_PAGE);
@@ -94,6 +94,20 @@ export function AlertGroup({ title, alerts, variant, defaultExpanded = false }: 
         <div className="border-t border-white/20 p-4 bg-black/5">
           <div className="space-y-3">
             {paginatedAlerts.map((alert) => {
+              const isItemExpanded = expandedItems.has(alert.news_id);
+              
+              const toggleItem = () => {
+                setExpandedItems(prev => {
+                  const newSet = new Set(prev);
+                  if (newSet.has(alert.news_id)) {
+                    newSet.delete(alert.news_id);
+                  } else {
+                    newSet.add(alert.news_id);
+                  }
+                  return newSet;
+                });
+              };
+              
               return (
                 <div
                   key={alert.news_id}
@@ -101,7 +115,7 @@ export function AlertGroup({ title, alerts, variant, defaultExpanded = false }: 
                 >
                   {/* Alert Header - Always Visible */}
                   <button
-                    onClick={() => setIsItemExpanded(!isItemExpanded)}
+                    onClick={toggleItem}
                     className="w-full p-4 hover:bg-white/10 transition-colors text-left"
                   >
                     <div className="flex items-start gap-3">

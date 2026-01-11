@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { DollarSign, Info, ArrowUpDown, TrendingUp, TrendingDown } from 'lucide-react';
+import { NotesPopover } from '@/app/lib/ui/NotesPopover';
 import MiniCharts from './MiniCharts';
 
 interface TickerBreakdown {
@@ -10,8 +11,10 @@ interface TickerBreakdown {
   totalPayments: number;
   totalReceived: number;
   avgPerShare: number;
-  latestExDivDate: string | null;
-  latestPaymentDate: string | null;
+  marketYield: number;
+  personalYield: number;
+  exDivDates: string[];
+  paymentDates: string[];
 }
 
 interface ChartData {
@@ -34,7 +37,7 @@ interface DividendBreakdownTableProps {
   title: string;
 }
 
-type SortField = 'ticker' | 'totalPayments' | 'totalReceived' | 'avgPerShare';
+type SortField = 'ticker' | 'totalPayments' | 'totalReceived' | 'avgPerShare' | 'marketYield' | 'personalYield';
 type SortDirection = 'asc' | 'desc';
 
 export default function DividendBreakdownTable({ data, chartData, title }: DividendBreakdownTableProps) {
@@ -87,6 +90,10 @@ export default function DividendBreakdownTable({ data, chartData, title }: Divid
     });
   };
 
+  const formatPercent = (value: number) => {
+    return `${value.toFixed(2)}%`;
+  };
+
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) {
       return <ArrowUpDown className="w-3 h-3 text-blue-300 opacity-50" />;
@@ -113,11 +120,11 @@ export default function DividendBreakdownTable({ data, chartData, title }: Divid
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full table-fixed">
+            <table className="w-full table-fixed border-collapse">
               <thead>
                 <tr className="border-b border-white/10">
                   <th 
-                    className="text-left text-blue-200 text-sm font-medium pb-3 w-[15%] cursor-pointer hover:text-white transition-colors"
+                    className="text-left text-blue-200 text-sm font-medium pb-3 w-[12%] cursor-pointer hover:text-white transition-colors"
                     onClick={() => handleSort('ticker')}
                   >
                     <div className="flex items-center gap-1">
@@ -126,16 +133,16 @@ export default function DividendBreakdownTable({ data, chartData, title }: Divid
                     </div>
                   </th>
                   <th 
-                    className="text-right text-blue-200 text-sm font-medium pb-3 w-[12%] cursor-pointer hover:text-white transition-colors"
+                    className="text-center text-blue-200 text-sm font-medium pb-3 w-[10%] cursor-pointer hover:text-white transition-colors"
                     onClick={() => handleSort('totalPayments')}
                   >
-                    <div className="flex items-center justify-end gap-1">
+                    <div className="flex items-center justify-center gap-1">
                       Payments
                       <SortIcon field="totalPayments" />
                     </div>
                   </th>
                   <th 
-                    className="text-right text-blue-200 text-sm font-medium pb-3 w-[20%] cursor-pointer hover:text-white transition-colors"
+                    className="text-right text-blue-200 text-sm font-medium pb-3 w-[15%] cursor-pointer hover:text-white transition-colors"
                     onClick={() => handleSort('totalReceived')}
                   >
                     <div className="flex items-center justify-end gap-1">
@@ -144,7 +151,7 @@ export default function DividendBreakdownTable({ data, chartData, title }: Divid
                     </div>
                   </th>
                   <th 
-                    className="text-right text-blue-200 text-sm font-medium pb-3 w-[15%] cursor-pointer hover:text-white transition-colors"
+                    className="text-right text-blue-200 text-sm font-medium pb-3 w-[13%] cursor-pointer hover:text-white transition-colors"
                     onClick={() => handleSort('avgPerShare')}
                   >
                     <div className="flex items-center justify-end gap-1">
@@ -152,11 +159,29 @@ export default function DividendBreakdownTable({ data, chartData, title }: Divid
                       <SortIcon field="avgPerShare" />
                     </div>
                   </th>
-                  <th className="text-right text-blue-200 text-sm font-medium pb-3 w-[19%]">
-                    Ex-Div Date
+                  <th 
+                    className="text-right text-blue-200 text-sm font-medium pb-3 w-[10%] cursor-pointer hover:text-white transition-colors"
+                    onClick={() => handleSort('marketYield')}
+                  >
+                    <div className="flex items-center justify-end gap-1">
+                      Market Yield
+                      <SortIcon field="marketYield" />
+                    </div>
                   </th>
-                  <th className="text-right text-blue-200 text-sm font-medium pb-3 w-[19%]">
-                    Payment Date
+                  <th 
+                    className="text-right text-blue-200 text-sm font-medium pb-3 w-[11%] cursor-pointer hover:text-white transition-colors"
+                    onClick={() => handleSort('personalYield')}
+                  >
+                    <div className="flex items-center justify-end gap-1">
+                      Personal Yield
+                      <SortIcon field="personalYield" />
+                    </div>
+                  </th>
+                  <th className="text-center text-blue-200 text-sm font-medium pb-3 w-[12%]">
+                    Ex-Div Dates
+                  </th>
+                  <th className="text-center text-blue-200 text-sm font-medium pb-3 w-[12%]">
+                    Payment Dates
                   </th>
                 </tr>
               </thead>
@@ -166,7 +191,7 @@ export default function DividendBreakdownTable({ data, chartData, title }: Divid
                     key={index}
                     className="border-b border-white/5 hover:bg-white/10 transition-colors"
                   >
-                    <td className="py-2">
+                    <td className="py-2 pl-2">
                       <div className="flex items-center gap-1 group relative">
                         <DollarSign className="w-4 h-4 text-amber-400 flex-shrink-0" />
                         <span className="text-white font-medium text-sm">{item.ticker}</span>
@@ -180,18 +205,34 @@ export default function DividendBreakdownTable({ data, chartData, title }: Divid
                         )}
                       </div>
                     </td>
-                    <td className="text-right text-white text-sm py-2">{item.totalPayments}</td>
-                    <td className="text-right text-amber-400 font-medium text-sm py-2">
+                    <td className="text-center text-white text-sm py-2">{item.totalPayments}</td>
+                    <td className="text-right text-amber-400 font-medium text-sm py-2 pr-4">
                       {formatCurrency(item.totalReceived)}
                     </td>
-                    <td className="text-right text-white text-sm py-2">
+                    <td className="text-right text-white text-sm py-2 pr-4">
                       {formatCurrency(item.avgPerShare)}
                     </td>
-                    <td className="text-right text-blue-200 text-sm py-2">
-                      {formatDate(item.latestExDivDate)}
+                    <td className="text-right text-blue-300 text-sm py-2 pr-4">
+                      {formatPercent(item.marketYield)}
                     </td>
-                    <td className="text-right text-emerald-200 text-sm py-2">
-                      {formatDate(item.latestPaymentDate)}
+                    <td className="text-right text-emerald-300 text-sm py-2 pr-4">
+                      {formatPercent(item.personalYield)}
+                    </td>
+                    <td className="py-2 text-center">
+                      <div className="flex justify-center">
+                        <NotesPopover
+                          notes={item.exDivDates.length > 0 ? item.exDivDates.map(date => formatDate(date)).join('\n') : null}
+                          title={`Ex-Div Dates - ${item.ticker}`}
+                        />
+                      </div>
+                    </td>
+                    <td className="py-2 text-center">
+                      <div className="flex justify-center">
+                        <NotesPopover
+                          notes={item.paymentDates.length > 0 ? item.paymentDates.map(date => formatDate(date)).join('\n') : null}
+                          title={`Payment Dates - ${item.ticker}`}
+                        />
+                      </div>
                     </td>
                   </tr>
                 ))}

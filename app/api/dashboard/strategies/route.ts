@@ -30,7 +30,10 @@ export async function GET() {
             p.total_shares || '|' || 
             p.average_cost || '|' || 
             COALESCE(p.current_market_price, 0) || '|' ||
-            COALESCE(p.unrealized_pnl, 0),
+            COALESCE(p.unrealized_pnl, 0) || '|' ||
+            COALESCE(p.opened_date, '') || '|' ||
+            (p.total_shares * p.average_cost) || '|' ||
+            COALESCE(p.current_value, 0),
             ','
           ) as positions_data
         FROM positions p
@@ -44,17 +47,27 @@ export async function GET() {
 
     const strategyBreakdown = result.rows.map(row => {
       const positionsData = (row.positions_data as string)?.split(',').map(pos => {
-        const [positionId, ticker, tickerName, totalShares, avgCost, currentPrice, unrealizedPnl] = pos.split('|');
-        return {
-          position_id: Number(positionId) || 0,
-          ticker: ticker || '',
-          ticker_name: tickerName || ticker || '',
-          total_shares: Number(totalShares) || 0,
-          average_cost: Number(avgCost) || 0,
-          current_market_price: Number(currentPrice) || 0,
-          unrealized_pnl: Number(unrealizedPnl) || 0,
-        };
-      }) || [];
+      const [positionId, ticker, tickerName, totalShares, avgCost, currentPrice, unrealizedPnl, openedDate, capitalInvested, currentValue] = pos.split('|');
+      
+      // Calculate daysHeld from opened_date
+      const daysHeld = openedDate ? Math.floor(
+        (new Date().getTime() - new Date(openedDate).getTime()) / (1000 * 60 * 60 * 24)
+      ) : 0;
+      
+      return {
+        position_id: Number(positionId) || 0,
+        ticker: ticker || '',
+        ticker_name: tickerName || ticker || '',
+        total_shares: Number(totalShares) || 0,
+        average_cost: Number(avgCost) || 0,
+        current_market_price: Number(currentPrice) || 0,
+        unrealized_pnl: Number(unrealizedPnl) || 0,
+        opened_date: openedDate || '',
+        daysHeld: daysHeld,
+        capital_invested: Number(capitalInvested) || 0,
+        current_value: Number(currentValue) || 0,
+      };
+    }) || [];
 
       return {
         strategy_code: row.strategy || 'UNKNOWN',
