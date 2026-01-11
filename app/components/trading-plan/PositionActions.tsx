@@ -7,6 +7,7 @@ import { ReducePositionPlanner } from './ReducePositionPlanner';
 import { IncreasePositionPlanner } from './IncreasePositionPlanner';
 import SegmentedControl from '@/app/lib/ui/SegmentedControl';
 import BulletDisplay from '@/app/lib/ui/BulletDisplay';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 export function PositionActions() {
   const [positions, setPositions] = useState<Position[]>([]);
@@ -20,6 +21,19 @@ export function PositionActions() {
   const [viewMode, setViewMode] = useState<'by-position' | 'all-plans'>('by-position');
   const [allPlans, setAllPlans] = useState<any[]>([]);
   const [loadingAllPlans, setLoadingAllPlans] = useState(false);
+  const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
+
+  const toggleCardExpansion = (planId: number) => {
+    setExpandedCards(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(planId)) {
+        newSet.delete(planId);
+      } else {
+        newSet.add(planId);
+      }
+      return newSet;
+    });
+  };
 
   useEffect(() => {
     fetchPositions();
@@ -405,140 +419,159 @@ export function PositionActions() {
               <p className="text-blue-200 text-center">No action plans found</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-max">
-              {allPlans.map((plan) => (
-                <div
-                  key={plan.plan_id}
-                  className="backdrop-blur-xl bg-white/10 rounded-2xl p-4 border border-white/20 hover:border-blue-400/50 transition-all"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <h3 className="text-white font-bold text-lg">{plan.ticker}</h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                          plan.action_type === 'ADD_POSITION'
-                            ? 'bg-green-500/20 text-green-300'
-                            : 'bg-blue-500/20 text-blue-300'
-                        }`}>
-                          {plan.action_type === 'ADD_POSITION' ? 'Increase' : 'Reduce'}
-                        </span>
-                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                          plan.status === 'DRAFT' 
-                            ? 'bg-yellow-500/20 text-yellow-300'
-                            : plan.status === 'EXECUTED'
-                            ? 'bg-green-500/20 text-green-300'
-                            : 'bg-slate-500/20 text-slate-300'
-                        }`}>
-                          {plan.status}
-                        </span>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
+              {allPlans.map((plan) => {
+                const isExpanded = expandedCards.has(plan.plan_id);
+                
+                return (
+                  <div
+                    key={plan.plan_id}
+                    className="backdrop-blur-xl bg-white/10 rounded-2xl p-4 border border-white/20 hover:border-blue-400/50 transition-all"
+                  >
+                    {/* Header */}
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <button
+                          onClick={() => toggleCardExpansion(plan.plan_id)}
+                          className="p-2 rounded-full bg-white/10 text-blue-300 hover:bg-white/20 transition-all flex-shrink-0"
+                          title={isExpanded ? 'Collapse' : 'Expand'}
+                        >
+                          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        </button>
+                        <div className="min-w-0">
+                          <h3 className="text-white font-bold text-lg">{plan.ticker}</h3>
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                              plan.action_type === 'ADD_POSITION'
+                                ? 'bg-green-500/20 text-green-300'
+                                : 'bg-blue-500/20 text-blue-300'
+                            }`}>
+                              {plan.action_type === 'ADD_POSITION' ? 'Increase' : 'Reduce'}
+                            </span>
+                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                              plan.status === 'DRAFT' 
+                                ? 'bg-yellow-500/20 text-yellow-300'
+                                : plan.status === 'EXECUTED'
+                                ? 'bg-green-500/20 text-green-300'
+                                : 'bg-slate-500/20 text-slate-300'
+                            }`}>
+                              {plan.status}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <button
+                          onClick={() => setViewingPlan(plan)}
+                          className="text-emerald-400 hover:text-emerald-300 transition-colors p-1"
+                          title="View plan"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedPosition(positions.find(p => p.position_id === plan.position_id) || null);
+                            setEditingPlan(plan);
+                            setActionType(plan.action_type === 'ADD_POSITION' ? 'increase' : 'reduce');
+                            setViewMode('by-position');
+                          }}
+                          className="text-blue-400 hover:text-blue-300 transition-colors p-1"
+                          title="Edit plan"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (confirm('Delete this action plan?')) {
+                              try {
+                                await fetch(`/api/position-action-plans?planId=${plan.plan_id}`, {
+                                  method: 'DELETE'
+                                });
+                                setAllPlans(prev => prev.filter(p => p.plan_id !== plan.plan_id));
+                              } catch (err) {
+                                console.error('Failed to delete plan:', err);
+                              }
+                            }
+                          }}
+                          className="text-rose-400 hover:text-rose-300 transition-colors p-1"
+                          title="Delete plan"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => setViewingPlan(plan)}
-                        className="text-emerald-400 hover:text-emerald-300 transition-colors p-1"
-                        title="View plan"
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSelectedPosition(positions.find(p => p.position_id === plan.position_id) || null);
-                          setEditingPlan(plan);
-                          setActionType(plan.action_type === 'ADD_POSITION' ? 'increase' : 'reduce');
-                          setViewMode('by-position');
-                        }}
-                        className="text-blue-400 hover:text-blue-300 transition-colors p-1"
-                        title="Edit plan"
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={async () => {
-                          if (confirm('Delete this action plan?')) {
-                            try {
-                              await fetch(`/api/position-action-plans?planId=${plan.plan_id}`, {
-                                method: 'DELETE'
-                              });
-                              setAllPlans(prev => prev.filter(p => p.plan_id !== plan.plan_id));
-                            } catch (err) {
-                              console.error('Failed to delete plan:', err);
-                            }
-                          }
-                        }}
-                        className="text-rose-400 hover:text-rose-300 transition-colors p-1"
-                        title="Delete plan"
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
+
+                    {/* Collapsible Content */}
+                    {isExpanded && (
+                      <>
+                        <div className="space-y-2 text-sm">
+                          {plan.action_type === 'ADD_POSITION' ? (
+                            <>
+                              <div className="flex justify-between">
+                                <span className="text-blue-300">Shares to Buy</span>
+                                <span className="text-white font-semibold">{plan.buy_shares?.toFixed(4)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-blue-300">Entry Price</span>
+                                <span className="text-white font-semibold">${plan.entry_price?.toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-blue-300">Investment Amount</span>
+                                <span className="text-white font-semibold">${((plan.buy_shares || 0) * (plan.entry_price || 0) + (plan.fees || 0)).toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-blue-300">New Avg Cost</span>
+                                <span className="text-white font-semibold">${plan.new_average_cost?.toFixed(2)}</span>
+                              </div>
+                              <div className="flex justify-between border-t border-white/10 pt-2 mt-2">
+                                <span className="text-blue-300">Previous Dividend</span>
+                                <span className="text-white font-semibold">${plan.previous_dividend?.toFixed(2) || '0.00'}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-blue-300">Projected Dividend</span>
+                                <span className={`font-semibold ${(plan.projected_dividend || 0) >= (plan.previous_dividend || 0) ? 'text-green-400' : 'text-rose-400'}`}>
+                                  ${plan.projected_dividend?.toFixed(2) || '0.00'}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-blue-300">Dividend Increase</span>
+                                <span className={`font-semibold ${(plan.projected_dividend || 0) - (plan.previous_dividend || 0) >= 0 ? 'text-green-400' : 'text-rose-400'}`}>
+                                  ${((plan.projected_dividend || 0) - (plan.previous_dividend || 0)).toFixed(2)}
+                                </span>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="flex justify-between">
+                                <span className="text-blue-300">Sell Shares</span>
+                                <span className="text-white font-semibold">{plan.sell_shares?.toFixed(4)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-blue-300">Expected Proceeds</span>
+                                <span className="text-white font-semibold">${plan.expected_proceeds?.toFixed(2)}</span>
+                              </div>
+                            </>
+                          )}
+                        </div>
+
+                        <p className="text-blue-300 text-xs mt-3 pt-3 border-t border-white/10">
+                          {new Date(plan.created_at).toLocaleDateString('en-US', { 
+                            month: 'short', 
+                            day: 'numeric'
+                          })}
+                        </p>
+                      </>
+                    )}
                   </div>
-
-                  <div className="space-y-2 text-sm">
-                      {plan.action_type === 'ADD_POSITION' ? (
-                        <>
-                          <div className="flex justify-between">
-                            <span className="text-blue-300">Shares to Buy</span>
-                            <span className="text-white font-semibold">{plan.buy_shares?.toFixed(4)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-blue-300">Entry Price</span>
-                            <span className="text-white font-semibold">${plan.entry_price?.toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-blue-300">Investment Amount</span>
-                            <span className="text-white font-semibold">${((plan.buy_shares || 0) * (plan.entry_price || 0) + (plan.fees || 0)).toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-blue-300">New Avg Cost</span>
-                            <span className="text-white font-semibold">${plan.new_average_cost?.toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between border-t border-white/10 pt-2 mt-2">
-                            <span className="text-blue-300">Previous Dividend</span>
-                            <span className="text-white font-semibold">${plan.previous_dividend?.toFixed(2) || '0.00'}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-blue-300">Projected Dividend</span>
-                            <span className={`font-semibold ${(plan.projected_dividend || 0) >= (plan.previous_dividend || 0) ? 'text-green-400' : 'text-rose-400'}`}>
-                              ${plan.projected_dividend?.toFixed(2) || '0.00'}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-blue-300">Dividend Increase</span>
-                            <span className={`font-semibold ${(plan.projected_dividend || 0) - (plan.previous_dividend || 0) >= 0 ? 'text-green-400' : 'text-rose-400'}`}>
-                              ${((plan.projected_dividend || 0) - (plan.previous_dividend || 0)).toFixed(2)}
-                            </span>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="flex justify-between">
-                            <span className="text-blue-300">Sell Shares</span>
-                            <span className="text-white font-semibold">{plan.sell_shares?.toFixed(4)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-blue-300">Expected Proceeds</span>
-                            <span className="text-white font-semibold">${plan.expected_proceeds?.toFixed(2)}</span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-
-                  <p className="text-blue-300 text-xs mt-3 pt-3 border-t border-white/10">
-                    {new Date(plan.created_at).toLocaleDateString('en-US', { 
-                      month: 'short', 
-                      day: 'numeric'
-                    })}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

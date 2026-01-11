@@ -42,16 +42,25 @@ export default function SegmentedControl({
   };
   
   return (
-    <div className={`backdrop-blur-md bg-white/10 border border-white/20 rounded-full p-1 relative ${className}`}>
+    <div className={`backdrop-blur-md bg-white/10 border border-white/20 rounded-full p-1 relative overflow-x-auto md:overflow-visible scroll-smooth scrollbar-hide ${className}`}>
       {/* Sliding pill background */}
       <div 
-        className={`absolute top-1 bottom-1 rounded-full transition-all duration-300 ease-out ${getActiveColor()}`}
+        className={`absolute top-1 bottom-1 rounded-full transition-all duration-300 ease-out hidden md:block ${getActiveColor()}`}
         style={{
           left: `calc(${activeIndex * (100 / options.length)}% + 4px)`,
           right: `calc(${(options.length - activeIndex - 1) * (100 / options.length)}% + 4px)`,
         }}
       />
       
+      {/* Mobile pill - shows behind active button only */}
+      <div 
+        className={`absolute top-1 bottom-1 rounded-full transition-all duration-300 ease-out md:hidden ${getActiveColor()}`}
+        style={{
+          left: `${activeIndex * (100 / options.length)}%`,
+          width: `${100 / options.length}%`,
+        }}
+      />
+
       {/* Buttons */}
       <div className="relative flex">
         {options.map((option) => (
@@ -59,15 +68,19 @@ export default function SegmentedControl({
             key={option.value}
             type="button"
             onClick={() => onChange(option.value)}
-            className={`flex-1 px-8 py-2.5 rounded-full font-medium transition-all flex items-center justify-center gap-2 whitespace-nowrap z-10 relative ${
+            className={`flex-1 px-3 md:px-8 py-2.5 rounded-full font-medium transition-all flex items-center justify-center gap-2 whitespace-nowrap z-10 relative flex-shrink-0 ${
               value === option.value
                 ? 'text-white'
                 : 'text-blue-200'
             }`}
             style={{ minWidth: `${100 / options.length}%` }}
           >
-            {option.icon}
-            {option.label}
+            {option.icon && (
+              <span className={value === option.value ? 'scale-110' : ''}>
+                {option.icon}
+              </span>
+            )}
+            <span className="hidden md:inline">{option.label}</span>
           </button>
         ))}
       </div>
