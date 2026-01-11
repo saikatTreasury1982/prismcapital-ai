@@ -15,7 +15,7 @@ interface Position {
   unrealized_pnl: number;
   capital_invested: number;
   current_value: number;
-  days_held: number;
+  daysHeld: number;
   strategy_code: string;
 }
 
@@ -164,6 +164,20 @@ export default function PositionDetailsByStrategy({
     }).format(value);
   };
 
+  const formatDaysHeld = (days: number) => {
+    const years = Math.floor(days / 365);
+    const remainingDays = days % 365;
+    const months = Math.floor(remainingDays / 30);
+    const finalDays = remainingDays % 30;
+    
+    const parts = [];
+    if (years > 0) parts.push(`${years} ${years === 1 ? 'year' : 'years'}`);
+    if (months > 0) parts.push(`${months} ${months === 1 ? 'month' : 'months'}`);
+    if (finalDays > 0) parts.push(`${finalDays} ${finalDays === 1 ? 'day' : 'days'}`);
+    
+    return parts.length > 0 ? parts.join(', ') : '0 days';
+  };
+
   const activePosition = activeId
     ? strategies
         .flatMap(s => s.positions.map(p => ({ ...p, strategy: s.strategy_code })))
@@ -188,6 +202,7 @@ export default function PositionDetailsByStrategy({
                   strategy={strategy}
                   formatCurrency={formatCurrency}
                   formatNumber={formatNumber}
+                  formatDaysHeld={formatDaysHeld}
                 />
               ))}
             </div>
@@ -251,7 +266,7 @@ export default function PositionDetailsByStrategy({
 }
 
 // Droppable Strategy Table Section
-function StrategyTableSection({ strategy, formatCurrency, formatNumber }: any) {
+function StrategyTableSection({ strategy, formatCurrency, formatNumber, formatDaysHeld, calculateDaysHeld }: any) {
   const { setNodeRef, isOver } = useDroppable({
     id: strategy.strategy_code,
   });
@@ -307,6 +322,7 @@ function StrategyTableSection({ strategy, formatCurrency, formatNumber }: any) {
                   strategyCode={strategy.strategy_code}
                   formatCurrency={formatCurrency}
                   formatNumber={formatNumber}
+                  formatDaysHeld={formatDaysHeld}
                 />
               ))
             )}
@@ -318,7 +334,7 @@ function StrategyTableSection({ strategy, formatCurrency, formatNumber }: any) {
 }
 
 // Draggable Table Row
-function DraggableTableRow({ position, strategyCode, formatCurrency, formatNumber }: any) {
+function DraggableTableRow({ position, strategyCode, formatCurrency, formatNumber, formatDaysHeld, calculateDaysHeld }: any) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `${position.position_id}|${strategyCode}`,
   });
@@ -356,7 +372,13 @@ function DraggableTableRow({ position, strategyCode, formatCurrency, formatNumbe
         {formatCurrency(position.capital_invested || position.average_cost * position.total_shares)}
       </td>
       <td className="text-right text-blue-200 text-sm py-2">
-        {position.days_held || 0} days
+        <div className="flex items-center justify-end gap-1 group relative">
+          <span className="font-medium text-sm">{position.daysHeld} days</span>
+          <Info className="w-3 h-3 text-blue-300 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+          <div className="absolute right-0 top-full mt-1 bg-gray-900 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+            {formatDaysHeld(position.daysHeld)}
+          </div>
+        </div>
       </td>
       <td className="text-right text-white text-sm py-2">
         {formatCurrency(position.current_value || position.current_market_price * position.total_shares)}

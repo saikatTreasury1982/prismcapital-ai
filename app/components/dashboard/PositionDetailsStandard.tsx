@@ -88,6 +88,20 @@ export default function PositionDetailsStandard({ positions, chartData }: Positi
     }).format(value);
   };
 
+  const formatDaysHeld = (days: number) => {
+    const years = Math.floor(days / 365);
+    const remainingDays = days % 365;
+    const months = Math.floor(remainingDays / 30);
+    const finalDays = remainingDays % 30;
+    
+    const parts = [];
+    if (years > 0) parts.push(`${years} ${years === 1 ? 'year' : 'years'}`);
+    if (months > 0) parts.push(`${months} ${months === 1 ? 'month' : 'months'}`);
+    if (finalDays > 0) parts.push(`${finalDays} ${finalDays === 1 ? 'day' : 'days'}`);
+    
+    return parts.length > 0 ? parts.join(', ') : '0 days';
+  };
+
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) {
       return <ArrowUpDown className="w-3 h-3 text-blue-300 opacity-50" />;
@@ -203,7 +217,15 @@ export default function PositionDetailsStandard({ positions, chartData }: Positi
                   <td className="text-right text-white text-sm py-2">
                     {formatCurrency(position.capitalInvested, position.currency)}
                   </td>
-                  <td className="text-right text-blue-200 text-sm py-2">{position.daysHeld} days</td>
+                  <td className="text-right text-blue-200 text-sm py-2">
+                    <div className="flex items-center justify-end gap-1 group relative">
+                      <span className="font-medium text-sm">{position.daysHeld} days</span>
+                      <Info className="w-3 h-3 text-blue-300 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                      <div className="absolute right-0 top-full mt-1 bg-gray-900 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                        {formatDaysHeld(position.daysHeld)}
+                      </div>
+                    </div>
+                  </td>
                   <td className="text-right text-white text-sm py-2">
                     {formatCurrency(position.currentValue, position.currency)}
                   </td>
