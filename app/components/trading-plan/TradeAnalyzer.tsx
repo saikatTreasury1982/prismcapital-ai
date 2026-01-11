@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Filter, BarChart3 } from 'lucide-react';
+import { Plus, Filter, BarChart3, List, Flag, Archive } from 'lucide-react';
 import { TradeAnalysis } from '@/app/lib/types/tradeAnalysis';
 import { getTradeAnalyses, deleteTradeAnalysis } from '@/app/services/tradeAnalysisServiceClient';
 import { TradeAnalysisCard } from './TradeAnalysisCard';
@@ -89,26 +89,60 @@ export function TradeAnalyzer() {
         <GlassButton
           icon={Plus}
           onClick={() => {
+            if (window.innerWidth < 768) {
+              alert('Please use desktop to create positions');
+              return;
+            }
             setEditingAnalysis(null);
             setShowForm(true);
           }}
-          tooltip="Add Analysis"
+          tooltip={typeof window !== 'undefined' && window.innerWidth < 768 ? 'Desktop only' : 'Add Analysis'}
           variant="secondary"
           size="lg"
+          className={typeof window !== 'undefined' && window.innerWidth < 768 ? 'opacity-50 cursor-not-allowed' : ''}
         />
 
         {/* Filters */}
-        <div className="flex items-center gap-3">
-          <Filter className="w-5 h-5 text-blue-300" />
-          <SegmentedControl
-            options={[
-              { value: 1, label: 'All' },
-              { value: 2, label: 'Flagged' },
-              { value: 3, label: 'Archived' },
-            ]}
-            value={filterStatus === 'all' ? 1 : filterStatus === 'flagged' ? 2 : 3}
-            onChange={(value) => setFilterStatus(value === 1 ? 'all' : value === 2 ? 'flagged' : 'archived')}
-          />
+        <div className="flex items-center gap-2">
+          <Filter className="w-5 h-5 text-blue-300 hidden md:block" />
+          <div className="flex gap-1 bg-white/5 rounded-2xl p-1 border border-white/10">
+            <button
+              onClick={() => setFilterStatus('all')}
+              className={`px-3 md:px-6 py-2 rounded-xl flex items-center justify-center gap-2 transition-all ${
+                filterStatus === 'all'
+                  ? 'bg-blue-500 text-white shadow-lg'
+                  : 'text-blue-200 hover:bg-white/5'
+              }`}
+              title="All"
+            >
+              <List className="w-5 h-5" />
+              <span className="hidden md:inline">All</span>
+            </button>
+            <button
+              onClick={() => setFilterStatus('flagged')}
+              className={`px-3 md:px-6 py-2 rounded-xl flex items-center justify-center gap-2 transition-all ${
+                filterStatus === 'flagged'
+                  ? 'bg-blue-500 text-white shadow-lg'
+                  : 'text-blue-200 hover:bg-white/5'
+              }`}
+              title="Flagged"
+            >
+              <Flag className="w-5 h-5" />
+              <span className="hidden md:inline">Flagged</span>
+            </button>
+            <button
+              onClick={() => setFilterStatus('archived')}
+              className={`px-3 md:px-6 py-2 rounded-xl flex items-center justify-center gap-2 transition-all ${
+                filterStatus === 'archived'
+                  ? 'bg-blue-500 text-white shadow-lg'
+                  : 'text-blue-200 hover:bg-white/5'
+              }`}
+              title="Archived"
+            >
+              <Archive className="w-5 h-5" />
+              <span className="hidden md:inline">Archived</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -135,7 +169,7 @@ export function TradeAnalyzer() {
           <p className="text-blue-300 text-sm">Click "Add Analysis" to start analyzing trade opportunities</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
           {filteredAnalyses.map((analysis) => (
             <TradeAnalysisCard
               key={analysis.analysis_id}
