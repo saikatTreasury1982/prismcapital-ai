@@ -45,11 +45,11 @@ export function DividendsClientWrapper({ positions }: DividendsClientWrapperProp
         <div className="mb-6">
           <UnderlineTabs
             tabs={[
-              { id: 'entry', label: 'Quick Entry', icon: <Plus className="w-5 h-5" /> },
-              { id: 'ticker', label: 'By Ticker', icon: <List className="w-5 h-5" /> },
-              { id: 'quarter', label: 'By Quarter', icon: <Calendar className="w-5 h-5" /> },
-              { id: 'year', label: 'By Year', icon: <TrendingUp className="w-5 h-5" /> },
-              { id: 'upcoming', label: 'Upcoming', icon: <Calendar className="w-5 h-5" /> },
+              { id: 'entry', label: 'Quick Entry', icon: <Plus className="w-6 h-6 md:w-5 md:h-5" /> },
+              { id: 'ticker', label: 'By Ticker', icon: <List className="w-6 h-6 md:w-5 md:h-5" /> },
+              { id: 'quarter', label: 'By Quarter', icon: <Calendar className="w-6 h-6 md:w-5 md:h-5" /> },
+              { id: 'year', label: 'By Year', icon: <TrendingUp className="w-6 h-6 md:w-5 md:h-5" /> },
+              { id: 'upcoming', label: 'Upcoming', icon: <Calendar className="w-6 h-6 md:w-5 md:h-5" /> },
             ]}
             activeTab={activeTab}
             onChange={(tabId) => {

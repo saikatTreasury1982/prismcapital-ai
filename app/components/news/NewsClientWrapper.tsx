@@ -43,9 +43,9 @@ export function NewsClientWrapper({ newsTypes }: NewsClientWrapperProps) {
       <div className="max-w-7xl mx-auto mb-6">
         <UnderlineTabs
           tabs={[
-            { id: 'entry', label: 'Quick Entry', icon: <Plus className="w-5 h-5" /> },
-            { id: 'ticker', label: 'By Ticker', icon: <List className="w-5 h-5" /> },
-            { id: 'category', label: 'By Category', icon: <BarChart3 className="w-5 h-5" /> },
+            { id: 'entry', label: 'Quick Entry', icon: <Plus className="w-6 h-6 md:w-5 md:h-5" /> },
+            { id: 'ticker', label: 'By Ticker', icon: <List className="w-6 h-6 md:w-5 md:h-5" /> },
+            { id: 'category', label: 'By Category', icon: <BarChart3 className="w-6 h-6 md:w-5 md:h-5" /> },
           ]}
           activeTab={activeTab}
           onChange={(tabId) => {

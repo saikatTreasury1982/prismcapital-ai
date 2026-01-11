@@ -40,11 +40,11 @@ export function TradesClientWrapper() {
       <div className="max-w-7xl mx-auto mb-6">
         <UnderlineTabs
           tabs={[
-            { id: 'import', label: 'Import Trades', icon: <Download className="w-5 h-5" /> },
-            { id: 'entry', label: 'Quick Entry', icon: <Plus className="w-5 h-5" /> },
-            { id: 'ticker', label: 'Closed Trades', icon: <List className="w-5 h-5" /> },
-            { id: 'status', label: 'Open Trades', icon: <BarChart2 className="w-5 h-5" /> },
-            { id: 'date', label: 'By Date', icon: <Calendar className="w-5 h-5" /> },
+            { id: 'import', label: 'Import Trades', icon: <Download className="w-6 h-6 md:w-5 md:h-5" /> },
+            { id: 'entry', label: 'Quick Entry', icon: <Plus className="w-6 h-6 md:w-5 md:h-5" /> },
+            { id: 'ticker', label: 'Closed Trades', icon: <List className="w-6 h-6 md:w-5 md:h-5" /> },
+            { id: 'status', label: 'Open Trades', icon: <BarChart2 className="w-6 h-6 md:w-5 md:h-5" /> },
+            { id: 'date', label: 'By Date', icon: <Calendar className="w-6 h-6 md:w-5 md:h-5" /> },
           ]}
           activeTab={activeTab}
           onChange={(tabId) => {
