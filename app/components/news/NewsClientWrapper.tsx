@@ -8,13 +8,14 @@ import { NewsEntryForm } from './NewsEntryForm';
 import { ByTickerView } from './ByTickerView';
 import { ByCategoryView } from './ByCategoryView';
 import UnderlineTabs from '@/app/lib/ui/UnderlineTabs';
+import { AllNews } from './AllNews';
 
 interface NewsClientWrapperProps {
   newsTypes: NewsType[];
 }
 
 export function NewsClientWrapper({ newsTypes }: NewsClientWrapperProps) {
-  const [activeTab, setActiveTab] = useState<'entry' | 'ticker' | 'category'>('entry');
+  const [activeTab, setActiveTab] = useState<'entry' | 'ticker' | 'category' | 'all'>('entry');
   const [editingNews, setEditingNews] = useState<NewsListItem | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -46,10 +47,11 @@ export function NewsClientWrapper({ newsTypes }: NewsClientWrapperProps) {
             { id: 'entry', label: 'Quick Entry', icon: <Plus className="w-6 h-6 md:w-5 md:h-5" /> },
             { id: 'ticker', label: 'By Ticker', icon: <List className="w-6 h-6 md:w-5 md:h-5" /> },
             { id: 'category', label: 'By Category', icon: <BarChart3 className="w-6 h-6 md:w-5 md:h-5" /> },
+            { id: 'all', label: 'All News', icon: <TrendingUp className="w-6 h-6 md:w-5 md:h-5" /> },
           ]}
           activeTab={activeTab}
           onChange={(tabId) => {
-            setActiveTab(tabId as 'entry' | 'ticker' | 'category');
+            setActiveTab(tabId as 'entry' | 'ticker' | 'category' | 'all');
             if (tabId === 'entry') {
               setEditingNews(null);
             }
@@ -58,34 +60,47 @@ export function NewsClientWrapper({ newsTypes }: NewsClientWrapperProps) {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto">
-        {activeTab === 'entry' && (
+      {activeTab === 'entry' && (
+        <div className="max-w-7xl mx-auto">
           <NewsEntryForm 
             newsTypes={newsTypes}
             onSuccess={handleSuccess}
             editingNews={editingNews}
             onCancelEdit={handleCancelEdit}
           />
-        )}
+        </div>
+      )}
 
-        {activeTab === 'ticker' && (
+      {activeTab === 'ticker' && (
+        <div className="max-w-7xl mx-auto">
           <ByTickerView 
             key={refreshKey}
             newsTypes={newsTypes}
             onEdit={handleEdit}
             onDelete={handleDelete}
           />
-        )}
+        </div>
+      )}
 
-        {activeTab === 'category' && (
+      {activeTab === 'category' && (
+        <div className="max-w-7xl mx-auto">
           <ByCategoryView 
             key={refreshKey}
             newsTypes={newsTypes}
             onEdit={handleEdit}
             onDelete={handleDelete}
           />
-        )}
-      </div>
+        </div>
+      )}
+
+      {activeTab === 'all' && (
+        <div className="max-w-7xl mx-auto">
+          <AllNews 
+            newsTypes={newsTypes}
+            onEdit={handleEdit}
+          />
+        </div>
+      )}
     </div>
   );
 }
