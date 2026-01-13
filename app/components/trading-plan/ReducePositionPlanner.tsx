@@ -46,6 +46,7 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
   const [loadingScenarios, setLoadingScenarios] = useState(true);
   const [editingScenario, setEditingScenario] = useState<any | null>(null);
   const [viewingScenario, setViewingScenario] = useState<any | null>(null);
+  const [showFeesInGainLoss, setShowFeesInGainLoss] = useState(false);
 
   // Calculate proceeds when liquidation changes
   useEffect(() => {
@@ -144,6 +145,22 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
       setNotes(editingPlan.notes || '');
     }
   }, [editingPlan, position]);
+
+  // Calculate expected gain/loss
+  const calculateExpectedGainLoss = (includeFees: boolean = false) => {
+    const costBasis = position.average_cost * sellShares;
+    const grossGainLoss = (targetSellPrice - position.average_cost) * sellShares;
+    const netGainLoss = includeFees ? grossGainLoss - fees : grossGainLoss;
+    
+    const percentageGainLoss = includeFees 
+      ? (netGainLoss / costBasis) * 100
+      : ((targetSellPrice - position.average_cost) / position.average_cost) * 100;
+    
+    return {
+      amount: netGainLoss,
+      percentage: percentageGainLoss
+    };
+  };
 
   const handleLoadScenario = (scenario: any) => {
     // Populate form with scenario data
@@ -380,6 +397,42 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
           </p>
         </div>
 
+        {/* Expected Gain/Loss */}
+        <div className="mt-4 bg-white/5 rounded-xl p-4 border border-white/10">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-blue-200 text-sm font-medium">Expected Gain/Loss</p>
+            <div className="flex items-center gap-2">
+              <span className={`text-xs ${!showFeesInGainLoss ? 'text-white' : 'text-blue-300'}`}>
+                Without Fees
+              </span>
+              <button
+                onClick={() => setShowFeesInGainLoss(!showFeesInGainLoss)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  showFeesInGainLoss ? 'bg-blue-500' : 'bg-white/20'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    showFeesInGainLoss ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+              <span className={`text-xs ${showFeesInGainLoss ? 'text-white' : 'text-blue-300'}`}>
+                With Fees
+              </span>
+            </div>
+          </div>
+          {(() => {
+            const gainLoss = calculateExpectedGainLoss(showFeesInGainLoss);
+            const isPositive = gainLoss.amount >= 0;
+            return (
+              <p className={`text-2xl font-bold ${isPositive ? 'text-green-400' : 'text-rose-400'}`}>
+                {isPositive ? '+' : ''}${gainLoss.amount.toFixed(2)} ({isPositive ? '+' : ''}{gainLoss.percentage.toFixed(1)}%)
+              </p>
+            );
+          })()}
+        </div>
+
         {/* Next Action Selector */}
         <div className="mt-4">
           <label className="text-blue-200 text-sm mb-2 block font-medium">
@@ -597,6 +650,23 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
                   <p className="text-blue-200 text-xs mb-1">Expected Proceeds</p>
                   <p className="text-white font-bold text-lg">${viewingScenario.expected_proceeds?.toFixed(2)}</p>
                 </div>
+              </div>
+              
+              {/* Expected Gain/Loss */}
+              <div className="mt-4 bg-white/5 rounded-xl p-3">
+                <p className="text-blue-200 text-xs mb-1">Expected Gain/Loss</p>
+                {(() => {
+                  const sellPrice = viewingScenario.expected_proceeds / viewingScenario.sell_shares;
+                  const costBasis = position.average_cost * viewingScenario.sell_shares;
+                  const gainLoss = (sellPrice - position.average_cost) * viewingScenario.sell_shares;
+                  const percentage = ((sellPrice - position.average_cost) / position.average_cost) * 100;
+                  const isPositive = gainLoss >= 0;
+                  return (
+                    <p className={`font-bold text-lg ${isPositive ? 'text-green-400' : 'text-rose-400'}`}>
+                      {isPositive ? '+' : ''}${gainLoss.toFixed(2)} ({isPositive ? '+' : ''}{percentage.toFixed(1)}%)
+                    </p>
+                  );
+                })()}
               </div>
             </div>
 

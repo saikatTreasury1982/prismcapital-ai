@@ -35,6 +35,22 @@ export function PositionActions() {
     });
   };
 
+  // Calculate expected gain/loss for a plan
+  const calculatePlanGainLoss = (plan: any, position: Position) => {
+    if (!plan.sell_shares || !plan.expected_proceeds) return null;
+    
+    const sellPrice = plan.expected_proceeds / plan.sell_shares;
+    const costBasis = position.average_cost * plan.sell_shares;
+    const gainLoss = (sellPrice - position.average_cost) * plan.sell_shares;
+    const percentage = ((sellPrice - position.average_cost) / position.average_cost) * 100;
+    
+    return {
+      amount: gainLoss,
+      percentage: percentage,
+      isPositive: gainLoss >= 0
+    };
+  };
+
   useEffect(() => {
     fetchPositions();
   }, []);
@@ -304,6 +320,18 @@ export function PositionActions() {
                                   <p className="text-blue-300 text-xs">Expected Proceeds</p>
                                   <p className="text-white font-semibold">${plan.expected_proceeds?.toFixed(2) || '-'}</p>
                                 </div>
+                                <div>
+                                  <p className="text-blue-300 text-xs">Expected Gain/Loss</p>
+                                  {(() => {
+                                    const gainLoss = calculatePlanGainLoss(plan, selectedPosition!);
+                                    if (!gainLoss) return <p className="text-white font-semibold">-</p>;
+                                    return (
+                                      <p className={`font-semibold ${gainLoss.isPositive ? 'text-green-400' : 'text-rose-400'}`}>
+                                        {gainLoss.isPositive ? '+' : ''}${gainLoss.amount.toFixed(2)} ({gainLoss.isPositive ? '+' : ''}{gainLoss.percentage.toFixed(1)}%)
+                                      </p>
+                                    );
+                                  })()}
+                                </div>
                                 {plan.reinvest_ticker && (
                                   <div>
                                     <p className="text-green-300 text-xs">Reinvest To</p>
@@ -557,6 +585,20 @@ export function PositionActions() {
                                 <span className="text-blue-300">Expected Proceeds</span>
                                 <span className="text-white font-semibold">${plan.expected_proceeds?.toFixed(2)}</span>
                               </div>
+                              <div className="flex justify-between">
+                                <span className="text-blue-300">Expected Gain/Loss</span>
+                                {(() => {
+                                  const position = positions.find(p => p.position_id === plan.position_id);
+                                  if (!position) return <span className="text-white font-semibold">-</span>;
+                                  const gainLoss = calculatePlanGainLoss(plan, position);
+                                  if (!gainLoss) return <span className="text-white font-semibold">-</span>;
+                                  return (
+                                    <span className={`font-semibold ${gainLoss.isPositive ? 'text-green-400' : 'text-rose-400'}`}>
+                                      {gainLoss.isPositive ? '+' : ''}${gainLoss.amount.toFixed(2)} ({gainLoss.isPositive ? '+' : ''}{gainLoss.percentage.toFixed(1)}%)
+                                    </span>
+                                  );
+                                })()}
+                              </div>
                             </>
                           )}
                         </div>
@@ -689,7 +731,7 @@ export function PositionActions() {
               ) : (
                 <>
                   <div className="backdrop-blur-xl bg-white/5 rounded-2xl p-4 border border-white/10">
-                    <h3 className="text-lg font-bold text-white mb-3">Liquidation Details</h3>
+                  <h3 className="text-lg font-bold text-white mb-3">Liquidation Details</h3>
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <p className="text-blue-300 text-xs mb-1">Sell Shares</p>
@@ -705,6 +747,22 @@ export function PositionActions() {
                           <p className="text-white font-bold text-lg">{viewingPlan.sell_percentage}%</p>
                         </div>
                       )}
+                    </div>
+                    
+                    {/* Expected Gain/Loss */}
+                    <div className="mt-4 pt-4 border-t border-white/10">
+                      <p className="text-blue-300 text-xs mb-1">Expected Gain/Loss</p>
+                      {(() => {
+                        const position = positions.find(p => p.position_id === viewingPlan.position_id);
+                        if (!position) return <p className="text-white font-bold text-lg">-</p>;
+                        const gainLoss = calculatePlanGainLoss(viewingPlan, position);
+                        if (!gainLoss) return <p className="text-white font-bold text-lg">-</p>;
+                        return (
+                          <p className={`font-bold text-lg ${gainLoss.isPositive ? 'text-green-400' : 'text-rose-400'}`}>
+                            {gainLoss.isPositive ? '+' : ''}${gainLoss.amount.toFixed(2)} ({gainLoss.isPositive ? '+' : ''}{gainLoss.percentage.toFixed(1)}%)
+                          </p>
+                        );
+                      })()}
                     </div>
                   </div>
 
