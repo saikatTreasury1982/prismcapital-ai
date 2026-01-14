@@ -23,6 +23,8 @@ export function FundingClientWrapper({
   periodStats: initialPeriodStats 
 }: FundingClientWrapperProps) {
   const [viewMode, setViewMode] = useState<'entry' | 'timeline' | 'compare' | 'all'>('entry');
+  const [canSubmit, setCanSubmit] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const formRef = useRef<DetailedEntryFormRef>(null);
 
   const handleSuccess = () => {
@@ -70,7 +72,7 @@ export function FundingClientWrapper({
                   <GlassButton
                     icon={Save}
                     onClick={() => formRef.current?.handleSubmit()}
-                    disabled={formRef.current?.isSubmitting || !formRef.current?.canSubmit}
+                    disabled={!formRef.current || formRef.current.isSubmitting || !formRef.current.canSubmit}
                     tooltip="Save Transaction"
                     variant="primary"
                     size="md"
@@ -83,6 +85,8 @@ export function FundingClientWrapper({
                 homeCurrency={currencies.home_currency}
                 tradingCurrency={currencies.trading_currency}
                 onSuccess={handleSuccess}
+                onValidationChange={setCanSubmit}
+                onSubmittingChange={setIsSubmitting}
               />
             </div>
 

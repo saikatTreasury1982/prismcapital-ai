@@ -35,6 +35,7 @@ export default function GlassButton({
 
   return (
     <button
+      suppressHydrationWarning
       title={tooltip}
       className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${className.replace('animate-spin', '').trim()}`}
       {...props}

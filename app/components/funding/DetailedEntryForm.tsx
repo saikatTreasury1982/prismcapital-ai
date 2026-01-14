@@ -9,6 +9,8 @@ interface DetailedEntryFormProps {
   homeCurrency: string;
   tradingCurrency: string;
   onSuccess: () => void;
+  onValidationChange?: (canSubmit: boolean) => void;  // ADD THIS
+  onSubmittingChange?: (isSubmitting: boolean) => void;  // ADD THIS
 }
 
 export interface DetailedEntryFormRef {
@@ -19,7 +21,7 @@ export interface DetailedEntryFormRef {
 }
 
 export const DetailedEntryForm = forwardRef<DetailedEntryFormRef, DetailedEntryFormProps>(
-  ({ homeCurrency, tradingCurrency, onSuccess }, ref) => {
+  ({ homeCurrency, tradingCurrency, onSuccess, onValidationChange, onSubmittingChange }, ref) => {
     const [currencies, setCurrencies] = useState<string[]>([]);
     const [formData, setFormData] = useState({
       transactionAmount: '',
@@ -83,6 +85,7 @@ export const DetailedEntryForm = forwardRef<DetailedEntryFormRef, DetailedEntryF
     const handleSubmit = async () => {
       setError(null);
       setIsSubmitting(true);
+      onSubmittingChange?.(true);
 
       try {
         const response = await fetch('/api/funding/movement', {
@@ -124,8 +127,9 @@ export const DetailedEntryForm = forwardRef<DetailedEntryFormRef, DetailedEntryF
         onSuccess();
       } catch (err: any) {
         setError(err.message || 'Failed to create transaction');
-      } finally {
+     } finally {
         setIsSubmitting(false);
+        onSubmittingChange?.(false);
       }
     };
 
@@ -138,6 +142,10 @@ export const DetailedEntryForm = forwardRef<DetailedEntryFormRef, DetailedEntryF
       formData.homeCurrency && 
       formData.exchangeCurrency
     );
+    
+    useEffect(() => {
+      onValidationChange?.(canSubmit);
+    }, [canSubmit, onValidationChange]);
 
     // Expose methods to parent
     useImperativeHandle(ref, () => ({
