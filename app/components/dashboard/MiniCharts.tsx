@@ -39,7 +39,7 @@ const MiniCharts = memo(function MiniCharts({ data }: MiniChartsProps) {
       
       return (
         <div className="bg-gray-900 border border-white/20 rounded-lg p-2 shadow-lg">
-          <p className="text-white font-semibold text-xs mb-1">{dataPoint.type || dataPoint.name}</p>
+          <p className="text-white font-semibold text-xs mb-1">{dataPoint.typeName || dataPoint.typeCode}</p>
           <div className="space-y-0.5">
             <div className="flex justify-between gap-3 text-xs">
               <span className="text-blue-300">Capital:</span>
@@ -79,10 +79,10 @@ const MiniCharts = memo(function MiniCharts({ data }: MiniChartsProps) {
   // ========================================
   // 🎯 SIZE CONTROL VARIABLES
   // ========================================
-  const CHART_HEIGHT = 155;           // Current: 100, Try: 120, 140, 160
+  const CHART_HEIGHT = 160;           // Current: 100, Try: 120, 140, 160
   const PIE_OUTER_RADIUS = 60;        // Current: 35, Try: 40, 45, 50
   const PIE_INNER_RADIUS = 30;        // Current: 22, Try: 25, 28, 30
-  const CONTAINER_PADDING = 'p-3';    // Current: p-3, Try: p-4
+  const CONTAINER_PADDING = 'p-4';    // Current: p-3, Try: p-4
   const BOTTOM_MARGIN = 'mb-6';       // Current: mb-6, Try: mb-8
   const DOT_SIZE = 3;                 // Current: 3, Try: 4, 5
 
@@ -153,19 +153,21 @@ const MiniCharts = memo(function MiniCharts({ data }: MiniChartsProps) {
       </div>
 
       {/* Mini Line Chart */}
-      <div className={`flex-1 bg-white/5 rounded-xl ${CONTAINER_PADDING} border border-white/10`}>
+      <div className={`flex-1 bg-white/5 rounded-xl ${CONTAINER_PADDING} border border-white/10 overflow-visible`}>
         <h4 className="text-xs font-semibold text-white mb-2">Capital vs Value</h4>
         <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
-          <LineChart data={data}>
+          <LineChart data={data} margin={{ bottom: 5, left: 10, right: 10 }}>
             <XAxis 
               dataKey="typeCode" 
-              tick={{ fill: 'white', fontSize: 9 }}
-              stroke="white"
+              tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 6 }}
+              stroke="rgba(255,255,255,0.5)"
+              angle={-45}
+              textAnchor="end"
               height={20}
             />
             <YAxis 
-              tick={{ fill: 'white', fontSize: 9 }}
-              stroke="white"
+              tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 9 }}
+              stroke="rgba(255,255,255,0.7)"
               width={30}
               tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
             />
