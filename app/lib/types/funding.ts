@@ -13,6 +13,7 @@ export interface CashMovement {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  spot_rate_isActual: number;
 }
 
 export interface CashMovementDirection {
@@ -51,6 +52,7 @@ export interface UserCurrencies {
 export interface CreateCashMovementInput {
   home_currency_value: number;
   spot_rate: number;
+  spot_rate_isActual: number;
   transaction_date: string;
   direction_id: number;
   period_from?: string;

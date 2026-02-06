@@ -142,6 +142,7 @@ export const cashMovements = sqliteTable('cash_movements', {
   notes: text('notes'),
   created_at: text('created_at').default(sql`(datetime('now'))`),
   updated_at: text('updated_at').default(sql`(datetime('now'))`),
+  spot_rate_isActual: integer('spot_rate_isActual').notNull(),
 });
 
 // DIVIDENDS
@@ -359,6 +360,7 @@ export const pnlStrategies = sqliteTable('pnl_strategies', {
 });
 
 import { sql as sqlTemplate } from 'drizzle-orm';
+import { boolean } from 'drizzle-orm/gel-core';
 
 // Cash Balance summary views
 export const cashBalanceSummary = sqliteView('cash_balance_summary', {}).as(sqlTemplate`SELECT * FROM cash_balance_summary`);

@@ -220,28 +220,29 @@ select option:hover {
 
 /* Custom Scrollbar for Popovers - Glass Morphism Style */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 8px;
+  display: block !important; /* Override global hide */
+  width: 8px !important;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-radius: 10px !important;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(147, 197, 253, 0.3); /* blue-300 with opacity */
-  border-radius: 10px;
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  background: rgba(147, 197, 253, 0.3) !important; /* blue-300 with opacity */
+  border-radius: 10px !important;
+  border: 2px solid rgba(255, 255, 255, 0.1) !important;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(147, 197, 253, 0.5); /* blue-300 with more opacity */
+  background: rgba(147, 197, 253, 0.5) !important; /* blue-300 with more opacity */
 }
 
 /* Firefox */
 .custom-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(147, 197, 253, 0.3) rgba(255, 255, 255, 0.05);
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(147, 197, 253, 0.3) rgba(255, 255, 255, 0.05) !important;
 }
 
 /* Hide scrollbar for horizontal tabs on mobile */
@@ -252,4 +253,33 @@ select option:hover {
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;  /* Chrome, Safari, Opera */
+}
+
+/* Remove number input spinners */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* Remove number input spinners */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* Style for Amount input fields - prevent scroll on wheel */
+input[type='number'].funding-input {
+  -moz-appearance: textfield;
 }
