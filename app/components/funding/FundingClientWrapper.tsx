@@ -17,18 +17,25 @@ interface FundingClientWrapperProps {
   periodStats: PeriodStats[];
 }
 
-export function FundingClientWrapper({ 
-  currencies, 
-  movements: initialMovements, 
-  periodStats: initialPeriodStats 
+export function FundingClientWrapper({
+  currencies,
+  movements: initialMovements,
+  periodStats: initialPeriodStats
 }: FundingClientWrapperProps) {
   const [viewMode, setViewMode] = useState<'entry' | 'timeline' | 'compare' | 'all'>('entry');
   const [canSubmit, setCanSubmit] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingTransactionId, setEditingTransactionId] = useState<number | null>(null);
   const formRef = useRef<DetailedEntryFormRef>(null);
 
   const handleSuccess = () => {
+    setEditingTransactionId(null);
     window.location.reload();
+  };
+
+  const handleTransactionClick = (transaction: CashMovementWithDirection) => {
+    setEditingTransactionId(transaction.cash_movement_id);
+    // Load transaction data into form will be handled by passing it as a prop
   };
 
   return (
@@ -79,22 +86,26 @@ export function FundingClientWrapper({
                   />
                 </div>
               </div>
-              
-              <DetailedEntryForm 
+
+              <DetailedEntryForm
                 ref={formRef}
                 homeCurrency={currencies.home_currency}
                 tradingCurrency={currencies.trading_currency}
                 onSuccess={handleSuccess}
                 onValidationChange={setCanSubmit}
                 onSubmittingChange={setIsSubmitting}
+                editingTransaction={initialMovements.find(m => m.cash_movement_id === editingTransactionId) || null}
+                onCancelEdit={() => setEditingTransactionId(null)}
               />
             </div>
 
             {/* Recent Transactions */}
             <div>
-              <RecentTransactions 
+              <RecentTransactions
                 movements={initialMovements.slice(0, 5)}
                 homeCurrency={currencies.home_currency}
+                onTransactionClick={handleTransactionClick}
+                editingTransactionId={editingTransactionId}
               />
             </div>
           </div>
@@ -104,7 +115,7 @@ export function FundingClientWrapper({
       {/* Timeline View */}
       {viewMode === 'timeline' && (
         <div className="max-w-7xl mx-auto">
-          <PeriodTimeline 
+          <PeriodTimeline
             periods={initialPeriodStats}
             homeCurrency={currencies.home_currency}
             tradingCurrency={currencies.trading_currency}
@@ -115,7 +126,7 @@ export function FundingClientWrapper({
       {/* Compare View */}
       {viewMode === 'compare' && (
         <div className="max-w-7xl mx-auto">
-          <PeriodCompare 
+          <PeriodCompare
             periods={initialPeriodStats}
             allMovements={initialMovements}
             home_currency={currencies.home_currency}
@@ -126,7 +137,7 @@ export function FundingClientWrapper({
       {/* All Transactions View */}
       {viewMode === 'all' && (
         <div className="max-w-7xl mx-auto">
-          <AllFundingMovements 
+          <AllFundingMovements
             homeCurrency={currencies.home_currency}
             tradingCurrency={currencies.trading_currency}
           />

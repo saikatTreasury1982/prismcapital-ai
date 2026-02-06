@@ -105,6 +105,7 @@ export async function createCashMovement(
       trading_currency_code: tradingCurrencyCode,
       trading_currency_value: trading_currency_value,
       spot_rate: input.spot_rate,
+      spot_rate_isActual: input.spot_rate_isActual ?? 1, // Default to 1 (Actual) if not provided
       direction_id: input.direction_id,
       transaction_date: input.transaction_date,
       period_from: input.period_from,

@@ -29,6 +29,7 @@ export default function UnderlineTabs({
             key={tab.id}
             type="button"
             onClick={() => onChange(tab.id)}
+            suppressHydrationWarning
             className={`flex-1 px-3 py-3 md:px-6 rounded-xl flex items-center justify-center gap-2 transition-all relative flex-shrink-0 ${
               activeTab === tab.id
                 ? 'text-white'

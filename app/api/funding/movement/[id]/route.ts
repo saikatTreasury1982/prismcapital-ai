@@ -28,6 +28,7 @@ export async function PUT(
       home_currency_value,
       trading_currency_code,
       spot_rate,
+      spot_rate_isActual,
       direction_id,
       transaction_date,
       period_from,
@@ -67,6 +68,7 @@ export async function PUT(
         trading_currency_code: trading_currency_code,
         trading_currency_value: trading_currency_value,
         spot_rate: rate,
+        spot_rate_isActual: spot_rate_isActual ?? 1, // Default to 1 (Actual) if not provided
         direction_id: directionId,
         transaction_date: transaction_date,
         period_from: period_from || null,
