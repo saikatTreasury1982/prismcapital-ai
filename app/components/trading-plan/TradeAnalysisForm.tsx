@@ -182,7 +182,7 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
             {editingAnalysis ? 'Edit Trade Analysis' : 'New Trade Analysis'}
           </h2>
           <div className="mt-3 text-left text-xs text-blue-300">
-          * Required fields
+            * Required fields
           </div>
         </div>
         <div className="flex gap-2">
@@ -311,12 +311,14 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
 
         {/* Notes */}
         <div className="md:col-span-2">
-          <label className="text-blue-200 text-sm mb-2 block font-medium">Notes</label>
           <BulletTextarea
             value={formData.notes}
             onChange={(value) => setFormData({ ...formData, notes: value })}
+            placeholder="Add any additional notes (each line becomes a bullet point)..."
             rows={4}
-            placeholder="Analysis notes (use • for bullet points)..."
+            label="Notes (Optional)"
+            rounded={false}
+            scrollable={true}
           />
         </div>
       </div>
@@ -337,7 +339,7 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
           <div className="bg-white/5 rounded-xl p-3 border border-rose-400/20">
             <p className="text-rose-200 text-xs mb-1">Risk Amount / Risk %</p>
             <p className="text-rose-400 font-bold text-lg">
-              {metrics.riskAmount ? `$${metrics.riskAmount}` : '-'} 
+              {metrics.riskAmount ? `$${metrics.riskAmount}` : '-'}
               {metrics.riskPercentage && <span className="text-sm ml-1">({metrics.riskPercentage}%)</span>}
             </p>
           </div>
@@ -346,7 +348,7 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
           <div className="bg-white/5 rounded-xl p-3 border border-green-400/20">
             <p className="text-green-200 text-xs mb-1">Reward Amount / Reward %</p>
             <p className="text-green-400 font-bold text-lg">
-              {metrics.rewardAmount ? `$${metrics.rewardAmount}` : '-'} 
+              {metrics.rewardAmount ? `$${metrics.rewardAmount}` : '-'}
               {metrics.rewardPercentage && <span className="text-sm ml-1">({metrics.rewardPercentage}%)</span>}
             </p>
           </div>

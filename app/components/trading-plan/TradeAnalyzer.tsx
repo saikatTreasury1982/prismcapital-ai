@@ -1,13 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Filter, BarChart3, List, Flag, Archive } from 'lucide-react';
+import { Plus, Filter, BarChart3, List, Flag, Archive, DiamondPlusIcon } from 'lucide-react';
 import { TradeAnalysis } from '@/app/lib/types/tradeAnalysis';
 import { getTradeAnalyses, deleteTradeAnalysis } from '@/app/services/tradeAnalysisServiceClient';
 import { TradeAnalysisCard } from './TradeAnalysisCard';
 import { TradeAnalysisForm } from './TradeAnalysisForm';
 import GlassButton from '@/app/lib/ui/GlassButton';
-import SegmentedControl from '@/app/lib/ui/SegmentedControl';
 
 export function TradeAnalyzer() {
   const [analyses, setAnalyses] = useState<TradeAnalysis[]>([]);
@@ -87,7 +86,7 @@ export function TradeAnalyzer() {
       {/* Top Bar */}
       <div className="flex items-center justify-between">
         <GlassButton
-          icon={Plus}
+          icon={DiamondPlusIcon}
           onClick={() => {
             if (window.innerWidth < 768) {
               alert('Please use desktop to create positions');

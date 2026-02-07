@@ -203,7 +203,7 @@ export function EditNewsModal({ newsItem, newsTypes, onClose, onSuccess }: EditN
                                     value={editFormData.ticker}
                                     onChange={(e) => setEditFormData({ ...editFormData, ticker: e.target.value.toUpperCase() })}
                                     className="w-full funding-input rounded-xl px-4 py-3"
-                                    disabled={isSaving}
+                                    disabled={true}
                                     placeholder="AAPL"
                                 />
                             </div>
@@ -216,7 +216,7 @@ export function EditNewsModal({ newsItem, newsTypes, onClose, onSuccess }: EditN
                                     value={editFormData.company_name}
                                     onChange={(e) => setEditFormData({ ...editFormData, company_name: e.target.value })}
                                     className="w-full funding-input rounded-xl px-4 py-3"
-                                    disabled={isSaving}
+                                    disabled={true}
                                     placeholder="Apple Inc."
                                 />
                             </div>
@@ -287,10 +287,13 @@ export function EditNewsModal({ newsItem, newsTypes, onClose, onSuccess }: EditN
                             <BulletTextarea
                                 value={editFormData.news_description}
                                 onChange={(value) => setEditFormData({ ...editFormData, news_description: value })}
-                                placeholder="Enter news details (each line becomes a bullet point)..."
+                                placeholder="Add any additional notes (each line becomes a bullet point)..."
                                 rows={4}
                                 label="Description of the News *"
+                                required
                                 disabled={isSaving}
+                                rounded={false}
+                                scrollable={true}
                             />
                         </div>
 

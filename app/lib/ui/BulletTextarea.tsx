@@ -12,6 +12,8 @@ interface BulletTextareaProps {
   label?: string;
   required?: boolean;
   disabled?: boolean;
+  rounded?: boolean; // New prop for rounded corners
+  scrollable?: boolean; // New prop for scrollbar
 }
 
 export function BulletTextarea({
@@ -23,6 +25,8 @@ export function BulletTextarea({
   label,
   required = false,
   disabled = false,
+  rounded = true, // Default to rounded
+  scrollable = false, // Default to no scrollbar
 }: BulletTextareaProps) {
   const [isFocused, setIsFocused] = useState(false);
 
@@ -42,7 +46,12 @@ export function BulletTextarea({
         placeholder={placeholder}
         rows={rows}
         disabled={disabled}
-        className={`w-full funding-input rounded-xl px-4 py-3 resize-none ${className}`}
+        className={`
+          w-full funding-input px-4 py-3 resize-none
+          ${rounded ? 'rounded-xl' : 'rounded-none'}
+          ${scrollable ? 'overflow-y-auto custom-scrollbar' : ''}
+          ${className}
+        `}
         required={required}
       />
     </div>

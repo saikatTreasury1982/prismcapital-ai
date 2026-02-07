@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Target, LineChart } from 'lucide-react';
+import { Target, LineChart, ListCheckIcon, ListPlusIcon } from 'lucide-react';
 import { TradeAnalyzer } from '@/app/components/trading-plan/TradeAnalyzer';
 import { PositionActions } from '@/app/components/trading-plan/PositionActions';
-import SegmentedControl from '@/app/lib/ui/SegmentedControl';
+import SegmentedPills from '@/app/lib/ui/SegmentedPills';
 
 export default function TradingPlanPage() {
   const [activeTab, setActiveTab] = useState<'actions' | 'analyzer'>('analyzer');
@@ -18,16 +18,16 @@ export default function TradingPlanPage() {
 
       {/* Tabs */}
       <div className="mb-8">
-      <SegmentedControl
-        options={[
-          { value: 1, label: 'Position Actions', icon: <Target className="w-5 h-5" /> },
-          { value: 2, label: 'Trade Analyzer', icon: <LineChart className="w-5 h-5" /> },
-        ]}
-        value={activeTab === 'actions' ? 1 : 2}
-        onChange={(value) => setActiveTab(value === 1 ? 'actions' : 'analyzer')}
-        className="inline-flex"
-        color='emerald'
-      />
+        <SegmentedPills
+          options={[
+            { value: 1, label: 'Position Actions', icon: <ListCheckIcon className="w-5 h-5" />, activeColor: 'bg-emerald-500' },
+            { value: 2, label: 'Trade Actions', icon: <LineChart className="w-5 h-5" />, activeColor: 'bg-indigo-500' },
+          ]}
+          value={activeTab === 'actions' ? 1 : 2}
+          onChange={(value) => setActiveTab(value === 1 ? 'actions' : 'analyzer')}
+          showLabels={true}
+          className="inline-flex"
+        />
       </div>
 
       {/* Tab Content */}
