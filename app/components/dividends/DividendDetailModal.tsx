@@ -1,7 +1,7 @@
 'use client';
 
 import { X, Edit2, Save, Trash2 } from 'lucide-react';
-import { useState, useEffect  } from 'react';
+import { useState, useEffect } from 'react';
 import { Dividend } from '../../lib/types/dividend';
 import GlassButton from '@/app/lib/ui/GlassButton';
 import { BulletTextarea } from '@/app/lib/ui/BulletTextarea';
@@ -94,7 +94,7 @@ export function DividendDetailModal({ dividend, onClose, onEdit, onDelete }: Div
 
       // Call parent's onEdit callback if provided
       if (onEdit) {
-        onEdit({ 
+        onEdit({
           ...dividend,
           ex_dividend_date: editFormData.ex_dividend_date,
           payment_date: editFormData.payment_date || null,
@@ -132,12 +132,12 @@ export function DividendDetailModal({ dividend, onClose, onEdit, onDelete }: Div
           <div className="flex-1">
             <h2 className="text-2xl font-bold text-white mb-1">{dividend.ticker}</h2>
             <p className="text-blue-200 text-sm">
-              {dividend.payment_date 
+              {dividend.payment_date
                 ? `Payment Date: ${new Date(dividend.payment_date).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}`
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}`
                 : 'Payment Date: Not set'
               }
             </p>
@@ -203,7 +203,7 @@ export function DividendDetailModal({ dividend, onClose, onEdit, onDelete }: Div
                 <div>
                   <h3 className="text-sm font-semibold text-blue-200 mb-2">Payment Date</h3>
                   <p className="text-white">
-                    {dividend.payment_date 
+                    {dividend.payment_date
                       ? new Date(dividend.payment_date).toLocaleDateString()
                       : 'Not set'
                     }
@@ -335,13 +335,15 @@ export function DividendDetailModal({ dividend, onClose, onEdit, onDelete }: Div
 
               {/* Notes */}
               <div>
-                <label className="text-blue-200 text-sm mb-2 block font-medium">Notes</label>
                 <BulletTextarea
                   value={editFormData.notes}
                   onChange={(value) => setEditFormData({ ...editFormData, notes: value })}
-                  disabled={isSaving}
+                  placeholder="Add any additional notes (each line becomes a bullet point)..."
                   rows={4}
-                  placeholder="Optional notes (use • for bullet points)..."
+                  label="Notes (Optional)"
+                  disabled={isSaving}
+                  rounded={false}
+                  scrollable={true}
                 />
               </div>
             </div>

@@ -5,8 +5,8 @@ import { useState, useEffect } from 'react';
 import { CashMovementWithDirection } from '../../lib/types/funding';
 import GlassButton from '@/app/lib/ui/GlassButton';
 import { BulletTextarea, BulletDisplay } from '@/app/lib/ui/BulletTextarea';
-import SegmentedControl from '@/app/lib/ui/SegmentedControl';
-import { TrendingUp, TrendingDown } from 'lucide-react';
+import SegmentedPills from '@/app/lib/ui/SegmentedPills';
+import { TrendingUp, TrendingDown, CheckCircle, Clock } from 'lucide-react';
 
 interface EditFundingModalProps {
   movement: CashMovementWithDirection | null;
@@ -20,12 +20,13 @@ export function EditFundingModal({ movement, onClose, onSuccess }: EditFundingMo
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [currencies, setCurrencies] = useState<string[]>([]);
-  
+
   const [editFormData, setEditFormData] = useState({
     home_currency_code: '',
     home_currency_value: '',
     trading_currency_code: '',
     spot_rate: '',
+    spot_rate_isActual: 1,
     direction_id: 1,
     transaction_date: '',
     period_from: '',
@@ -44,7 +45,7 @@ export function EditFundingModal({ movement, onClose, onSuccess }: EditFundingMo
         console.error('Failed to fetch currencies:', error);
       }
     };
-    
+
     fetchCurrencies();
   }, []);
 
@@ -58,6 +59,7 @@ export function EditFundingModal({ movement, onClose, onSuccess }: EditFundingMo
         home_currency_value: movement.home_currency_value.toString(),
         trading_currency_code: movement.trading_currency_code,
         spot_rate: movement.spot_rate.toString(),
+        spot_rate_isActual: movement.spot_rate_isActual ?? 1,
         direction_id: movement.direction_id,
         transaction_date: movement.transaction_date,
         period_from: movement.period_from || '',
@@ -100,6 +102,7 @@ export function EditFundingModal({ movement, onClose, onSuccess }: EditFundingMo
           home_currency_value: homeValue,
           trading_currency_code: editFormData.trading_currency_code,
           spot_rate: spotRate,
+          spot_rate_isActual: editFormData.spot_rate_isActual,
           direction_id: editFormData.direction_id,
           transaction_date: editFormData.transaction_date,
           period_from: editFormData.period_from || null,
@@ -178,7 +181,7 @@ export function EditFundingModal({ movement, onClose, onSuccess }: EditFundingMo
               </span>
             </div>
           </div>
-          
+
           {/* Action Buttons */}
           <div className="flex items-center gap-2">
             <GlassButton
@@ -217,19 +220,20 @@ export function EditFundingModal({ movement, onClose, onSuccess }: EditFundingMo
 
           <div className="space-y-4">
             {/* Direction */}
-              <div>
+            <div>
               <label className="text-blue-200 text-sm mb-2 block font-medium">Transaction Type *</label>
-                  <div className={isSaving ? 'opacity-50 pointer-events-none' : ''}>
-                      <SegmentedControl
-                      options={[
-                          { value: 1, label: 'Deposit', icon: <TrendingUp className="w-5 h-5" /> },
-                          { value: 2, label: 'Withdrawal', icon: <TrendingDown className="w-5 h-5" /> },
-                      ]}
-                      value={editFormData.direction_id}
-                      onChange={(value) => setEditFormData({ ...editFormData, direction_id: value })}
-                      />
-                  </div>
+              <div className={isSaving ? 'opacity-50 pointer-events-none' : ''}>
+                <SegmentedPills
+                  options={[
+                    { value: 1, label: 'Deposit', icon: <TrendingUp className="w-4 h-4" />, activeColor: 'bg-emerald-500' },
+                    { value: 2, label: 'Withdrawal', icon: <TrendingDown className="w-4 h-4" />, activeColor: 'bg-rose-500' },
+                  ]}
+                  value={editFormData.direction_id}
+                  onChange={(value) => setEditFormData({ ...editFormData, direction_id: value })}
+                  showLabels={true}
+                />
               </div>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Home Currency */}
@@ -261,6 +265,7 @@ export function EditFundingModal({ movement, onClose, onSuccess }: EditFundingMo
               </div>
             </div>
 
+            {/* Exchange Currency and Rate Type Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Exchange Currency */}
               <div>
@@ -277,18 +282,34 @@ export function EditFundingModal({ movement, onClose, onSuccess }: EditFundingMo
                 </select>
               </div>
 
-              {/* Exchange Rate */}
+              {/* Rate Type */}
               <div>
-                <label className="text-blue-200 text-sm mb-2 block font-medium">Exchange Rate *</label>
-                <input
-                  type="number"
-                  step="0.000001"
-                  value={editFormData.spot_rate}
-                  onChange={(e) => setEditFormData({ ...editFormData, spot_rate: e.target.value })}
-                  className="w-full funding-input rounded-xl px-4 py-3"
-                  disabled={isSaving}
-                />
+                <label className="text-blue-200 text-sm mb-2 block font-medium">Rate Type *</label>
+                <div className={isSaving ? 'opacity-50 pointer-events-none' : ''}>
+                  <SegmentedPills
+                    options={[
+                      { value: 1, label: 'Actual', icon: <CheckCircle className="w-4 h-4" />, activeColor: "bg-pink-500" },
+                      { value: 0, label: 'Earmarked', icon: <Clock className="w-4 h-4" />, activeColor: "bg-cyan-500" },
+                    ]}
+                    value={editFormData.spot_rate_isActual}
+                    onChange={(value) => setEditFormData({ ...editFormData, spot_rate_isActual: value })}
+                    showLabels={true}
+                  />
+                </div>
               </div>
+            </div>
+
+            {/* Exchange Rate Row */}
+            <div>
+              <label className="text-blue-200 text-sm mb-2 block font-medium">Exchange Rate *</label>
+              <input
+                type="number"
+                step="0.000001"
+                value={editFormData.spot_rate}
+                onChange={(e) => setEditFormData({ ...editFormData, spot_rate: e.target.value })}
+                className="w-full funding-input rounded-xl px-4 py-3"
+                disabled={isSaving}
+              />
             </div>
 
             {/* Calculated Trading Value */}
@@ -348,6 +369,8 @@ export function EditFundingModal({ movement, onClose, onSuccess }: EditFundingMo
                 rows={4}
                 label="Notes (Optional)"
                 disabled={isSaving}
+                rounded={false}
+                scrollable={true}
               />
             </div>
           </div>

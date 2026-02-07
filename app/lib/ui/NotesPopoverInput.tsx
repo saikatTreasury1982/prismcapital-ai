@@ -77,11 +77,11 @@ export function NotesPopoverInput({ value, onChange, disabled = false }: NotesPo
             <div
                 ref={popoverRef}
                 className="
-          w-full max-w-lg
-          backdrop-blur-xl bg-white/10 rounded-2xl 
-          border border-white/20 shadow-2xl
-          animate-in fade-in zoom-in-95 duration-200
-        "
+                w-full max-w-lg
+                backdrop-blur-xl bg-white/10 rounded-2xl 
+                border border-white/20 shadow-2xl
+                animate-in fade-in zoom-in-95 duration-200
+                "
             >
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-white/20">
@@ -109,11 +109,13 @@ export function NotesPopoverInput({ value, onChange, disabled = false }: NotesPo
 
                 {/* Content with scrollbar */}
                 <div className="p-4">
-                    <textarea
+                    <BulletTextarea
                         value={tempValue}
-                        onChange={(e) => setTempValue(e.target.value)}
+                        onChange={setTempValue}
                         placeholder="Add any additional notes (each line becomes a bullet point)..."
-                        className="w-full h-[300px] bg-white/5 border border-white/10 rounded-none px-4 py-3 text-white placeholder-blue-300/50 resize-none focus:outline-none focus:border-blue-400/50 focus:bg-white/10 transition-colors overflow-y-auto custom-scrollbar"
+                        rounded={false}
+                        scrollable={true}
+                        className="h-[200px]"
                     />
                 </div>
             </div>

@@ -5,9 +5,9 @@ import { Position } from '@/app/lib/types/transaction';
 import { getPositions } from '@/app/services/positionServiceClient';
 import { ReducePositionPlanner } from './ReducePositionPlanner';
 import { IncreasePositionPlanner } from './IncreasePositionPlanner';
-import SegmentedControl from '@/app/lib/ui/SegmentedControl';
+import SegmentedPills from '@/app/lib/ui/SegmentedPills';
 import BulletDisplay from '@/app/lib/ui/BulletDisplay';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, ChartAreaIcon, ChartBarIcon, ListPlusIcon } from 'lucide-react';
 
 export function PositionActions() {
   const [positions, setPositions] = useState<Position[]>([]);
@@ -38,12 +38,12 @@ export function PositionActions() {
   // Calculate expected gain/loss for a plan
   const calculatePlanGainLoss = (plan: any, position: Position) => {
     if (!plan.sell_shares || !plan.expected_proceeds) return null;
-    
+
     const sellPrice = plan.expected_proceeds / plan.sell_shares;
     const costBasis = position.average_cost * plan.sell_shares;
     const gainLoss = (sellPrice - position.average_cost) * plan.sell_shares;
     const percentage = ((sellPrice - position.average_cost) / position.average_cost) * 100;
-    
+
     return {
       amount: gainLoss,
       percentage: percentage,
@@ -120,14 +120,14 @@ export function PositionActions() {
     <>
       {/* View Mode Toggle */}
       <div className="mb-6 inline-flex">
-        <SegmentedControl
+        <SegmentedPills
           options={[
-            { value: 1, label: 'By Position' },
-            { value: 2, label: 'All Plans' },
+            { value: 1, label: 'By Position', icon: <ChartBarIcon className="w-4 h-4" />, activeColor: 'bg-blue-500' },
+            { value: 2, label: 'All Plans', icon: <ListPlusIcon className="w-4 h-4" />, activeColor: 'bg-cyan-500' },
           ]}
           value={viewMode === 'by-position' ? 1 : 2}
           onChange={(value) => setViewMode(value === 1 ? 'by-position' : 'all-plans')}
-          color="blue"
+          showLabels={true}
         />
       </div>
 
@@ -138,7 +138,7 @@ export function PositionActions() {
           <div className="lg:col-span-1">
             <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-6 border border-white/20">
               <h2 className="text-xl font-bold text-white mb-4">Your Positions</h2>
-              
+
               {positions.length === 0 ? (
                 <p className="text-blue-200 text-sm text-center py-8">No active positions found</p>
               ) : (
@@ -150,57 +150,55 @@ export function PositionActions() {
                       return 0;
                     })
                     .map((position) => (
-                    <button
-                      key={position.position_id}
-                      onClick={() => {
-                        setSelectedPosition(position);
-                        setActionType(null);
-                      }}
-                      className={`w-full text-left p-4 rounded-xl transition-all ${
-                        selectedPosition?.position_id === position.position_id
-                          ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-2 border-blue-400'
-                          : 'bg-white/5 border border-white/10 hover:bg-white/10'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-white font-bold text-lg">{position.ticker}</h3>
-                        <span className="text-blue-200 text-xs">{position.position_currency}</span>
-                      </div>
-                      {position.ticker_name && (
-                        <p className="text-blue-300 text-xs mb-2">{position.ticker_name}</p>
-                      )}
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div>
-                          <p className="text-blue-300">Shares</p>
-                          <p className="text-white font-semibold">{position.total_shares.toFixed(2)}</p>
+                      <button
+                        key={position.position_id}
+                        onClick={() => {
+                          setSelectedPosition(position);
+                          setActionType(null);
+                        }}
+                        className={`w-full text-left p-4 rounded-xl transition-all ${selectedPosition?.position_id === position.position_id
+                            ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-2 border-blue-400'
+                            : 'bg-white/5 border border-white/10 hover:bg-white/10'
+                          }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="text-white font-bold text-lg">{position.ticker}</h3>
+                          <span className="text-blue-200 text-xs">{position.position_currency}</span>
                         </div>
-                        <div>
-                          <p className="text-blue-300">Avg Cost</p>
-                          <p className="text-white font-semibold">${position.average_cost.toFixed(2)}</p>
+                        {position.ticker_name && (
+                          <p className="text-blue-300 text-xs mb-2">{position.ticker_name}</p>
+                        )}
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div>
+                            <p className="text-blue-300">Shares</p>
+                            <p className="text-white font-semibold">{position.total_shares.toFixed(2)}</p>
+                          </div>
+                          <div>
+                            <p className="text-blue-300">Avg Cost</p>
+                            <p className="text-white font-semibold">${position.average_cost.toFixed(2)}</p>
+                          </div>
+                          <div>
+                            <p className="text-blue-300">Current Price</p>
+                            <p className="text-white font-semibold">
+                              ${position.current_market_price?.toFixed(2) || 'N/A'}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-blue-300">Value</p>
+                            <p className="text-white font-semibold">
+                              ${position.current_value?.toFixed(2) || 'N/A'}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-blue-300">Current Price</p>
-                          <p className="text-white font-semibold">
-                            ${position.current_market_price?.toFixed(2) || 'N/A'}
+                        <div className="mt-2 pt-2 border-t border-white/10">
+                          <p className="text-xs text-blue-300">Unrealized P/L</p>
+                          <p className={`font-bold ${(position.unrealized_pnl || 0) >= 0 ? 'text-green-400' : 'text-rose-400'
+                            }`}>
+                            ${position.unrealized_pnl?.toFixed(2) || '0.00'}
                           </p>
                         </div>
-                        <div>
-                          <p className="text-blue-300">Value</p>
-                          <p className="text-white font-semibold">
-                            ${position.current_value?.toFixed(2) || 'N/A'}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="mt-2 pt-2 border-t border-white/10">
-                        <p className="text-xs text-blue-300">Unrealized P/L</p>
-                        <p className={`font-bold ${
-                          (position.unrealized_pnl || 0) >= 0 ? 'text-green-400' : 'text-rose-400'
-                        }`}>
-                          ${position.unrealized_pnl?.toFixed(2) || '0.00'}
-                        </p>
-                      </div>
-                    </button>
-                  ))}
+                      </button>
+                    ))}
                 </div>
               )}
             </div>
@@ -222,24 +220,22 @@ export function PositionActions() {
                         >
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center gap-3">
-                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                plan.action_type === 'ADD_POSITION'
+                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${plan.action_type === 'ADD_POSITION'
                                   ? 'bg-green-500/20 text-green-300'
                                   : 'bg-blue-500/20 text-blue-300'
-                              }`}>
+                                }`}>
                                 {plan.action_type === 'ADD_POSITION' ? 'Increase' : 'Reduce'} Position
                               </span>
-                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                plan.status === 'DRAFT' 
+                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${plan.status === 'DRAFT'
                                   ? 'bg-yellow-500/20 text-yellow-300'
                                   : plan.status === 'EXECUTED'
-                                  ? 'bg-green-500/20 text-green-300'
-                                  : 'bg-slate-500/20 text-slate-300'
-                              }`}>
+                                    ? 'bg-green-500/20 text-green-300'
+                                    : 'bg-slate-500/20 text-slate-300'
+                                }`}>
                                 {plan.status}
                               </span>
                             </div>
-                            
+
                             <div className="flex items-center gap-2">
                               <button
                                 onClick={() => setViewingPlan(plan)}
@@ -289,7 +285,7 @@ export function PositionActions() {
                               </button>
                             </div>
                           </div>
-                          
+
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm mb-2">
                             {plan.action_type === 'ADD_POSITION' ? (
                               <>
@@ -349,8 +345,8 @@ export function PositionActions() {
                           </div>
 
                           <p className="text-blue-300 text-xs">
-                            {new Date(plan.created_at).toLocaleDateString('en-US', { 
-                              month: 'short', 
+                            {new Date(plan.created_at).toLocaleDateString('en-US', {
+                              month: 'short',
                               day: 'numeric',
                               year: 'numeric'
                             })}
@@ -395,14 +391,14 @@ export function PositionActions() {
 
                 {/* Planners */}
                 {actionType === 'increase' && (
-                  <IncreasePositionPlanner 
-                    position={selectedPosition} 
+                  <IncreasePositionPlanner
+                    position={selectedPosition}
                     editingPlan={editingPlan}
                     onSuccess={() => {
                       fetchSavedPlans();
                       fetchPositions();
                       setEditingPlan(null);
-                    }} 
+                    }}
                     onCancel={() => {
                       setActionType(null);
                       setEditingPlan(null);
@@ -410,14 +406,14 @@ export function PositionActions() {
                   />
                 )}
                 {actionType === 'reduce' && (
-                  <ReducePositionPlanner 
-                    position={selectedPosition} 
+                  <ReducePositionPlanner
+                    position={selectedPosition}
                     editingPlan={editingPlan}
                     onSuccess={() => {
                       fetchSavedPlans();
                       fetchPositions();
                       setEditingPlan(null);
-                    }} 
+                    }}
                     onCancel={() => {
                       setActionType(null);
                       setEditingPlan(null);
@@ -450,7 +446,7 @@ export function PositionActions() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
               {allPlans.map((plan) => {
                 const isExpanded = expandedCards.has(plan.plan_id);
-                
+
                 return (
                   <div
                     key={plan.plan_id}
@@ -469,20 +465,18 @@ export function PositionActions() {
                         <div className="min-w-0">
                           <h3 className="text-white font-bold text-lg">{plan.ticker}</h3>
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                              plan.action_type === 'ADD_POSITION'
+                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${plan.action_type === 'ADD_POSITION'
                                 ? 'bg-green-500/20 text-green-300'
                                 : 'bg-blue-500/20 text-blue-300'
-                            }`}>
+                              }`}>
                               {plan.action_type === 'ADD_POSITION' ? 'Increase' : 'Reduce'}
                             </span>
-                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                              plan.status === 'DRAFT' 
+                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${plan.status === 'DRAFT'
                                 ? 'bg-yellow-500/20 text-yellow-300'
                                 : plan.status === 'EXECUTED'
-                                ? 'bg-green-500/20 text-green-300'
-                                : 'bg-slate-500/20 text-slate-300'
-                            }`}>
+                                  ? 'bg-green-500/20 text-green-300'
+                                  : 'bg-slate-500/20 text-slate-300'
+                              }`}>
                               {plan.status}
                             </span>
                           </div>
@@ -604,8 +598,8 @@ export function PositionActions() {
                         </div>
 
                         <p className="text-blue-300 text-xs mt-3 pt-3 border-t border-white/10">
-                          {new Date(plan.created_at).toLocaleDateString('en-US', { 
-                            month: 'short', 
+                          {new Date(plan.created_at).toLocaleDateString('en-US', {
+                            month: 'short',
                             day: 'numeric'
                           })}
                         </p>
@@ -644,20 +638,18 @@ export function PositionActions() {
 
             {/* Status Badges */}
             <div className="flex items-center gap-3 mb-6">
-              <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
-                viewingPlan.action_type === 'ADD_POSITION'
+              <span className={`px-4 py-2 rounded-full text-sm font-semibold ${viewingPlan.action_type === 'ADD_POSITION'
                   ? 'bg-green-500/20 text-green-300 border border-green-400/30'
                   : 'bg-blue-500/20 text-blue-300 border border-blue-400/30'
-              }`}>
+                }`}>
                 {viewingPlan.action_type === 'ADD_POSITION' ? 'Increase Position' : 'Reduce Position'}
               </span>
-              <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
-                viewingPlan.status === 'DRAFT' 
+              <span className={`px-4 py-2 rounded-full text-sm font-semibold ${viewingPlan.status === 'DRAFT'
                   ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-400/30'
                   : viewingPlan.status === 'EXECUTED'
-                  ? 'bg-green-500/20 text-green-300 border border-green-400/30'
-                  : 'bg-slate-500/20 text-slate-300 border border-slate-400/30'
-              }`}>
+                    ? 'bg-green-500/20 text-green-300 border border-green-400/30'
+                    : 'bg-slate-500/20 text-slate-300 border border-slate-400/30'
+                }`}>
                 {viewingPlan.status}
               </span>
             </div>
@@ -731,7 +723,7 @@ export function PositionActions() {
               ) : (
                 <>
                   <div className="backdrop-blur-xl bg-white/5 rounded-2xl p-4 border border-white/10">
-                  <h3 className="text-lg font-bold text-white mb-3">Liquidation Details</h3>
+                    <h3 className="text-lg font-bold text-white mb-3">Liquidation Details</h3>
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <p className="text-blue-300 text-xs mb-1">Sell Shares</p>
@@ -748,7 +740,7 @@ export function PositionActions() {
                         </div>
                       )}
                     </div>
-                    
+
                     {/* Expected Gain/Loss */}
                     <div className="mt-4 pt-4 border-t border-white/10">
                       <p className="text-blue-300 text-xs mb-1">Expected Gain/Loss</p>
@@ -812,9 +804,9 @@ export function PositionActions() {
               <div className="backdrop-blur-xl bg-white/5 rounded-2xl p-4 border border-white/10">
                 <p className="text-blue-300 text-xs mb-1">Created</p>
                 <p className="text-white">
-                  {new Date(viewingPlan.created_at).toLocaleString('en-US', { 
-                    year: 'numeric', 
-                    month: 'short', 
+                  {new Date(viewingPlan.created_at).toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
                     day: 'numeric',
                     hour: '2-digit',
                     minute: '2-digit'

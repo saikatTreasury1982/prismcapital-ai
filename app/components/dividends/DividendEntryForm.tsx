@@ -25,15 +25,14 @@ interface PositionCardProps {
 function PositionCard({ position, onAutoFill, isAutoFilling, loadingTicker }: PositionCardProps) {
   const isThisCardLoading = loadingTicker === position.ticker;
   const isDisabled = isAutoFilling && !isThisCardLoading;
-  
+
   return (
-    <div 
+    <div
       onClick={() => !isAutoFilling && onAutoFill(position)}
-      className={`p-3 bg-white/5 rounded-xl border border-white/10 transition-all relative ${
-        isDisabled 
-          ? 'opacity-30 cursor-not-allowed' 
+      className={`p-3 bg-white/5 rounded-xl border border-white/10 transition-all relative ${isDisabled
+          ? 'opacity-30 cursor-not-allowed'
           : 'cursor-pointer hover:scale-105 hover:border-emerald-400/50 hover:shadow-lg hover:shadow-emerald-500/20'
-      } ${isThisCardLoading ? 'border-emerald-400 animate-pulse' : ''}`}
+        } ${isThisCardLoading ? 'border-emerald-400 animate-pulse' : ''}`}
       title={isDisabled ? '' : 'Click to propose dividend for this position'}
       style={{ pointerEvents: isAutoFilling ? 'none' : 'auto' }}
     >
@@ -48,15 +47,15 @@ function PositionCard({ position, onAutoFill, isAutoFilling, loadingTicker }: Po
           </div>
         </div>
       )}
-      
+
       <div className="flex items-start justify-between mb-2">
         <h4 className="text-white font-bold text-lg">{position.ticker}</h4>
       </div>
-      
+
       {position.ticker_name && (
         <p className="text-blue-200 text-xs mb-2 line-clamp-1">{position.ticker_name}</p>
       )}
-      
+
       <div className="space-y-1 text-xs">
         <p className="text-blue-300">
           {position.total_shares.toLocaleString()} shares
@@ -97,7 +96,7 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
   useEffect(() => {
     const perShare = parseFloat(formData.dividend_per_share);
     const shares = parseFloat(formData.shares_owned);
-    
+
     if (!isNaN(perShare) && !isNaN(shares)) {
       const total = perShare * shares;
       setFormData(prev => ({
@@ -114,7 +113,7 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
         try {
           const response = await fetch(`/api/dividends?dividendId=${editingDividend.dividend_id}`);
           const result = await response.json();
-          
+
           if (result.data) {
             const fullDividend = result.data;
             setFormData({
@@ -133,7 +132,7 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
           console.error('Failed to fetch full dividend record:', err);
         }
       };
-      
+
       fetchFullDividendRecord();
     }
   }, [editingDividend]);
@@ -158,7 +157,7 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
 
       // Step 2: If we have an ex-dividend date, fetch exact amount from Yahoo Finance
       let dividendAmount = '';
-      
+
       if (alphaData.exDividendDate) {
         try {
           const yahooRes = await fetch(
@@ -223,8 +222,8 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
   };
 
   const handleSubmit = async () => {
-    if (!formData.ticker || !formData.ex_dividend_date || 
-        !formData.dividend_per_share || !formData.shares_owned) {
+    if (!formData.ticker || !formData.ex_dividend_date ||
+      !formData.dividend_per_share || !formData.shares_owned) {
       setError('Please fill in all required fields');
       return;
     }
@@ -233,13 +232,13 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
     if (formData.payment_date && formData.ex_dividend_date) {
       const exDate = new Date(formData.ex_dividend_date);
       const payDate = new Date(formData.payment_date);
-      
+
       if (payDate <= exDate) {
         setError('Payment date must be later than ex-dividend date');
         return;
       }
     }
-    
+
     setError(null);
     setIsSubmitting(true);
 
@@ -260,7 +259,7 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
         // CREATE MODE: Check for duplicates first
         const checkRes = await fetch(`/api/dividends-by-ticker?userId=${session?.user?.id}&ticker=${encodeURIComponent(formData.ticker)}`);
         const checkResult = await checkRes.json();
-        
+
         if (checkResult.data && checkResult.data.length > 0) {
           const duplicate = checkResult.data.find((d: any) => d.ex_dividend_date === formData.ex_dividend_date);
           if (duplicate) {
@@ -269,7 +268,7 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
             return;
           }
         }
-        
+
         // Create new dividend
         if (!session?.user?.id) {
           throw new Error('Not authenticated');
@@ -312,7 +311,7 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
       {/* Left Column - Position Cards */}
       <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-4 border border-white/20 h-fit">
         <h3 className="text-lg font-bold text-white mb-4">Open Positions</h3>
-        
+
         {positions.length === 0 ? (
           <p className="text-blue-200 text-sm">No open positions found</p>
         ) : (
@@ -487,12 +486,14 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
 
           {/* Notes */}
           <div className="md:col-span-2">
-            <label className="text-blue-200 text-sm mb-2 block font-medium">Notes</label>
             <BulletTextarea
               value={formData.notes}
               onChange={(value) => setFormData({ ...formData, notes: value })}
+              placeholder="Add any additional notes (each line becomes a bullet point)..."
               rows={4}
-              placeholder="Optional notes (use • for bullet points)..."
+              label="Notes (Optional)"
+              rounded={false}
+              scrollable={true}
             />
           </div>
         </div>

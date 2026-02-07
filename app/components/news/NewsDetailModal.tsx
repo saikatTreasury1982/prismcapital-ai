@@ -24,7 +24,7 @@ export function NewsDetailModal({ news, onClose, onEdit, onDelete, newsTypes = [
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
-  
+
   const [editFormData, setEditFormData] = useState({
     ticker: '',
     company_name: '',
@@ -73,7 +73,7 @@ export function NewsDetailModal({ news, onClose, onEdit, onDelete, newsTypes = [
     try {
       const response = await fetch(`/api/news?newsId=${news.news_id}`);
       const result = await response.json();
-      
+
       if (result.data) {
         const fullNews = result.data;
         setEditFormData({
@@ -85,7 +85,7 @@ export function NewsDetailModal({ news, onClose, onEdit, onDelete, newsTypes = [
           alert_notes: fullNews.alert_notes || '',
           news_source: fullNews.news_source || '',
           news_url: fullNews.news_url || '',
-          tags: fullNews.tags 
+          tags: fullNews.tags
             ? (Array.isArray(fullNews.tags) ? fullNews.tags.join(', ') : fullNews.tags)
             : ''
         });
@@ -110,8 +110,8 @@ export function NewsDetailModal({ news, onClose, onEdit, onDelete, newsTypes = [
     setEditError(null);
 
     try {
-      const tagsArray = editFormData.tags 
-        ? editFormData.tags.split(',').map(t => t.trim()).filter(t => t) 
+      const tagsArray = editFormData.tags
+        ? editFormData.tags.split(',').map(t => t.trim()).filter(t => t)
         : [];
 
       const response = await fetch('/api/news', {
@@ -184,7 +184,7 @@ export function NewsDetailModal({ news, onClose, onEdit, onDelete, newsTypes = [
               </span>
             </div>
           </div>
-          
+
           {/* Action Buttons */}
           <div className="flex items-center gap-2">
             {!isEditing && onEdit && (
@@ -269,10 +269,10 @@ export function NewsDetailModal({ news, onClose, onEdit, onDelete, newsTypes = [
 
               {/* Tags */}
               {news.tags && (() => {
-                const tagsArray = Array.isArray(news.tags) 
-                  ? news.tags 
+                const tagsArray = Array.isArray(news.tags)
+                  ? news.tags
                   : (news.tags as string).split(',');
-                
+
                 return (
                   <div>
                     <h3 className="text-sm font-semibold text-blue-200 mb-2">Tags</h3>
@@ -321,7 +321,7 @@ export function NewsDetailModal({ news, onClose, onEdit, onDelete, newsTypes = [
                     value={editFormData.ticker}
                     onChange={(e) => setEditFormData({ ...editFormData, ticker: e.target.value.toUpperCase() })}
                     className="w-full funding-input rounded-xl px-4 py-3 uppercase"
-                    disabled={isSaving}
+                    disabled={true}
                   />
                 </div>
 
@@ -333,7 +333,7 @@ export function NewsDetailModal({ news, onClose, onEdit, onDelete, newsTypes = [
                     value={editFormData.company_name}
                     onChange={(e) => setEditFormData({ ...editFormData, company_name: e.target.value })}
                     className="w-full funding-input rounded-xl px-4 py-3"
-                    disabled={isSaving}
+                    disabled={true}
                   />
                 </div>
 
@@ -396,11 +396,13 @@ export function NewsDetailModal({ news, onClose, onEdit, onDelete, newsTypes = [
                 <BulletTextarea
                   value={editFormData.news_description}
                   onChange={(value) => setEditFormData({ ...editFormData, news_description: value })}
-                  placeholder="Enter news details (each line becomes a bullet point)..."
+                  placeholder="Add any additional notes (each line becomes a bullet point)..."
                   rows={4}
-                  label="Description of the News"
+                  label="Description of the News *"
                   required
                   disabled={isSaving}
+                  rounded={false}
+                  scrollable={true}
                 />
               </div>
 
