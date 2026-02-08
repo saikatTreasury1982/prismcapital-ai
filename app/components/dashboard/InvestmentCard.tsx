@@ -8,6 +8,7 @@ interface InvestmentCardProps {
     totalInvested: number;
     totalMarketValue: number;
     totalUnrealizedPnL: number;
+    totalRealizedPnL: number;
   };
   onRefresh?: () => void;  
   isRefreshing?: boolean;  
@@ -80,15 +81,34 @@ export default function InvestmentCard({
             </p>
           </div>
 
-          <div className="bg-gradient-to-br from-green-500/10 to-transparent rounded-xl p-4 border border-white/10">
-            <p className="text-blue-200 text-sm mb-1">Unrealized P/L</p>
-            <p
-              className={`text-2xl font-bold ${
-                summary.totalUnrealizedPnL >= 0 ? 'text-green-400' : 'text-red-400'
-              }`}
-            >
-              {formatCurrency(summary.totalUnrealizedPnL)}
-            </p>
+          {/* Profit / Loss */}
+          <div className="bg-gradient-to-br from-green-500/5 to-transparent rounded-xl p-4 border border-white/10">
+            <p className="text-blue-200 text-sm mb-3">Profit / Loss</p>
+            
+            {/* Unrealized P/L */}
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-blue-300 text-xs">Unrealized</span>
+              <span className={`text-lg font-semibold ${summary.totalUnrealizedPnL >= 0 ? 'text-green-400' : 'text-rose-400'}`}>
+                {formatCurrency(Math.abs(summary.totalUnrealizedPnL))}
+              </span>
+            </div>
+            
+            {/* Realized P/L */}
+            <div className="flex items-center justify-between mb-3 pb-3 border-b border-white/10">
+              <span className="text-blue-300 text-xs">Realized</span>
+              <span className={`text-lg font-semibold ${summary.totalRealizedPnL >= 0 ? 'text-green-400' : 'text-rose-400'}`}>
+                {formatCurrency(Math.abs(summary.totalRealizedPnL))}
+              </span>
+            </div>
+            
+            {/* Total P/L */}
+            <div className="flex items-center justify-between">
+              <span className="text-white text-sm font-medium">Total</span>
+              <span className={`text-2xl font-bold ${(summary.totalUnrealizedPnL + summary.totalRealizedPnL) >= 0 ? 'text-green-400' : 'text-rose-400'}`}>
+                {(summary.totalUnrealizedPnL + summary.totalRealizedPnL) >= 0 ? '+' : ''}
+                {formatCurrency(Math.abs(summary.totalUnrealizedPnL + summary.totalRealizedPnL))}
+              </span>
+            </div>
           </div>
         </div>
 

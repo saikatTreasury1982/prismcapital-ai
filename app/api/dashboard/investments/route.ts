@@ -15,6 +15,18 @@ export async function GET() {
 
     const userId = session.user.id;
 
+    // Fetch total realized P/L
+    const realizedPnLResult = await db.$client.execute({
+      sql: `
+        SELECT COALESCE(SUM(realized_pnl), 0) as total_realized_pnl
+        FROM realized_pnl_history
+        WHERE user_id = ?
+      `,
+      args: [userId],
+    });
+
+    const totalRealizedPnL = Number(realizedPnLResult.rows[0]?.total_realized_pnl) || 0;
+
     // Fetch active positions
     const activePositions = await db
       .select()
@@ -64,9 +76,11 @@ export async function GET() {
         totalInvested,
         totalMarketValue,
         totalUnrealizedPnL: totalMarketValue - totalInvested,
+        totalRealizedPnL: totalRealizedPnL,
       },
       positions: positionsWithDetails,
     });
+    
   } catch (error: any) {
     console.error('Dashboard investments error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
