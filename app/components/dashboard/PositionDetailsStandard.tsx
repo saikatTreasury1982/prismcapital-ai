@@ -33,12 +33,14 @@ interface ChartData {
 interface PositionDetailsStandardProps {
   positions: Position[];
   chartData: ChartData[];
+  displayCurrency: string;
+  fxRate: number;
 }
 
 type SortField = 'ticker' | 'quantity' | 'averageCost' | 'capitalInvested' | 'daysHeld' | 'currentValue' | 'moneyness';
 type SortDirection = 'asc' | 'desc';
 
-export default function PositionDetailsStandard({ positions, chartData }: PositionDetailsStandardProps) {
+export default function PositionDetailsStandard({ positions, chartData, displayCurrency, fxRate }: PositionDetailsStandardProps) {
   const [sortField, setSortField] = useState<SortField>('capitalInvested');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
@@ -72,13 +74,14 @@ export default function PositionDetailsStandard({ positions, chartData }: Positi
     return sorted;
   }, [positions, sortField, sortDirection]);
 
-  const formatCurrency = (value: number, currency: string = 'USD') => {
+  const formatCurrency = (value: number) => {
+    const converted = value * fxRate;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: currency,
+      currency: displayCurrency,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(value);
+    }).format(converted);
   };
 
   const formatNumber = (value: number) => {
@@ -120,7 +123,7 @@ export default function PositionDetailsStandard({ positions, chartData }: Positi
         
         {/* Mini Charts */}
         <div className="mb-8">
-          <MiniCharts data={chartData} />
+          <MiniCharts data={chartData} displayCurrency={displayCurrency} fxRate={fxRate} />
         </div>
 
         {/* Sortable Table */}
@@ -212,10 +215,10 @@ export default function PositionDetailsStandard({ positions, chartData }: Positi
                   </td>
                   <td className="text-right text-white text-sm py-2">{formatNumber(position.quantity)}</td>
                   <td className="text-right text-white text-sm py-2">
-                    {formatCurrency(position.averageCost, position.currency)}
+                    {formatCurrency(position.averageCost)}
                   </td>
                   <td className="text-right text-white text-sm py-2">
-                    {formatCurrency(position.capitalInvested, position.currency)}
+                    {formatCurrency(position.capitalInvested)}
                   </td>
                   <td className="text-right text-blue-200 text-sm py-2">
                     <div className="flex items-center justify-end gap-1 group relative">
@@ -227,7 +230,7 @@ export default function PositionDetailsStandard({ positions, chartData }: Positi
                     </div>
                   </td>
                   <td className="text-right text-white text-sm py-2">
-                    {formatCurrency(position.currentValue, position.currency)}
+                    {formatCurrency(position.currentValue)}
                   </td>
                   <td className="text-right py-2">
                     <div className={`font-medium text-sm flex items-center justify-end gap-1 ${
@@ -238,7 +241,7 @@ export default function PositionDetailsStandard({ positions, chartData }: Positi
                       ) : (
                         <TrendingDown className="w-3 h-3" />
                       )}
-                      {formatCurrency(position.moneyness, position.currency)}
+                      {formatCurrency(position.moneyness)}
                     </div>
                     <div className={`text-xs font-medium ${
                       position.moneyness >= 0 ? 'text-green-300' : 'text-red-300'

@@ -3,8 +3,6 @@
 import { CashMovementWithDirection } from '../../lib/types/funding';
 import { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { Plus, Save, XCircle, TrendingUp, TrendingDown } from 'lucide-react';
-import SegmentedControl from '@/app/lib/ui/SegmentedControl';
-import { BulletTextarea } from '@/app/lib/ui/BulletTextarea';
 import SegmentedPills from '@/app/lib/ui/SegmentedPills';
 import { NotesPopoverInput } from '@/app/lib/ui/NotesPopoverInput';
 import { CheckCircle, Clock } from 'lucide-react';
@@ -197,25 +195,35 @@ export const DetailedEntryForm = forwardRef<DetailedEntryFormRef, DetailedEntryF
           </div>
         )}
 
-        {/* Direction */}
-        <div>
-          <label className="text-blue-200 text-sm mb-2 block">
-            Transaction Type <span className="text-rose-400">*</span>
-          </label>
-          <SegmentedPills
-            options={[
-              { value: 1, label: 'Deposit', icon: <TrendingUp className="w-4 h-4" />, activeColor: 'bg-emerald-500' },
-              { value: 2, label: 'Withdrawal', icon: <TrendingDown className="w-4 h-4" />, activeColor: 'bg-rose-500' },
-            ]}
-            value={formData.direction}
-            onChange={(value) => setFormData({ ...formData, direction: value })}
-            showLabels={true}
-          />
+        {/* Transaction Type and Notes Row */}
+        <div className="flex items-start gap-4">
+          <div className="flex-1">
+            <label className="text-blue-200 text-sm mb-2 block">
+              Transaction Type <span className="text-rose-400">*</span>
+            </label>
+            <SegmentedPills
+              options={[
+                { value: 1, label: 'Deposit', icon: <TrendingUp className="w-4 h-4" />, activeColor: 'bg-emerald-500' },
+                { value: 2, label: 'Withdrawal', icon: <TrendingDown className="w-4 h-4" />, activeColor: 'bg-rose-500' },
+              ]}
+              value={formData.direction}
+              onChange={(value) => setFormData({ ...formData, direction: value })}
+              showLabels={true}
+            />
+          </div>
+
+          {/* Notes Icon - No Label */}
+          <div className="pt-8">
+            <NotesPopoverInput
+              value={formData.notes}
+              onChange={(value) => setFormData({ ...formData, notes: value })}
+            />
+          </div>
         </div>
 
-        {/* Transaction Amount and Home Currency Row */}
+        {/* Transaction Currency and Amount Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Home Currency */}
+          {/* Transaction Currency */}
           <div>
             <label className="text-blue-200 text-sm mb-2 block">
               Transaction Currency <span className="text-rose-400">*</span>
@@ -233,7 +241,7 @@ export const DetailedEntryForm = forwardRef<DetailedEntryFormRef, DetailedEntryF
             </select>
           </div>
 
-          {/* Transaction Amount */}
+          {/* Amount */}
           <div>
             <label className="text-blue-200 text-sm mb-2 block">
               Amount <span className="text-rose-400">*</span>
@@ -250,7 +258,7 @@ export const DetailedEntryForm = forwardRef<DetailedEntryFormRef, DetailedEntryF
           </div>
         </div>
 
-        {/* Exchange Currency and Rate Type Row */}
+        {/* Exchange Currency and Auto-Calculated Value Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Exchange Currency */}
           <div>
@@ -270,24 +278,23 @@ export const DetailedEntryForm = forwardRef<DetailedEntryFormRef, DetailedEntryF
             </select>
           </div>
 
-          {/* Rate Type */}
+          {/* Auto-Calculated Exchange Value */}
           <div>
             <label className="text-blue-200 text-sm mb-2 block">
-              Rate Type <span className="text-rose-400">*</span>
+              Exchange Value (auto-calculated)
             </label>
-            <SegmentedPills
-              options={[
-                { value: 1, label: 'Actual', icon: <CheckCircle className="w-4 h-4" />, activeColor: "bg-pink-500" },
-                { value: 0, label: 'Earmarked', icon: <Clock className="w-4 h-4" />, activeColor: "bg-cyan-500" },
-              ]}
-              value={formData.rateType}
-              onChange={(value) => setFormData({ ...formData, rateType: value })}
-              showLabels={true}
+            <input
+              type="text"
+              value={formData.transactionAmount && formData.exchangeRate ? calculateTrading() : ''}
+              readOnly
+              disabled
+              placeholder="0.0000"
+              className="w-full rounded-xl px-4 py-3 bg-white/5 border border-white/10 text-white cursor-not-allowed"
             />
           </div>
         </div>
 
-        {/* Exchange Rate and Notes Row */}
+        {/* Exchange Rate and Rate Type Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Exchange Rate */}
           <div>
@@ -318,25 +325,22 @@ export const DetailedEntryForm = forwardRef<DetailedEntryFormRef, DetailedEntryF
             `}</style>
           </div>
 
-          {/* Notes Popover Button */}
+          {/* Rate Type */}
           <div>
             <label className="text-blue-200 text-sm mb-2 block">
-              Notes (Optional)
+              Rate Type <span className="text-rose-400">*</span>
             </label>
-            <NotesPopoverInput
-              value={formData.notes}
-              onChange={(value) => setFormData({ ...formData, notes: value })}
+            <SegmentedPills
+              options={[
+                { value: 1, label: 'Actual', icon: <CheckCircle className="w-4 h-4" />, activeColor: "bg-pink-500" },
+                { value: 0, label: 'Earmarked', icon: <Clock className="w-4 h-4" />, activeColor: "bg-cyan-500" },
+              ]}
+              value={formData.rateType}
+              onChange={(value) => setFormData({ ...formData, rateType: value })}
+              showLabels={true}
             />
           </div>
         </div>
-
-        {/* Calculated Exchange Currency Value */}
-        {formData.transactionAmount && formData.exchangeRate && (
-          <div className="bg-blue-500/20 rounded-xl p-4 border border-blue-400/30">
-            <div className="text-blue-300 text-sm mb-1">Exchange Value (auto-calculated)</div>
-            <div className="text-2xl font-bold text-white">{calculateTrading()}</div>
-          </div>
-        )}
 
         {/* Date Fields - Three Column Layout */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

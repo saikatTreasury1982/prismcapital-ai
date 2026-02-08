@@ -262,7 +262,7 @@ export function DividendDetailModal({ dividend, onClose, onEdit, onDelete }: Div
               <div className="grid grid-cols-2 gap-4">
                 {/* Ex-Dividend Date */}
                 <div>
-                  <label className="text-blue-200 text-sm mb-2 block font-medium">Ex-Dividend Date *</label>
+                  <label className="text-blue-200 text-sm mb-2 block font-medium">Ex-Dividend Date <span className="text-rose-400">*</span></label>
                   <input
                     type="date"
                     value={editFormData.ex_dividend_date}
@@ -288,7 +288,7 @@ export function DividendDetailModal({ dividend, onClose, onEdit, onDelete }: Div
               <div className="grid grid-cols-2 gap-4">
                 {/* Dividend Per Share */}
                 <div>
-                  <label className="text-blue-200 text-sm mb-2 block font-medium">Dividend Per Share *</label>
+                  <label className="text-blue-200 text-sm mb-2 block font-medium">Dividend Per Share <span className="text-rose-400">*</span></label>
                   <input
                     type="number"
                     step="0.0001"
@@ -301,7 +301,7 @@ export function DividendDetailModal({ dividend, onClose, onEdit, onDelete }: Div
 
                 {/* Shares Owned */}
                 <div>
-                  <label className="text-blue-200 text-sm mb-2 block font-medium">Shares Owned *</label>
+                  <label className="text-blue-200 text-sm mb-2 block font-medium">Shares Owned <span className="text-rose-400">*</span></label>
                   <input
                     type="number"
                     step="0.01"

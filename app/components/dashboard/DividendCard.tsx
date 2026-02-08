@@ -16,16 +16,19 @@ interface DividendCardProps {
   };
   onViewChange?: (view: 'alltime' | 'ytd' | null) => void;
   activeView?: 'alltime' | 'ytd' | null;
+  displayCurrency: string;
+  fxRate: number;
 }
 
-export default function DividendCard({ summary, onViewChange, activeView }: DividendCardProps) {
+export default function DividendCard({ summary, onViewChange, activeView, displayCurrency, fxRate }: DividendCardProps) {
   const formatCurrency = (value: number) => {
+    const converted = value * fxRate;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: displayCurrency,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(value);
+    }).format(converted);
   };
 
   return (

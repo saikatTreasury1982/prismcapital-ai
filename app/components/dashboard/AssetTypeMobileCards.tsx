@@ -19,18 +19,21 @@ interface ChartData {
 
 interface AssetTypeMobileCardsProps {
   data: ChartData[];
+  displayCurrency: string;
+  fxRate: number;
 }
 
-export function AssetTypeMobileCards({ data }: AssetTypeMobileCardsProps) {
+export function AssetTypeMobileCards({ data, displayCurrency, fxRate }: AssetTypeMobileCardsProps) {
   const [expandedType, setExpandedType] = useState<string | null>(null);
 
   const formatCurrency = (value: number) => {
+    const converted = value * fxRate;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: displayCurrency,
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).format(value);
+    }).format(converted);
   };
 
   const totalInvestment = data.reduce((sum, item) => sum + item.capitalInvested, 0);

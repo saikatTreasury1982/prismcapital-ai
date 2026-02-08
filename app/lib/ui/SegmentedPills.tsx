@@ -53,6 +53,7 @@ export default function SegmentedPills<T extends number | string>({
         
         return (
           <button
+            suppressHydrationWarning
             key={String(option.value)}
             type="button"
             onClick={() => !disabled && onChange(option.value)}

@@ -19,19 +19,22 @@ interface ChartData {
 
 interface CapitalByAssetChartProps {
   data: ChartData[];
+  displayCurrency: string;
+  fxRate: number;
 }
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
-const CapitalByAssetChart = memo(function CapitalByAssetChart({ data }: CapitalByAssetChartProps) {
+const CapitalByAssetChart = memo(function CapitalByAssetChart({ data, displayCurrency, fxRate }: CapitalByAssetChartProps) {
 
   const formatCurrency = (value: number) => {
+    const converted = value * fxRate;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: displayCurrency,
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).format(value);
+    }).format(converted);
   };
 
   const [selectedAsset, setSelectedAsset] = useState<any>(null);

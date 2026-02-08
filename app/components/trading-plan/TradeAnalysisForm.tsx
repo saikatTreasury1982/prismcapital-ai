@@ -222,7 +222,7 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         {/* Ticker */}
         <div>
-          <label className="text-blue-200 text-sm mb-2 block font-medium">Ticker *</label>
+          <label className="text-blue-200 text-sm mb-2 block font-medium">Ticker <span className="text-rose-400">*</span></label>
           <input
             type="text"
             value={formData.ticker}
@@ -257,7 +257,7 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
 
         {/* Entry Price */}
         <div>
-          <label className="text-blue-200 text-sm mb-2 block font-medium">Entry Price *</label>
+          <label className="text-blue-200 text-sm mb-2 block font-medium">Entry Price <span className="text-rose-400">*</span></label>
           <input
             type="number"
             step="0.01"
@@ -271,7 +271,7 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
 
         {/* Position Size */}
         <div>
-          <label className="text-blue-200 text-sm mb-2 block font-medium">Position Size ($) *</label>
+          <label className="text-blue-200 text-sm mb-2 block font-medium">Position Size ($) <span className="text-rose-400">*</span></label>
           <input
             type="number"
             step="100"

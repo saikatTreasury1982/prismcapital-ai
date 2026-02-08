@@ -6,6 +6,7 @@ import { createTransaction, updateTransaction } from '../../services/transaction
 import { useDebounce } from '../../lib/hooks/useDebounce';
 import GlassButton from '@/app/lib/ui/GlassButton';
 import SegmentedControl from '@/app/lib/ui/SegmentedControl';
+import SegmentedPills from '@/app/lib/ui/SegmentedPills';
 import { Plus, Save, XCircle, TrendingUp, TrendingDown, Edit2 } from 'lucide-react';
 import { BulletTextarea } from '@/app/lib/ui/BulletTextarea';
 import { StagingRecord } from '@/app/lib/types/moomoo';
@@ -25,9 +26,9 @@ interface Strategy {
   description: string;
 }
 
-export function TransactionEntryForm({ 
-  onSuccess, 
-  editingTransaction, 
+export function TransactionEntryForm({
+  onSuccess,
+  editingTransaction,
   onCancelEdit,
   mode = 'create',
   stagingRecord
@@ -75,7 +76,7 @@ export function TransactionEntryForm({
   useEffect(() => {
     const quantity = parseFloat(formData.quantity);
     const price = parseFloat(formData.price);
-    
+
     if (!isNaN(quantity) && !isNaN(price)) {
       const tradeValue = quantity * price;
       setFormData(prev => ({
@@ -109,7 +110,7 @@ export function TransactionEntryForm({
         // Check positions table first
         const posRes = await fetch(`/api/hasOpenPosition?ticker=${encodeURIComponent(debouncedTicker)}`);
         const posData = await posRes.json();
-        
+
         setHasPosition(posData.hasPosition);
 
         // If has position, fetch the strategy info
@@ -118,14 +119,14 @@ export function TransactionEntryForm({
           // Get position details including strategy
           const positionRes = await fetch(`/api/positions/${encodeURIComponent(debouncedTicker)}`);
           console.log('Position API response status:', positionRes.status);
-          
+
           if (positionRes.ok) {
             const positionData = await positionRes.json();
-            
+
             if (positionData.data && positionData.data.strategy) {
               // Find strategy name from strategies list
               const strategy = strategies.find(s => s.strategy_code === positionData.data.strategy);
-              
+
               if (strategy) {
                 const strategyText = `${strategy.strategy_name}`;
                 setPositionStrategy(strategyText);
@@ -206,7 +207,7 @@ export function TransactionEntryForm({
         notes: stagingRecord.notes || '',
         trade_value: stagingRecord.trade_value?.toString() || '0'
       });
-      
+
       if (stagingRecord.ticker_name) {
         setCompanyName(stagingRecord.ticker_name);
       }
@@ -223,11 +224,11 @@ export function TransactionEntryForm({
 
     // Note: Strategy is NOT required for staging edits
     // Strategy will be validated when releasing to transactions
-      setError(null);
-      setIsSubmitting(true);
+    setError(null);
+    setIsSubmitting(true);
 
-    try {    
-      if (mode === 'staging' && stagingRecord?.staging_id) {        
+    try {
+      if (mode === 'staging' && stagingRecord?.staging_id) {
         const requestBody = {
           strategy_code: formData.strategy_code,
           quantity: parseFloat(formData.quantity),
@@ -238,7 +239,7 @@ export function TransactionEntryForm({
           transaction_date: formData.transaction_date,
           status: 'edited'
         };
-        
+
         // Update staging record
         const response = await fetch(`/api/moomoo/staging/${stagingRecord.staging_id}`, {
           method: 'PATCH',
@@ -255,20 +256,20 @@ export function TransactionEntryForm({
 
         // Exit edit mode
         setIsStagingEditMode(false);
-        
+
         if (onCancelEdit) {
           onCancelEdit();
           console.log('✅ onCancelEdit called');
         } else {
           console.log('⚠️ onCancelEdit is not defined!');
         }
-        
+
         // Then trigger refresh
         onSuccess();
 
         return;
-      
-      } 
+
+      }
       else if (editingTransaction) {
         // Update existing transaction (only fees and notes)
         await updateTransaction(editingTransaction.transaction_id, {
@@ -311,7 +312,7 @@ export function TransactionEntryForm({
       }
 
       onSuccess();
-        
+
     } catch (err: any) {
       setError(err.message || 'Failed to save transaction');
     } finally {
@@ -349,9 +350,9 @@ export function TransactionEntryForm({
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-3">
             <Plus className="w-6 h-6" />
-            {mode === 'staging' ? 'Review Imported Trade' : 
-            editingTransaction ? 'Edit Transaction' : 
-            'Quick Transaction Entry'}
+            {mode === 'staging' ? 'Review Imported Trade' :
+              editingTransaction ? 'Edit Transaction' :
+                'Quick Transaction Entry'}
           </h2>
           <p className="text-xs text-blue-300 mt-1">* Required fields</p>
         </div>
@@ -500,16 +501,15 @@ export function TransactionEntryForm({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         {/* Ticker */}
         <div>
-          <label className="text-blue-200 text-sm mb-2 block font-medium">Ticker *</label>
+          <label className="text-blue-200 text-sm mb-2 block font-medium">Ticker <span className="text-rose-400">*</span></label>
           <div className="flex items-center gap-3">
             <input
               type="text"
               value={formData.ticker}
               onChange={(e) => setFormData({ ...formData, ticker: e.target.value.toUpperCase() })}
               placeholder="AAPL"
-              className={`flex-1 funding-input rounded-xl px-4 py-3 uppercase max-w-[70%] ${
-                tickerError ? 'border-2 border-rose-400' : ''
-              } ${editingTransaction || mode === 'staging' ? 'bg-white/5 cursor-not-allowed' : ''}`}
+              className={`flex-1 funding-input rounded-xl px-4 py-3 uppercase max-w-[70%] ${tickerError ? 'border-2 border-rose-400' : ''
+                } ${editingTransaction || mode === 'staging' ? 'bg-white/5 cursor-not-allowed' : ''}`}
               disabled={!!editingTransaction || mode === 'staging'}
               required
             />
@@ -581,7 +581,7 @@ export function TransactionEntryForm({
 
         {/* Strategy */}
         <div>
-          <label className="text-blue-200 text-sm mb-2 block font-medium">Strategy *</label>
+          <label className="text-blue-200 text-sm mb-2 block font-medium">Strategy <span className="text-rose-400">*</span></label>
           <select
             value={formData.strategy_code}
             onChange={(e) => setFormData({ ...formData, strategy_code: e.target.value })}
@@ -598,22 +598,23 @@ export function TransactionEntryForm({
 
         {/* Transaction Type */}
         <div>
-          <label className="text-blue-200 text-sm mb-2 block font-medium">Transaction Type *</label>
+          <label className="text-blue-200 text-sm mb-2 block font-medium">Transaction Type <span className="text-rose-400">*</span></label>
           <div className={editingTransaction || mode === 'staging' ? 'opacity-50 pointer-events-none' : ''}>
-            <SegmentedControl
+            <SegmentedPills
               options={[
-                { value: 1, label: 'Buy', icon: <TrendingUp className="w-5 h-5" /> },
-                { value: 2, label: 'Sell', icon: <TrendingDown className="w-5 h-5" /> },
+                { value: 1, label: 'Buy', icon: <TrendingUp className="w-5 h-5" />, activeColor: 'bg-emerald-500' },
+                { value: 2, label: 'Sell', icon: <TrendingDown className="w-5 h-5" />, activeColor: 'bg-rose-500' },
               ]}
               value={formData.transaction_type_id}
               onChange={(value) => setFormData({ ...formData, transaction_type_id: value })}
+              showLabels={true}
             />
           </div>
         </div>
 
         {/* Transaction Date */}
         <div>
-          <label className="text-blue-200 text-sm mb-2 block font-medium">Transaction Date *</label>
+          <label className="text-blue-200 text-sm mb-2 block font-medium">Transaction Date <span className="text-rose-400">*</span></label>
           <input
             type="date"
             value={formData.transaction_date}
@@ -626,7 +627,7 @@ export function TransactionEntryForm({
 
         {/* Quantity */}
         <div>
-          <label className="text-blue-200 text-sm mb-2 block font-medium">Quantity (Shares) *</label>
+          <label className="text-blue-200 text-sm mb-2 block font-medium">Quantity (Shares) <span className="text-rose-400">*</span></label>
           <input
             type="number"
             step="0.0001"
@@ -641,7 +642,7 @@ export function TransactionEntryForm({
 
         {/* Price */}
         <div>
-          <label className="text-blue-200 text-sm mb-2 block font-medium">Price per Share *</label>
+          <label className="text-blue-200 text-sm mb-2 block font-medium">Price per Share <span className="text-rose-400">*</span></label>
           <input
             type="number"
             step="0.01"

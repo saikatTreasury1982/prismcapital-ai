@@ -25,7 +25,7 @@ interface FundingCardProps {
 }
 
 export default function FundingCard({ summary, details }: FundingCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false); // Default collapsed
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const formatCurrency = (value: number, currency: string = 'USD') => {
     return new Intl.NumberFormat('en-US', {
@@ -147,33 +147,6 @@ export default function FundingCard({ summary, details }: FundingCardProps) {
                 </div>
               </div>
             </div>
-
-            {/* Trading Currency Info */}
-            {details.tradingCurrency.netBalance !== 0 && (
-              <div className="mt-6 pt-6 border-t border-white/10">
-                <h5 className="text-white font-semibold mb-3">Trading Currency</h5>
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="bg-white/5 rounded-lg p-3 border border-white/10">
-                    <p className="text-blue-200 text-xs mb-1">Deposited</p>
-                    <p className="text-white text-sm font-medium">
-                      {formatCurrency(details.tradingCurrency.totalDeposited, 'USD')}
-                    </p>
-                  </div>
-                  <div className="bg-white/5 rounded-lg p-3 border border-white/10">
-                    <p className="text-blue-200 text-xs mb-1">Withdrawn</p>
-                    <p className="text-white text-sm font-medium">
-                      {formatCurrency(details.tradingCurrency.totalWithdrawn, 'USD')}
-                    </p>
-                  </div>
-                  <div className="bg-white/5 rounded-lg p-3 border border-white/10">
-                    <p className="text-blue-200 text-xs mb-1">Net Balance</p>
-                    <p className="text-white text-sm font-medium">
-                      {formatCurrency(details.tradingCurrency.netBalance, 'USD')}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       )}

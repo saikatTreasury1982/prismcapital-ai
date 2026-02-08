@@ -278,7 +278,7 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         {/* Ticker */}
         <div>
-          <label className="text-blue-200 text-sm mb-2 block font-medium">Ticker *</label>
+          <label className="text-blue-200 text-sm mb-2 block font-medium">Ticker <span className="text-rose-400">*</span></label>
           <div className="flex items-center gap-3">
             <input
               type="text"
@@ -327,7 +327,7 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
 
         {/* News Type */}
         <div>
-          <label className="text-blue-200 text-sm mb-2 block font-medium">Type of News *</label>
+          <label className="text-blue-200 text-sm mb-2 block font-medium">Type of News <span className="text-rose-400">*</span></label>
           <select
             value={formData.news_type_id}
             onChange={(e) => setFormData({...formData, news_type_id: parseInt(e.target.value)})}
@@ -343,7 +343,7 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
 
         {/* News Date */}
         <div>
-          <label className="text-blue-200 text-sm mb-2 block font-medium">News published on *</label>
+          <label className="text-blue-200 text-sm mb-2 block font-medium">News published on <span className="text-rose-400">*</span></label>
           <input
             type="date"
             value={formData.news_date}

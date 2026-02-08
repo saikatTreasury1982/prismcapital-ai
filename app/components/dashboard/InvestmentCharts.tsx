@@ -17,18 +17,21 @@ interface ChartData {
 
 interface InvestmentChartsProps {
   data: ChartData[];
+  displayCurrency?: string;
+  fxRate?: number;
 }
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
-const InvestmentCharts = memo(function InvestmentCharts({ data }: InvestmentChartsProps) {
-  const formatCurrency = (value: number, currency: string = 'USD') => {
+const InvestmentCharts = memo(function InvestmentCharts({ data, displayCurrency = 'USD', fxRate = 1 }: InvestmentChartsProps) {
+  const formatCurrency = (value: number) => {
+    const converted = value * fxRate;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: currency,
+      currency: displayCurrency,
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).format(value);
+    }).format(converted);
   };
 
   const CustomTooltip = ({ active, payload }: any) => {

@@ -17,7 +17,7 @@ export function NotesPopoverInput({ value, onChange, disabled = false }: NotesPo
     const [tempValue, setTempValue] = useState(value);
     const [mounted, setMounted] = useState(false);
     const popoverRef = useRef<HTMLDivElement>(null);
-    const buttonRef = useRef<HTMLButtonElement>(null);
+    const buttonRef = useRef<HTMLDivElement>(null);
 
     // Handle client-side mounting for portal
     useEffect(() => {
@@ -126,23 +126,17 @@ export function NotesPopoverInput({ value, onChange, disabled = false }: NotesPo
 
     return (
         <>
-            {/* Notes Icon Button */}
-            <button
-                ref={buttonRef}
-                type="button"
-                onClick={() => !disabled && setIsOpen(true)}
-                disabled={disabled}
-                className={`
-          p-2 transition-all group
-          ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-        `}
-                title={hasNotes ? 'Edit notes' : 'Add notes'}
-            >
-                <MessageSquare
-                    className={`w-5 h-5 transition-colors ${hasNotes ? 'text-blue-400' : 'text-blue-300 group-hover:text-blue-200'
-                        }`}
+            {/* Notes Glass Button */}
+            <div ref={buttonRef}>
+                <GlassButton
+                    icon={MessageSquare}
+                    onClick={() => !disabled && setIsOpen(true)}
+                    disabled={disabled}
+                    tooltip={hasNotes ? 'Edit notes' : 'Add notes'}
+                    variant={hasNotes ? 'primary' : 'secondary'}
+                    size="md"
                 />
-            </button>
+            </div>
 
             {/* Portal: Render popover at document root */}
             {mounted && popoverContent && createPortal(popoverContent, document.body)}
