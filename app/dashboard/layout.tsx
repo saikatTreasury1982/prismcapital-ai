@@ -6,7 +6,6 @@ import { signOut, useSession } from 'next-auth/react';
 import { DashboardNav } from '../components/dashboard/DashboardNav';
 import { Settings, LogOut, Save, Menu, XCircle, X as CloseIcon } from 'lucide-react';
 import GlassButton from '@/app/lib/ui/GlassButton';
-import { X } from 'lucide-react';
 import { AlertBell } from '../components/alerts/AlertBell';
 import { AlertPanel } from '../components/alerts/AlertPanel';
 import { formatDisplayDate } from '@/app/lib/utils/dateFormatter';
@@ -277,7 +276,7 @@ export default function DashboardLayout({
                   </div>
                   
                   <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                    <p className="text-blue-200 text-xs mb-1">Default Currency</p>
+                    <p className="text-blue-200 text-xs mb-1">Default Trading Currency</p>
                     <p className="font-semibold">{preferences.default_trading_currency}</p>
                   </div>
                 </div>

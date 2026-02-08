@@ -58,6 +58,13 @@ export function RecentTransactions({ movements, homeCurrency, onTransactionClick
                   </div>
                   <div className="text-blue-200 text-sm">
                     {txn.period_from ? new Date(txn.period_from).toLocaleDateString('en-US', { 
+                      year: 'numeric',
+                      month: 'short', 
+                      day: 'numeric' 
+                    }) : 'No period'}
+                    {' - '}
+                    {txn.period_to ? new Date(txn.period_to).toLocaleDateString('en-US', { 
+                      year: 'numeric',
                       month: 'short', 
                       day: 'numeric' 
                     }) : 'No period'}

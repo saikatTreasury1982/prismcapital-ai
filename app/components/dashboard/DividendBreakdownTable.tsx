@@ -35,12 +35,14 @@ interface DividendBreakdownTableProps {
   data: TickerBreakdown[];
   chartData: ChartData[];
   title: string;
+  displayCurrency: string;
+  fxRate: number;
 }
 
 type SortField = 'ticker' | 'totalPayments' | 'totalReceived' | 'avgPerShare' | 'marketYield' | 'personalYield';
 type SortDirection = 'asc' | 'desc';
 
-export default function DividendBreakdownTable({ data, chartData, title }: DividendBreakdownTableProps) {
+export default function DividendBreakdownTable({ data, chartData, title, displayCurrency, fxRate }: DividendBreakdownTableProps) {
   const [sortField, setSortField] = useState<SortField>('totalReceived');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
@@ -73,12 +75,13 @@ export default function DividendBreakdownTable({ data, chartData, title }: Divid
   }, [data, sortField, sortDirection]);
 
   const formatCurrency = (value: number) => {
+    const converted = value * fxRate;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: displayCurrency,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(value);
+    }).format(converted);
   };
 
   const formatDate = (dateString: string | null) => {
@@ -111,7 +114,7 @@ export default function DividendBreakdownTable({ data, chartData, title }: Divid
         <h3 className="text-lg font-semibold text-white mb-4">{title}</h3>
         
         {/* Mini Charts */}
-        <MiniCharts data={chartData} />
+        <MiniCharts data={chartData} displayCurrency={displayCurrency} fxRate={fxRate} />
 
         {/* Sortable Table */}
         {sortedData.length === 0 ? (

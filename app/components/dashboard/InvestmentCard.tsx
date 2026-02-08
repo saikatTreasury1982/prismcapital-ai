@@ -14,6 +14,8 @@ interface InvestmentCardProps {
   refreshMessage?: string | null;
   onViewChange?: (view: 'standard' | 'strategy' | null) => void;
   activeView?: 'standard' | 'strategy' | null;
+  displayCurrency: string;
+  fxRate: number;
 }
 
 export default function InvestmentCard({ 
@@ -22,15 +24,18 @@ export default function InvestmentCard({
   isRefreshing = false,
   refreshMessage,
   onViewChange,
-  activeView
+  activeView,
+  displayCurrency,
+  fxRate
 }: InvestmentCardProps) {
   const formatCurrency = (value: number) => {
+    const converted = value * fxRate;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: displayCurrency,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(value);
+    }).format(converted);
   };
 
   return (

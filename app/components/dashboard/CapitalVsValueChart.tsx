@@ -19,17 +19,20 @@ interface ChartData {
 
 interface CapitalVsValueChartProps {
   data: ChartData[];
+  displayCurrency: string;
+  fxRate: number;
 }
 
-const CapitalVsValueChart = memo(function CapitalVsValueChart({ data }: CapitalVsValueChartProps) {
+const CapitalVsValueChart = memo(function CapitalVsValueChart({ data, displayCurrency, fxRate }: CapitalVsValueChartProps) {
 
   const formatCurrency = (value: number) => {
+    const converted = value * fxRate;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: displayCurrency,
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).format(value);
+    }).format(converted);
   };
 
   const [selectedAsset, setSelectedAsset] = useState<ChartData | null>(data[0] || null);

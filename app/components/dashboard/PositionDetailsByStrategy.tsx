@@ -43,6 +43,8 @@ interface ChartData {
 interface PositionDetailsByStrategyProps {
   strategies: Strategy[];
   chartData: ChartData[];
+  displayCurrency: string;
+  fxRate: number;
 }
 
 interface ConfirmationDialog {
@@ -55,7 +57,9 @@ interface ConfirmationDialog {
 
 export default function PositionDetailsByStrategy({ 
   strategies: initialStrategies,
-  chartData 
+  chartData,
+  displayCurrency,
+  fxRate
 }: PositionDetailsByStrategyProps) {
   const [strategies, setStrategies] = useState(initialStrategies);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -149,12 +153,13 @@ export default function PositionDetailsByStrategy({
   };
 
   const formatCurrency = (value: number) => {
+    const converted = value * fxRate;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: displayCurrency,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(value);
+    }).format(converted);
   };
 
   const formatNumber = (value: number) => {
@@ -192,7 +197,7 @@ export default function PositionDetailsByStrategy({
             <h3 className="text-lg font-semibold text-white mb-4">Position Details - By Strategy</h3>
             
             {/* Mini Charts */}
-            <MiniCharts data={chartData} />
+            <MiniCharts data={chartData} displayCurrency={displayCurrency} fxRate={fxRate} />
 
             {/* Strategy Groups with Tables */}
             <div className="space-y-6">

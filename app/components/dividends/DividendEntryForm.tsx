@@ -382,7 +382,7 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           {/* Ticker */}
           <div>
-            <label className="text-blue-200 text-sm mb-2 block font-medium">Ticker *</label>
+            <label className="text-blue-200 text-sm mb-2 block font-medium">Ticker <span className="text-rose-400">*</span></label>
             <input
               type="text"
               value={formData.ticker}
@@ -395,7 +395,7 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
 
           {/* Shares Owned */}
           <div>
-            <label className="text-blue-200 text-sm mb-2 block font-medium">Shares Owned *</label>
+            <label className="text-blue-200 text-sm mb-2 block font-medium">Shares Owned <span className="text-rose-400">*</span></label>
             <input
               type="number"
               step="0.0001"
@@ -409,7 +409,7 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
 
           {/* Ex-Dividend Date */}
           <div>
-            <label className="text-blue-200 text-sm mb-2 block font-medium">Ex-Dividend Date *</label>
+            <label className="text-blue-200 text-sm mb-2 block font-medium">Ex-Dividend Date <span className="text-rose-400">*</span></label>
             <input
               type="date"
               value={formData.ex_dividend_date}
@@ -433,7 +433,7 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
 
           {/* Dividend Per Share */}
           <div>
-            <label className="text-blue-200 text-sm mb-2 block font-medium">Dividend Per Share *</label>
+            <label className="text-blue-200 text-sm mb-2 block font-medium">Dividend Per Share <span className="text-rose-400">*</span></label>
             <input
               type="number"
               step="0.0001"

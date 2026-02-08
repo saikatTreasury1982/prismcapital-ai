@@ -34,7 +34,7 @@ export function BulletTextarea({
     <div className="space-y-2">
       {label && (
         <label className="text-blue-200 text-sm font-medium block">
-          {label} {required && '*'}
+          {label} {required && <span className="text-rose-400">*</span>}
         </label>
       )}
       

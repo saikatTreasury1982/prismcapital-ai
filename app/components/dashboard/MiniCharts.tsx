@@ -19,18 +19,21 @@ interface ChartData {
 
 interface MiniChartsProps {
   data: ChartData[];
+  displayCurrency?: string;
+  fxRate?: number;
 }
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
-const MiniCharts = memo(function MiniCharts({ data }: MiniChartsProps) {
+const MiniCharts = memo(function MiniCharts({ data, displayCurrency = 'USD', fxRate = 1 }: MiniChartsProps) {
   const formatCurrency = (value: number) => {
+    const converted = value * fxRate;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: displayCurrency,
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).format(value);
+    }).format(converted);
   };
 
   const CustomTooltip = ({ active, payload }: any) => {
