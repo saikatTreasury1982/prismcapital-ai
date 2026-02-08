@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { DollarSign, TrendingUp, Wallet, Save,XCircle } from 'lucide-react';
+import { DollarSign, TrendingUp, Wallet, Save, XCircle } from 'lucide-react';
 import { Position } from '@/app/lib/types/transaction';
 import { convertCurrency, createPositionActionPlan, updatePositionActionPlan } from '@/app/services/positionActionPlanServiceClient';
 import GlassButton from '@/app/lib/ui/GlassButton';
 import SegmentedControl from '@/app/lib/ui/SegmentedControl';
+import SegmentedPills from '@/app/lib/ui/SegmentedPills';
 import { BulletTextarea } from '@/app/lib/ui/BulletTextarea';
 import BulletDisplay from '@/app/lib/ui/BulletDisplay';
 
@@ -130,7 +131,7 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
       setSellShares(editingPlan.sell_shares || position.total_shares);
       setTargetSellPrice(editingPlan.expected_proceeds ? editingPlan.expected_proceeds / editingPlan.sell_shares : position.current_market_price || position.average_cost);
       setProceeds(editingPlan.expected_proceeds || 0);
-      
+
       if (editingPlan.reinvest_ticker) {
         setNextAction('reinvest');
         setReinvestTicker(editingPlan.reinvest_ticker);
@@ -141,7 +142,7 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
       } else {
         setNextAction('none');
       }
-      
+
       setNotes(editingPlan.notes || '');
     }
   }, [editingPlan, position]);
@@ -151,11 +152,11 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
     const costBasis = position.average_cost * sellShares;
     const grossGainLoss = (targetSellPrice - position.average_cost) * sellShares;
     const netGainLoss = includeFees ? grossGainLoss - fees : grossGainLoss;
-    
-    const percentageGainLoss = includeFees 
+
+    const percentageGainLoss = includeFees
       ? (netGainLoss / costBasis) * 100
       : ((targetSellPrice - position.average_cost) / position.average_cost) * 100;
-    
+
     return {
       amount: netGainLoss,
       percentage: percentageGainLoss
@@ -169,7 +170,7 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
     setSellShares(scenario.sell_shares || position.total_shares);
     setTargetSellPrice(scenario.expected_proceeds ? scenario.expected_proceeds / scenario.sell_shares : position.current_market_price || position.average_cost);
     setProceeds(scenario.expected_proceeds || 0);
-    
+
     // Determine next action based on scenario data
     if (scenario.reinvest_ticker) {
       setNextAction('reinvest');
@@ -181,10 +182,10 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
     } else {
       setNextAction('none');
     }
-    
+
     setNotes(scenario.notes || '');
     setEditingScenario(scenario);
-    
+
     // Scroll to top of form
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -211,7 +212,7 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
     try {
       // Determine if we're editing an existing plan
       const isEditing = editingPlan?.plan_id || editingScenario?.plan_id;
-      const planId = editingPlan?.plan_id || editingScenario?.plan_id;  
+      const planId = editingPlan?.plan_id || editingScenario?.plan_id;
 
       if (isEditing && planId) {
         // UPDATE existing scenario - don't include position_id
@@ -315,14 +316,14 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
 
         {/* Liquidation Type Toggle */}
         <div className="mb-4 inline-flex">
-          <SegmentedControl
+          <SegmentedPills
             options={[
-              { value: 1, label: 'Full Liquidation' },
-              { value: 2, label: 'Partial Sale' },
+              { value: 1, label: 'Full Liquidation', activeColor: 'bg-rose-500' },
+              { value: 2, label: 'Partial Sale', activeColor: 'bg-orange-500' },
             ]}
             value={liquidationType === 'full' ? 1 : 2}
             onChange={(value) => setLiquidationType(value === 1 ? 'full' : 'partial')}
-            color="rose"
+            showLabels={true}
           />
         </div>
 
@@ -407,14 +408,12 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
               </span>
               <button
                 onClick={() => setShowFeesInGainLoss(!showFeesInGainLoss)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  showFeesInGainLoss ? 'bg-blue-500' : 'bg-white/20'
-                }`}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${showFeesInGainLoss ? 'bg-blue-500' : 'bg-white/20'
+                  }`}
               >
                 <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    showFeesInGainLoss ? 'translate-x-6' : 'translate-x-1'
-                  }`}
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showFeesInGainLoss ? 'translate-x-6' : 'translate-x-1'
+                    }`}
                 />
               </button>
               <span className={`text-xs ${showFeesInGainLoss ? 'text-white' : 'text-blue-300'}`}>
@@ -452,9 +451,8 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
       </div>
 
       {/* Card 2: Reinvest */}
-      <div className={`backdrop-blur-xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-3xl p-6 border border-green-400/20 transition-all ${
-        nextAction !== 'reinvest' ? 'opacity-50 pointer-events-none' : ''
-      }`}>
+      <div className={`backdrop-blur-xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-3xl p-6 border border-green-400/20 transition-all ${nextAction !== 'reinvest' ? 'opacity-50 pointer-events-none' : ''
+        }`}>
         <div className="flex items-center gap-3 mb-4">
           <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center">
             <TrendingUp className="w-6 h-6 text-white" />
@@ -522,9 +520,8 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
       </div>
 
       {/* Card 3: Withdraw */}
-      <div className={`backdrop-blur-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-3xl p-6 border border-purple-400/20 transition-all ${
-        nextAction !== 'withdraw' ? 'opacity-50 pointer-events-none' : ''
-      }`}>
+      <div className={`backdrop-blur-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-3xl p-6 border border-purple-400/20 transition-all ${nextAction !== 'withdraw' ? 'opacity-50 pointer-events-none' : ''
+        }`}>
         <div className="flex items-center gap-3 mb-4">
           <div className="w-12 h-12 rounded-full bg-purple-500 flex items-center justify-center">
             <Wallet className="w-6 h-6 text-white" />
@@ -577,12 +574,14 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
 
       {/* Notes */}
       <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-6 border border-white/20">
-        <label className="text-blue-200 text-sm mb-2 block font-medium">Notes</label>
         <BulletTextarea
           value={notes}
           onChange={(value) => setNotes(value)}
+          placeholder="Add any additional notes (each line becomes a bullet point)..."
           rows={4}
-          placeholder="Add any notes about this scenario (use • for bullet points)..."
+          label="Notes (Optional)"
+          rounded={false}
+          scrollable={true}
         />
       </div>
 
@@ -611,20 +610,18 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
 
             {/* Status Badges */}
             <div className="flex items-center gap-3 mb-6">
-              <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
-                viewingScenario.action_type === 'LIQUIDATE' 
-                  ? 'bg-blue-500/20 text-blue-300 border border-blue-400/30'
-                  : 'bg-purple-500/20 text-purple-300 border border-purple-400/30'
-              }`}>
+              <span className={`px-4 py-2 rounded-full text-sm font-semibold ${viewingScenario.action_type === 'LIQUIDATE'
+                ? 'bg-blue-500/20 text-blue-300 border border-blue-400/30'
+                : 'bg-purple-500/20 text-purple-300 border border-purple-400/30'
+                }`}>
                 {viewingScenario.action_type === 'LIQUIDATE' ? 'Full Liquidation' : 'Partial Sale'}
               </span>
-              <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
-                viewingScenario.status === 'DRAFT' 
-                  ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-400/30'
-                  : viewingScenario.status === 'EXECUTED'
+              <span className={`px-4 py-2 rounded-full text-sm font-semibold ${viewingScenario.status === 'DRAFT'
+                ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-400/30'
+                : viewingScenario.status === 'EXECUTED'
                   ? 'bg-green-500/20 text-green-300 border border-green-400/30'
                   : 'bg-slate-500/20 text-slate-300 border border-slate-400/30'
-              }`}>
+                }`}>
                 {viewingScenario.status}
               </span>
             </div>
@@ -651,7 +648,7 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
                   <p className="text-white font-bold text-lg">${viewingScenario.expected_proceeds?.toFixed(2)}</p>
                 </div>
               </div>
-              
+
               {/* Expected Gain/Loss */}
               <div className="mt-4 bg-white/5 rounded-xl p-3">
                 <p className="text-blue-200 text-xs mb-1">Expected Gain/Loss</p>
@@ -726,9 +723,9 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
                 <div>
                   <p className="text-blue-300 text-xs mb-1">Created</p>
                   <p className="text-white">
-                    {new Date(viewingScenario.created_at).toLocaleString('en-US', { 
-                      year: 'numeric', 
-                      month: 'short', 
+                    {new Date(viewingScenario.created_at).toLocaleString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
                       day: 'numeric',
                       hour: '2-digit',
                       minute: '2-digit'
@@ -738,9 +735,9 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
                 <div>
                   <p className="text-blue-300 text-xs mb-1">Last Updated</p>
                   <p className="text-white">
-                    {new Date(viewingScenario.updated_at).toLocaleString('en-US', { 
-                      year: 'numeric', 
-                      month: 'short', 
+                    {new Date(viewingScenario.updated_at).toLocaleString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
                       day: 'numeric',
                       hour: '2-digit',
                       minute: '2-digit'

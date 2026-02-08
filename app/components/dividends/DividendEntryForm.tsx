@@ -307,9 +307,9 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[350px_1fr] gap-6">
+    <div className="flex flex-col lg:flex-row gap-6">
       {/* Left Column - Position Cards */}
-      <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-4 border border-white/20 h-fit">
+      <div className="lg:w-[420px] backdrop-blur-xl bg-white/10 rounded-3xl p-4 border border-white/20 h-fit">
         <h3 className="text-lg font-bold text-white mb-4">Open Positions</h3>
 
         {positions.length === 0 ? (
@@ -329,8 +329,11 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
         )}
       </div>
 
+      {/* GRADIENT DIVIDER */}
+      <div className="hidden lg:block w-px bg-gradient-to-b from-transparent via-white/20 to-transparent mx-3" />
+
       {/* Right Column - Form */}
-      <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-6 sm:p-8 border border-white/20 relative">
+      <div className="flex-1 backdrop-blur-xl bg-white/10 rounded-3xl pt-6 px-6 pb-2 sm:pt-8 sm:px-8 sm:pb-8 border border-white/20 relative h-fit">
         {/* Loading Overlay */}
         {isAutoFilling && (
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm rounded-3xl flex items-center justify-center z-50">
@@ -379,7 +382,7 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Ticker */}
           <div>
             <label className="text-blue-200 text-sm mb-2 block font-medium">Ticker <span className="text-rose-400">*</span></label>

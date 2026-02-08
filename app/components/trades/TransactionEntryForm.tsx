@@ -345,7 +345,7 @@ export function TransactionEntryForm({
   };
 
   return (
-    <div className={mode === 'staging' ? 'p-6 sm:p-8' : 'backdrop-blur-xl bg-white/10 rounded-3xl p-6 sm:p-8 border border-white/20'}>
+    <div>
       <div className="flex items-start justify-between mb-6">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-3">
@@ -696,13 +696,14 @@ export function TransactionEntryForm({
 
         {/* Notes */}
         <div className="md:col-span-2">
-          <label className="text-blue-200 text-sm mb-2 block font-medium">Notes</label>
           <BulletTextarea
             value={formData.notes}
             onChange={(value) => setFormData({ ...formData, notes: value })}
+            placeholder="Add any additional notes (each line becomes a bullet point)..."
             rows={4}
-            placeholder="Optional notes (use • for bullet points)..."
-            disabled={mode === 'staging' && !isStagingEditMode}
+            label="Notes (Optional)"
+            rounded={false}
+            scrollable={true}
           />
         </div>
       </div>

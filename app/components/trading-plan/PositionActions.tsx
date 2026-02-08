@@ -133,9 +133,9 @@ export function PositionActions() {
 
       {/* By Position View */}
       {viewMode === 'by-position' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="flex flex-col lg:flex-row gap-6">
           {/* Left Panel - Positions List (30%) */}
-          <div className="lg:col-span-1">
+          <div className="lg:w-[30%]">
             <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-6 border border-white/20">
               <h2 className="text-xl font-bold text-white mb-4">Your Positions</h2>
 
@@ -204,8 +204,11 @@ export function PositionActions() {
             </div>
           </div>
 
+          {/* GRADIENT DIVIDER */}
+          <div className="hidden lg:block w-px bg-gradient-to-b from-transparent via-white/20 to-transparent mx-3" />
+
           {/* Right Panel - Action Selector or Planner (70%) */}
-          <div className="lg:col-span-2">
+          <div className="lg:w-[70%]">
             {selectedPosition ? (
               <div className="space-y-6">
                 {/* Saved Plans Section */}
