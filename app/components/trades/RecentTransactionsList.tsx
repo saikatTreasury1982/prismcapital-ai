@@ -9,7 +9,13 @@ interface RecentTransactionsListProps {
   refreshKey?: number;
 }
 
-export function RecentTransactionsList({ refreshKey = 0 }: RecentTransactionsListProps) {
+interface RecentTransactionsListProps {
+  refreshKey?: number;
+  onTransactionClick?: (transaction: Transaction) => void;
+  editingTransactionId?: number | null;
+}
+
+export function RecentTransactionsList({ refreshKey = 0, onTransactionClick, editingTransactionId }: RecentTransactionsListProps) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -62,7 +68,14 @@ export function RecentTransactionsList({ refreshKey = 0 }: RecentTransactionsLis
           {transactions.map((transaction) => (
             <div
               key={transaction.transaction_id}
-              className="bg-gradient-to-r from-white/5 to-white/10 rounded-xl p-4 border border-white/10 hover:border-white/20 transition-all"
+              onClick={() => onTransactionClick?.(transaction)}
+              className={`
+                rounded-xl p-4 border transition-all cursor-pointer
+                ${editingTransactionId === transaction.transaction_id
+                  ? 'bg-blue-500/20 border-blue-400/50 ring-2 ring-blue-400/30'
+                  : 'bg-gradient-to-r from-white/5 to-white/10 border-white/10 hover:border-white/20'
+                }
+              `}
             >
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-center gap-2">

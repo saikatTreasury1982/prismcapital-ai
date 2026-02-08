@@ -15,9 +15,11 @@ export function TradesClientWrapper() {
   const [activeTab, setActiveTab] = useState<'entry' | 'ticker' | 'status' | 'date' | 'import'>('entry');
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [editingTransactionId, setEditingTransactionId] = useState<number | null>(null);
 
   const handleSuccess = () => {
     setEditingTransaction(null);
+    setEditingTransactionId(null);
     setRefreshKey(prev => prev + 1);
   };
 
@@ -26,12 +28,19 @@ export function TradesClientWrapper() {
     setActiveTab('entry');
   };
 
+  const handleTransactionClick = (transaction: Transaction) => {
+    setEditingTransaction(transaction);
+    setEditingTransactionId(transaction.transaction_id);
+    // Already on entry tab, just highlight the row
+  };
+
   const handleDelete = () => {
     setRefreshKey(prev => prev + 1);
   };
 
   const handleCancelEdit = () => {
     setEditingTransaction(null);
+    setEditingTransactionId(null);
   };
 
   return (
@@ -59,9 +68,9 @@ export function TradesClientWrapper() {
       {/* Content */}
       <div className="max-w-7xl mx-auto">
         {activeTab === 'entry' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="flex flex-col lg:flex-row gap-6">
             {/* Entry Form */}
-            <div>
+            <div className="flex-1 backdrop-blur-xl bg-white/10 rounded-3xl p-6 sm:p-8 border border-white/20">
               <TransactionEntryForm 
                 onSuccess={handleSuccess}
                 editingTransaction={editingTransaction}
@@ -69,9 +78,16 @@ export function TradesClientWrapper() {
               />
             </div>
 
+            {/* GRADIENT DIVIDER */}
+            <div className="hidden lg:block w-px bg-gradient-to-b from-transparent via-white/20 to-transparent mx-3" />
+
             {/* Recent Transactions */}
-            <div>
-              <RecentTransactionsList refreshKey={refreshKey} />
+            <div className="flex-1">
+              <RecentTransactionsList 
+                refreshKey={refreshKey}
+                onTransactionClick={handleTransactionClick}
+                editingTransactionId={editingTransactionId}
+              />
             </div>
           </div>
         )}

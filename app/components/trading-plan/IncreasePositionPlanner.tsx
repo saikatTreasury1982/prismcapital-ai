@@ -309,12 +309,14 @@ export function IncreasePositionPlanner({ position, editingPlan, onSuccess, onCa
 
       {/* Notes */}
       <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-6 border border-white/20">
-        <label className="text-blue-200 text-sm mb-2 block font-medium">Notes</label>
         <BulletTextarea
           value={notes}
           onChange={(value) => setNotes(value)}
+          placeholder="Add any additional notes (each line becomes a bullet point)..."
           rows={4}
-          placeholder="Add any notes about this investment scenario (use • for bullet points)..."
+          label="Notes (Optional)"
+          rounded={false}
+          scrollable={true}
         />
       </div>
 
