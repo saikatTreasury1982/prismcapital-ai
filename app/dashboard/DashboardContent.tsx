@@ -37,6 +37,7 @@ interface InvestmentData {
     totalInvested: number;
     totalMarketValue: number;
     totalUnrealizedPnL: number;
+    totalRealizedPnL: number;
   };
   positions: any[];
 }
