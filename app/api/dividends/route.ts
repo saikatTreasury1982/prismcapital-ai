@@ -54,6 +54,7 @@ export async function POST(request: Request) {
         payment_date: dividendData.payment_date || null,
         dividend_per_share: dividendData.dividend_per_share,
         shares_owned: dividendData.shares_owned,
+        total_dividend_amount: dividendData.total_dividend_amount,
         dividend_yield: dividendData.dividend_yield || null,
         Currency: dividendData.Currency || null,
         notes: dividendData.notes || null,
