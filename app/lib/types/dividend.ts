@@ -20,6 +20,7 @@ export interface CreateDividendInput {
   payment_date?: string;
   dividend_per_share: number;
   shares_owned: number;
+  total_dividend_amount: number; // Generated column
   dividend_yield?: number;
   notes?: string;
   Currency?: string;
