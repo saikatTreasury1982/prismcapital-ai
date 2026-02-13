@@ -251,6 +251,7 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
           payment_date: formData.payment_date || undefined,
           dividend_per_share: parseFloat(formData.dividend_per_share),
           shares_owned: parseFloat(formData.shares_owned),
+          total_dividend_amount: parseFloat(formData.total_dividend_amount),
           dividend_yield: formData.dividend_yield ? parseFloat(formData.dividend_yield) : undefined,
           Currency: formData.Currency || undefined,
           notes: formData.notes || undefined
@@ -279,6 +280,7 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
           payment_date: formData.payment_date || undefined,
           dividend_per_share: parseFloat(formData.dividend_per_share),
           shares_owned: parseFloat(formData.shares_owned),
+          total_dividend_amount: parseFloat(formData.total_dividend_amount),
           dividend_yield: formData.dividend_yield ? parseFloat(formData.dividend_yield) : undefined,
           Currency: formData.Currency || undefined,
           notes: formData.notes || undefined
