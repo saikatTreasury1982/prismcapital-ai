@@ -76,6 +76,7 @@ function PositionCard({ position, onAutoFill, isAutoFilling, loadingTicker }: Po
 export function DividendEntryForm({ positions, onSuccess, editingDividend, onCancelEdit }: DividendEntryFormProps) {
   const [formData, setFormData] = useState({
     ticker: '',
+    position_id: '',  // Hidden field
     ex_dividend_date: '',
     payment_date: '',
     dividend_per_share: '',
@@ -118,6 +119,7 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
             const fullDividend = result.data;
             setFormData({
               ticker: fullDividend.ticker,
+              position_id: fullDividend.position_id?.toString() || '',  // ADD THIS
               ex_dividend_date: fullDividend.ex_dividend_date,
               payment_date: fullDividend.payment_date || '',
               dividend_per_share: fullDividend.dividend_per_share.toString(),
@@ -188,6 +190,7 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
       setFormData(prev => ({
         ...prev,
         ticker: position.ticker,
+        position_id: position.position_id.toString(),  // Capture position_id
         shares_owned: position.total_shares.toString(),
         dividend_per_share: dividendAmount || alphaData.dividendPerShare || '',
         dividend_yield: alphaData.dividendYield || '',
@@ -206,6 +209,7 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
   const handleCancel = () => {
     setFormData({
       ticker: '',
+      position_id: '',
       ex_dividend_date: '',
       payment_date: '',
       dividend_per_share: '',
@@ -228,6 +232,11 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
       return;
     }
 
+    if (!formData.position_id) {
+      setError(`No open position found for ${formData.ticker}. Please select from Open Positions.`);
+      return;
+    }
+
     // Validate payment date is after ex-dividend date (if payment date is provided)
     if (formData.payment_date && formData.ex_dividend_date) {
       const exDate = new Date(formData.ex_dividend_date);
@@ -247,6 +256,7 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
         // UPDATE MODE: Update existing dividend
         await updateDividend(editingDividend.dividend_id, {
           ticker: formData.ticker.toUpperCase(),
+          position_id: parseInt(formData.position_id),
           ex_dividend_date: formData.ex_dividend_date,
           payment_date: formData.payment_date || undefined,
           dividend_per_share: parseFloat(formData.dividend_per_share),
@@ -276,6 +286,7 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
         }
         await createDividend(session.user.id, {
           ticker: formData.ticker.toUpperCase(),
+          position_id: parseInt(formData.position_id),
           ex_dividend_date: formData.ex_dividend_date,
           payment_date: formData.payment_date || undefined,
           dividend_per_share: parseFloat(formData.dividend_per_share),
@@ -290,6 +301,7 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
       // Reset form
       setFormData({
         ticker: '',
+        position_id: '',
         ex_dividend_date: '',
         payment_date: '',
         dividend_per_share: '',
@@ -391,7 +403,16 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
             <input
               type="text"
               value={formData.ticker}
-              onChange={(e) => setFormData({ ...formData, ticker: e.target.value.toUpperCase() })}
+              onChange={(e) => {
+                const upperTicker = e.target.value.toUpperCase();
+                const matchingPosition = positions.find(p => p.ticker === upperTicker);
+                
+                setFormData({ 
+                  ...formData, 
+                  ticker: upperTicker,
+                  position_id: matchingPosition ? matchingPosition.position_id.toString() : ''
+                });
+              }}
               placeholder="AAPL"
               className="w-full funding-input rounded-xl px-4 py-3 uppercase"
               required
