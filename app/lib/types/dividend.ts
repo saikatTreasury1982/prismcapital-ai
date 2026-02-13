@@ -1,6 +1,7 @@
 export interface Dividend {
   dividend_id: number;
   user_id: string;
+  position_id: number;
   ticker: string;
   ex_dividend_date: string;
   payment_date: string | null;
@@ -16,6 +17,7 @@ export interface Dividend {
 
 export interface CreateDividendInput {
   ticker: string;
+  position_id: number;
   ex_dividend_date: string;
   payment_date?: string;
   dividend_per_share: number;

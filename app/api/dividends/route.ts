@@ -50,6 +50,7 @@ export async function POST(request: Request) {
       .values({
         user_id: userId,
         ticker: dividendData.ticker,
+        position_id: dividendData.position_id,
         ex_dividend_date: dividendData.ex_dividend_date,
         payment_date: dividendData.payment_date || null,
         dividend_per_share: dividendData.dividend_per_share,

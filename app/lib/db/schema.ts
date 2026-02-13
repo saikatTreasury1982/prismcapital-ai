@@ -150,6 +150,7 @@ export const dividends = sqliteTable('dividends', {
   dividend_id: integer('dividend_id').primaryKey({ autoIncrement: true }),
   user_id: text('user_id').notNull().references(() => users.user_id),
   ticker: text('ticker').notNull(),
+  position_id: integer('position_id').notNull(),
   ex_dividend_date: text('ex_dividend_date').notNull(),
   payment_date: text('payment_date'),
   dividend_per_share: real('dividend_per_share').notNull(),
