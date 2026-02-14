@@ -25,7 +25,6 @@ export function DividendDetailModal({ dividend, onClose, onEdit, onDelete }: Div
     payment_date: '',
     dividend_per_share: '',
     shares_owned: '',
-    dividend_yield: '',
     notes: ''
   });
 
@@ -44,7 +43,6 @@ export function DividendDetailModal({ dividend, onClose, onEdit, onDelete }: Div
       payment_date: dividend.payment_date || '',
       dividend_per_share: dividend.dividend_per_share.toString(),
       shares_owned: dividend.shares_owned.toString(),
-      dividend_yield: dividend.dividend_yield ? dividend.dividend_yield.toString() : '',
       notes: dividend.notes || ''
     });
     setEditError(null);
@@ -59,17 +57,6 @@ export function DividendDetailModal({ dividend, onClose, onEdit, onDelete }: Div
 
     const dividendPerShare = parseFloat(editFormData.dividend_per_share);
     const sharesOwned = parseFloat(editFormData.shares_owned);
-    const dividendYield = editFormData.dividend_yield ? parseFloat(editFormData.dividend_yield) : null;
-
-    if (isNaN(dividendPerShare) || isNaN(sharesOwned) || (editFormData.dividend_yield && isNaN(dividendYield!))) {
-      setEditError('Please enter valid numbers');
-      return;
-    }
-
-    if (dividendPerShare <= 0 || sharesOwned <= 0 || (dividendYield !== null && dividendYield < 0)) {
-      setEditError('Invalid values entered');
-      return;
-    }
 
     setIsSaving(true);
     setEditError(null);
@@ -83,7 +70,6 @@ export function DividendDetailModal({ dividend, onClose, onEdit, onDelete }: Div
           payment_date: editFormData.payment_date || null,
           dividend_per_share: dividendPerShare,
           shares_owned: sharesOwned,
-          dividend_yield: dividendYield,
           notes: editFormData.notes || null
         })
       });
@@ -100,7 +86,6 @@ export function DividendDetailModal({ dividend, onClose, onEdit, onDelete }: Div
           payment_date: editFormData.payment_date || null,
           dividend_per_share: dividendPerShare,
           shares_owned: sharesOwned,
-          dividend_yield: dividendYield,
           notes: editFormData.notes || null,
           total_dividend_amount: dividendPerShare * sharesOwned
         });
@@ -233,15 +218,6 @@ export function DividendDetailModal({ dividend, onClose, onEdit, onDelete }: Div
                 </p>
               </div>
 
-              {dividend.dividend_yield && (
-                <div>
-                  <h3 className="text-sm font-semibold text-blue-200 mb-2">Dividend Yield</h3>
-                  <p className="text-white">
-                    {((dividend.dividend_yield * 100) || 0).toFixed(2)}%
-                  </p>
-                </div>
-              )}
-
               {dividend.notes && (
                 <div>
                   <h3 className="text-sm font-semibold text-blue-200 mb-2">Notes</h3>
@@ -317,20 +293,6 @@ export function DividendDetailModal({ dividend, onClose, onEdit, onDelete }: Div
               <div className="bg-white/5 rounded-xl p-4 border border-white/10">
                 <p className="text-blue-200 text-sm mb-2 font-medium">Total Dividend Amount (Calculated)</p>
                 <p className="text-white text-2xl font-bold">${editTotalAmount}</p>
-              </div>
-
-              {/* Dividend Yield */}
-              <div>
-                <label className="text-blue-200 text-sm mb-2 block font-medium">Dividend Yield (%)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={editFormData.dividend_yield}
-                  onChange={(e) => setEditFormData({ ...editFormData, dividend_yield: e.target.value })}
-                  className="w-full funding-input rounded-xl px-4 py-3"
-                  disabled={isSaving}
-                  placeholder="Optional"
-                />
               </div>
 
               {/* Notes */}
