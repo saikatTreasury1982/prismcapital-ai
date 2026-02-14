@@ -7,6 +7,7 @@ import { createPositionActionPlan, updatePositionActionPlan } from '@/app/servic
 import GlassButton from '@/app/lib/ui/GlassButton';
 import { BulletTextarea } from '@/app/lib/ui/BulletTextarea';
 import BulletDisplay from '@/app/lib/ui/BulletDisplay';
+import SegmentedPills from '@/app/lib/ui/SegmentedPills';
 
 interface IncreasePositionPlannerProps {
   position: Position;
@@ -16,12 +17,14 @@ interface IncreasePositionPlannerProps {
 }
 
 export function IncreasePositionPlanner({ position, editingPlan, onSuccess, onCancel }: IncreasePositionPlannerProps) {
+  const [inputMode, setInputMode] = useState<'shares' | 'amount'>('shares');
   const [buyShares, setBuyShares] = useState(0);
+  const [totalAmount, setTotalAmount] = useState(0);
   const [entryPrice, setEntryPrice] = useState(position.current_market_price || position.average_cost);
   const [fees, setFees] = useState(0);
   const [notes, setNotes] = useState('');
   const [lastDividendPerShare, setLastDividendPerShare] = useState(0);
-  
+
   const [isLoadingDividend, setIsLoadingDividend] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,20 +81,33 @@ export function IncreasePositionPlanner({ position, editingPlan, onSuccess, onCa
     fetchScenarios();
   }, [position.position_id]);
 
-  // Calculate new metrics
-  const totalInvestmentAmount = (buyShares * entryPrice) + fees;
+  // Calculate based on input mode
+  let calculatedShares = buyShares;
+  let totalInvestmentAmount = 0;
+
+  if (inputMode === 'shares') {
+    // User entered shares, calculate amount
+    totalInvestmentAmount = (buyShares * entryPrice) + fees;
+  } else {
+    // User entered amount, calculate shares
+    calculatedShares = entryPrice > 0 ? (totalAmount - fees) / entryPrice : 0;
+    totalInvestmentAmount = totalAmount;
+  }
+
   const previousTotalCost = position.average_cost * position.total_shares;
   const newTotalCost = previousTotalCost + totalInvestmentAmount;
-  const newTotalShares = position.total_shares + buyShares;
-  const newAverageCost = newTotalCost / newTotalShares;
+  const newTotalShares = position.total_shares + calculatedShares;
+  const newAverageCost = newTotalShares > 0 ? newTotalCost / newTotalShares : 0;
   const costSavings = position.average_cost - newAverageCost;
-  
+
   const previousDividend = lastDividendPerShare * position.total_shares;
   const projectedDividend = lastDividendPerShare * newTotalShares;
   const dividendIncrease = projectedDividend - previousDividend;
 
   const handleLoadScenario = (scenario: any) => {
+    setInputMode('shares');
     setBuyShares(scenario.buy_shares || 0);
+    setTotalAmount(0);
     setEntryPrice(scenario.entry_price || position.current_market_price || position.average_cost);
     setFees(scenario.fees || 0);
     setNotes(scenario.notes || '');
@@ -100,7 +116,9 @@ export function IncreasePositionPlanner({ position, editingPlan, onSuccess, onCa
   };
 
   const handleCancelEdit = () => {
+    setInputMode('shares');
     setBuyShares(0);
+    setTotalAmount(0);
     setEntryPrice(position.current_market_price || position.average_cost);
     setFees(0);
     setNotes('');
@@ -115,12 +133,12 @@ export function IncreasePositionPlanner({ position, editingPlan, onSuccess, onCa
       // Determine if we're editing an existing plan
       const isEditing = editingPlan?.plan_id || editingScenario?.plan_id;
       const planId = editingPlan?.plan_id || editingScenario?.plan_id;
-      
+
       if (isEditing && planId) {
-      // UPDATE existing plan
+        // UPDATE existing plan
         await updatePositionActionPlan(planId, {
           action_type: 'ADD_POSITION',
-          buy_shares: buyShares,
+          buy_shares: calculatedShares,
           entry_price: entryPrice,
           fees: fees || undefined,
           new_total_shares: newTotalShares,
@@ -135,7 +153,7 @@ export function IncreasePositionPlanner({ position, editingPlan, onSuccess, onCa
         await createPositionActionPlan({
           position_id: position.position_id,
           action_type: 'ADD_POSITION',
-          buy_shares: buyShares,
+          buy_shares: calculatedShares,
           entry_price: entryPrice,
           fees: fees || undefined,
           new_total_shares: newTotalShares,
@@ -189,7 +207,7 @@ export function IncreasePositionPlanner({ position, editingPlan, onSuccess, onCa
             <GlassButton
               icon={Save}
               onClick={handleSaveScenario}
-              disabled={isSaving || buyShares <= 0 || entryPrice <= 0 || newTotalShares <= 0}
+              disabled={isSaving || calculatedShares <= 0 || entryPrice <= 0 || newTotalShares <= 0}
               tooltip={isSaving ? (editingPlan || editingScenario ? 'Updating...' : 'Saving...') : (editingPlan || editingScenario ? 'Update Scenario' : 'Save Scenario')}
               variant="primary"
               size="md"
@@ -216,20 +234,58 @@ export function IncreasePositionPlanner({ position, editingPlan, onSuccess, onCa
           </div>
         </div>
 
+        {/* Input Mode Toggle */}
+        <div className="mb-4">
+          <SegmentedPills
+            options={[
+              {
+                value: 1,
+                label: 'By Shares',
+                activeColor: 'bg-green-500'
+              },
+              {
+                value: 2,
+                label: 'By Amount',
+                activeColor: 'bg-emerald-500'
+              },
+            ]}
+            value={inputMode === 'shares' ? 1 : 2}
+            onChange={(value) => {
+              setInputMode(value === 1 ? 'shares' : 'amount');
+              // Reset the non-active field
+              if (value === 1) {
+                setTotalAmount(0);
+              } else {
+                setBuyShares(0);
+              }
+            }}
+            showLabels={true}
+          />
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          {/* First Input - Dynamic based on mode */}
           <div>
             <label className="text-blue-200 text-sm mb-2 block font-medium">
-              Shares to Buy <span className="text-rose-400">*</span>
+              {inputMode === 'shares' ? 'Shares to Buy' : 'Total Amount'} <span className="text-rose-400">*</span>
             </label>
             <input
               type="number"
-              step="0.0001"
-              value={buyShares || ''}
-              onChange={(e) => setBuyShares(parseFloat(e.target.value) || 0)}
+              step={inputMode === 'shares' ? '0.0001' : '0.01'}
+              value={inputMode === 'shares' ? (buyShares || '') : (totalAmount || '')}
+              onChange={(e) => {
+                if (inputMode === 'shares') {
+                  setBuyShares(parseFloat(e.target.value) || 0);
+                } else {
+                  setTotalAmount(parseFloat(e.target.value) || 0);
+                }
+              }}
               className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white"
-              placeholder="0.0000"
+              placeholder={inputMode === 'shares' ? '0.0000' : '0.00'}
             />
           </div>
+
+          {/* Entry Price - Always editable */}
           <div>
             <label className="text-blue-200 text-sm mb-2 block font-medium">
               Entry Price <span className="text-rose-400">*</span>
@@ -243,6 +299,8 @@ export function IncreasePositionPlanner({ position, editingPlan, onSuccess, onCa
               placeholder="0.00"
             />
           </div>
+
+          {/* Fees - Always editable */}
           <div>
             <label className="text-blue-200 text-sm mb-2 block font-medium">
               Fees (Optional)
@@ -258,23 +316,40 @@ export function IncreasePositionPlanner({ position, editingPlan, onSuccess, onCa
           </div>
         </div>
 
+        {/* Display boxes - Dynamic based on mode */}
         <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-            <p className="text-blue-200 text-xs mb-1">Total Investment Amount</p>
-            <p className="text-white text-2xl font-bold">${totalInvestmentAmount.toFixed(2)}</p>
-            <p className="text-blue-300 text-xs mt-1">{position.position_currency}</p>
-          </div>
-          <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-            <p className="text-blue-200 text-xs mb-1">Current Avg Cost</p>
-            <p className="text-white text-2xl font-bold">${position.average_cost.toFixed(2)}</p>
-          </div>
+          {inputMode === 'shares' ? (
+            <>
+              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                <p className="text-blue-200 text-xs mb-1">Total Investment Amount</p>
+                <p className="text-white text-2xl font-bold">${totalInvestmentAmount.toFixed(2)}</p>
+                <p className="text-blue-300 text-xs mt-1">{position.position_currency}</p>
+              </div>
+              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                <p className="text-blue-200 text-xs mb-1">Current Avg Cost</p>
+                <p className="text-white text-2xl font-bold">${position.average_cost.toFixed(2)}</p>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                <p className="text-blue-200 text-xs mb-1">Shares to Buy</p>
+                <p className="text-white text-2xl font-bold">{calculatedShares.toFixed(4)}</p>
+                <p className="text-blue-300 text-xs mt-1">shares</p>
+              </div>
+              <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                <p className="text-blue-200 text-xs mb-1">Current Avg Cost</p>
+                <p className="text-white text-2xl font-bold">${position.average_cost.toFixed(2)}</p>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
       {/* New Position Metrics Card */}
       <div className="backdrop-blur-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-3xl p-6 border border-blue-400/20">
         <h3 className="text-xl font-bold text-white mb-4">New Position Metrics</h3>
-        
+
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
           <div className="bg-white/5 rounded-xl p-4 border border-white/10">
             <p className="text-blue-200 text-xs mb-1">New Total Shares</p>
