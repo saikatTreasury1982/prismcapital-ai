@@ -64,7 +64,6 @@ export async function GET(request: Request) {
       name: data.Name || null,
       currentPrice: currentPrice,
       dividendPerShare: data.DividendPerShare || null,
-      dividendYield: data.DividendYield || null,
       exDividendDate: data.ExDividendDate || null,
       dividendDate: data.DividendDate || null
     };

@@ -37,7 +37,6 @@ export async function PUT(
         dividend_per_share,
         shares_owned,
         total_dividend_amount,
-        dividend_yield,
         notes,
         updated_at: new Date().toISOString(),
       })

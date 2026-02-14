@@ -8,7 +8,6 @@ export interface Dividend {
   dividend_per_share: number;
   shares_owned: number;
   total_dividend_amount: number; // Generated column
-  dividend_yield: number | null;
   Currency: string | null;
   notes: string | null;
   created_at: string;
@@ -23,7 +22,6 @@ export interface CreateDividendInput {
   dividend_per_share: number;
   shares_owned: number;
   total_dividend_amount: number; // Generated column
-  dividend_yield?: number;
   notes?: string;
   Currency?: string;
 }
@@ -77,7 +75,6 @@ export interface PositionForDividend {
 export interface AlphaVantageOverview {
   Symbol: string;
   DividendPerShare: string;
-  DividendYield: string;
   ExDividendDate: string;
   DividendDate: string;
 }

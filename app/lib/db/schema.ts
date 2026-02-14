@@ -158,7 +158,6 @@ export const dividends = sqliteTable('dividends', {
   notes: text('notes'),
   created_at: text('created_at').default(sql`(datetime('now'))`),
   updated_at: text('updated_at').default(sql`(datetime('now'))`),
-  dividend_yield: real('dividend_yield'),
   total_dividend_amount: real('total_dividend_amount'),
   Currency: text('Currency'),
 });
