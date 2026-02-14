@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { CoinsIcon, CurrencyIcon } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useCurrency } from '../lib/contexts/CurrencyContext';
 import InvestmentCard from '../components/dashboard/InvestmentCard';
@@ -56,6 +55,8 @@ interface DividendData {
   summary: {
     totalDividends: number;
     totalStocks: number;
+    totalPortfolioCapital: number;
+    portfolioYield: number;
     ytdDividends: number;
     ytdStocks: number;
     ytdPayments: number;

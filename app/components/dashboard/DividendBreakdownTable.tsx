@@ -11,8 +11,8 @@ interface TickerBreakdown {
   totalPayments: number;
   totalReceived: number;
   avgPerShare: number;
-  marketYield: number;
-  personalYield: number;
+  currentShares: number;
+  latestDividendPerShare: number;
   exDivDates: string[];
   paymentDates: string[];
 }
@@ -39,7 +39,7 @@ interface DividendBreakdownTableProps {
   fxRate: number;
 }
 
-type SortField = 'ticker' | 'totalPayments' | 'totalReceived' | 'avgPerShare' | 'marketYield' | 'personalYield';
+type SortField = 'ticker' | 'totalPayments' | 'totalReceived' | 'avgPerShare' | 'currentShares' | 'latestDividendPerShare';
 type SortDirection = 'asc' | 'desc';
 
 export default function DividendBreakdownTable({ data, chartData, title, displayCurrency, fxRate }: DividendBreakdownTableProps) {
@@ -163,21 +163,21 @@ export default function DividendBreakdownTable({ data, chartData, title, display
                     </div>
                   </th>
                   <th 
-                    className="text-right text-blue-200 text-sm font-medium pb-3 w-[10%] cursor-pointer hover:text-white transition-colors"
-                    onClick={() => handleSort('marketYield')}
+                    className="text-right text-blue-200 text-sm font-medium pb-3 w-[11%] cursor-pointer hover:text-white transition-colors"
+                    onClick={() => handleSort('currentShares')}
                   >
                     <div className="flex items-center justify-end gap-1">
-                      Market Yield
-                      <SortIcon field="marketYield" />
+                      Current Qty
+                      <SortIcon field="currentShares" />
                     </div>
                   </th>
                   <th 
-                    className="text-right text-blue-200 text-sm font-medium pb-3 w-[11%] cursor-pointer hover:text-white transition-colors"
-                    onClick={() => handleSort('personalYield')}
+                    className="text-right text-blue-200 text-sm font-medium pb-3 w-[13%] cursor-pointer hover:text-white transition-colors"
+                    onClick={() => handleSort('latestDividendPerShare')}
                   >
                     <div className="flex items-center justify-end gap-1">
-                      Personal Yield
-                      <SortIcon field="personalYield" />
+                      Latest Div/Share
+                      <SortIcon field="latestDividendPerShare" />
                     </div>
                   </th>
                   <th className="text-center text-blue-200 text-sm font-medium pb-3 w-[12%]">
@@ -216,10 +216,13 @@ export default function DividendBreakdownTable({ data, chartData, title, display
                       {formatCurrency(item.avgPerShare)}
                     </td>
                     <td className="text-right text-blue-300 text-sm py-2 pr-4">
-                      {formatPercent(item.marketYield)}
+                      {item.currentShares.toLocaleString(undefined, { 
+                        minimumFractionDigits: 2, 
+                        maximumFractionDigits: 4 
+                      })}
                     </td>
                     <td className="text-right text-emerald-300 text-sm py-2 pr-4">
-                      {formatPercent(item.personalYield)}
+                      {formatCurrency(item.latestDividendPerShare)}
                     </td>
                     <td className="py-2 text-center">
                       <div className="flex justify-center">

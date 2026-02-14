@@ -8,6 +8,8 @@ interface DividendCardProps {
   summary: {
     totalDividends: number;
     totalStocks: number;
+    totalPortfolioCapital: number;
+    portfolioYield: number;
     ytdDividends: number;
     ytdStocks: number;
     ytdPayments: number;
@@ -51,7 +53,19 @@ export default function DividendCard({ summary, onViewChange, activeView, displa
             <p className="text-2xl font-bold text-amber-400">
               {formatCurrency(summary.totalDividends)}
             </p>
-            <p className="text-blue-300 text-xs mt-1">
+            
+            <div className="border-t border-white/10 my-2" />
+            
+            <div className="space-y-1">
+              <p className="text-blue-300 text-xs">
+                Portfolio: {formatCurrency(summary.totalPortfolioCapital)}
+              </p>
+              <p className="text-emerald-300 text-xs font-semibold">
+                Yield: {summary.portfolioYield.toFixed(2)}%
+              </p>
+            </div>
+            
+            <p className="text-blue-300 text-xs mt-2">
               {summary.totalStocks} stocks
             </p>
           </div>

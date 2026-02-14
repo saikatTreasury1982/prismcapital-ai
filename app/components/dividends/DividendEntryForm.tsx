@@ -82,7 +82,6 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
     dividend_per_share: '',
     shares_owned: '',
     total_dividend_amount: '', // For display only
-    dividend_yield: '',
     notes: '',
     Currency: 'USD'
   });
@@ -107,6 +106,21 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
     }
   }, [formData.dividend_per_share, formData.shares_owned]);
 
+  // Auto-calculate dividend yield (for this payment only)
+  useEffect(() => {
+    const perShare = parseFloat(formData.dividend_per_share);
+    const position = positions.find(p => p.ticker === formData.ticker);
+    
+    if (!isNaN(perShare) && perShare > 0 && position?.current_market_price && position.current_market_price > 0) {
+      const yieldPercent = (perShare / position.current_market_price) * 100;
+      
+      setFormData(prev => ({
+        ...prev,
+        dividend_yield: yieldPercent.toFixed(4)  // 4 decimals for precision
+      }));
+    }
+  }, [formData.dividend_per_share, formData.ticker, positions]);
+
   // Pre-fill form when editing - fetch full dividend record
   useEffect(() => {
     if (editingDividend) {
@@ -125,7 +139,6 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
               dividend_per_share: fullDividend.dividend_per_share.toString(),
               shares_owned: fullDividend.shares_owned.toString(),
               total_dividend_amount: fullDividend.total_dividend_amount?.toString() || '',
-              dividend_yield: fullDividend.dividend_yield?.toString() || '',
               notes: fullDividend.notes || '',
               Currency: fullDividend.Currency || 'USD'
             });
@@ -190,10 +203,10 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
       setFormData(prev => ({
         ...prev,
         ticker: position.ticker,
-        position_id: position.position_id.toString(),  // Capture position_id
+        position_id: position.position_id.toString(),
         shares_owned: position.total_shares.toString(),
         dividend_per_share: dividendAmount || alphaData.dividendPerShare || '',
-        dividend_yield: alphaData.dividendYield || '',
+        // dividend_yield will be auto-calculated by useEffect
         ex_dividend_date: alphaData.exDividendDate || '',
         payment_date: alphaData.dividendDate || ''
       }));
@@ -215,7 +228,6 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
       dividend_per_share: '',
       shares_owned: '',
       total_dividend_amount: '',
-      dividend_yield: '',
       notes: '',
       Currency: 'USD'
     });
@@ -262,7 +274,6 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
           dividend_per_share: parseFloat(formData.dividend_per_share),
           shares_owned: parseFloat(formData.shares_owned),
           total_dividend_amount: parseFloat(formData.total_dividend_amount),
-          dividend_yield: formData.dividend_yield ? parseFloat(formData.dividend_yield) : undefined,
           Currency: formData.Currency || undefined,
           notes: formData.notes || undefined
         });
@@ -292,7 +303,6 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
           dividend_per_share: parseFloat(formData.dividend_per_share),
           shares_owned: parseFloat(formData.shares_owned),
           total_dividend_amount: parseFloat(formData.total_dividend_amount),
-          dividend_yield: formData.dividend_yield ? parseFloat(formData.dividend_yield) : undefined,
           Currency: formData.Currency || undefined,
           notes: formData.notes || undefined
         });
@@ -307,7 +317,6 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
         dividend_per_share: '',
         shares_owned: '',
         total_dividend_amount: '',
-        dividend_yield: '',
         notes: '',
         Currency: 'USD'
       });
@@ -479,19 +488,6 @@ export function DividendEntryForm({ positions, onSuccess, editingDividend, onCan
               value={formData.total_dividend_amount}
               readOnly
               className="w-full funding-input rounded-xl px-4 py-3 bg-white/5 cursor-not-allowed"
-            />
-          </div>
-
-          {/* Dividend Yield */}
-          <div>
-            <label className="text-blue-200 text-sm mb-2 block font-medium">Dividend Yield (%)</label>
-            <input
-              type="number"
-              step="0.01"
-              value={formData.dividend_yield}
-              onChange={(e) => setFormData({ ...formData, dividend_yield: e.target.value })}
-              placeholder="2.5"
-              className="w-full funding-input rounded-xl px-4 py-3"
             />
           </div>
 

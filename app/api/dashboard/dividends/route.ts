@@ -26,7 +26,7 @@ export async function GET() {
           COUNT(*) as total_dividend_payments,
           ROUND(SUM(d.dividend_per_share * d.shares_owned), 4) as total_dividends_received,
           ROUND(AVG(d.dividend_per_share), 4) as avg_dividend_per_share,
-          MAX(d.dividend_yield) as market_yield,
+          GROUP_CONCAT(d.dividend_per_share, '|') as dividend_amounts,
           GROUP_CONCAT(d.ex_dividend_date, '|') as ex_div_dates,
           GROUP_CONCAT(d.payment_date, '|') as payment_dates
         FROM dividends d
@@ -51,7 +51,7 @@ export async function GET() {
           COUNT(*) as total_dividend_payments,
           ROUND(SUM(d.dividend_per_share * d.shares_owned), 4) as total_dividends_received,
           ROUND(AVG(d.dividend_per_share), 4) as avg_dividend_per_share,
-          MAX(d.dividend_yield) as market_yield,
+          GROUP_CONCAT(d.dividend_per_share, '|') as dividend_amounts,
           GROUP_CONCAT(d.ex_dividend_date, '|') as ex_div_dates,
           GROUP_CONCAT(d.payment_date, '|') as payment_dates
         FROM dividends d
@@ -146,15 +146,32 @@ export async function GET() {
         // Calculate personal yield
         const personalYield = totalCapital > 0 ? (totalDividends / totalCapital) * 100 : 0;
         
+        // Extract dividend amounts and match with dates to get latest
+        const dividendAmounts = row.dividend_amounts 
+          ? (row.dividend_amounts as string).split('|').map(Number) 
+          : [];
+        const exDivDates = row.ex_div_dates 
+          ? (row.ex_div_dates as string).split('|') 
+          : [];
+        
+        // Find latest dividend (most recent ex-div date)
+        let latestDividendPerShare = 0;
+        if (exDivDates.length > 0 && dividendAmounts.length > 0) {
+          const sortedIndices = exDivDates
+            .map((date, index) => ({ date, amount: dividendAmounts[index], index }))
+            .sort((a, b) => b.date.localeCompare(a.date));
+          latestDividendPerShare = sortedIndices[0].amount;
+        }
+
         return {
           ticker: row.ticker,
           tickerName: row.ticker_name || row.ticker,
           totalPayments: Number(row.total_dividend_payments) || 0,
           totalReceived: totalDividends,
           avgPerShare: Number(row.avg_dividend_per_share) || 0,
-          marketYield: Number(row.market_yield) || 0,
-          personalYield: Number(personalYield.toFixed(2)),
-          exDivDates: row.ex_div_dates ? (row.ex_div_dates as string).split('|').sort().reverse() : [],
+          currentShares: Number(row.total_shares) || 0,
+          latestDividendPerShare: Number(latestDividendPerShare.toFixed(4)),
+          exDivDates: exDivDates.sort().reverse(),
           paymentDates: row.payment_dates ? (row.payment_dates as string).split('|').sort().reverse() : [],
         };
       })
@@ -186,24 +203,60 @@ export async function GET() {
         // Calculate personal yield
         const personalYield = effectiveCapital > 0 ? (totalDividends / effectiveCapital) * 100 : 0;
         
+        // Extract dividend amounts and match with dates to get latest
+        const dividendAmounts = row.dividend_amounts 
+          ? (row.dividend_amounts as string).split('|').map(Number) 
+          : [];
+        const exDivDates = row.ex_div_dates 
+          ? (row.ex_div_dates as string).split('|') 
+          : [];
+        
+        // Find latest dividend (most recent ex-div date)
+        let latestDividendPerShare = 0;
+        if (exDivDates.length > 0 && dividendAmounts.length > 0) {
+          const sortedIndices = exDivDates
+            .map((date, index) => ({ date, amount: dividendAmounts[index], index }))
+            .sort((a, b) => b.date.localeCompare(a.date));
+          latestDividendPerShare = sortedIndices[0].amount;
+        }
+
         return {
           ticker: row.ticker,
           tickerName: row.ticker_name || row.ticker,
           totalPayments: Number(row.total_dividend_payments) || 0,
           totalReceived: totalDividends,
           avgPerShare: Number(row.avg_dividend_per_share) || 0,
-          marketYield: Number(row.market_yield) || 0,
-          personalYield: Number(personalYield.toFixed(2)),
-          exDivDates: row.ex_div_dates ? (row.ex_div_dates as string).split('|').sort().reverse() : [],
+          currentShares: Number(row.total_shares) || 0,
+          latestDividendPerShare: Number(latestDividendPerShare.toFixed(4)),
+          exDivDates: exDivDates.sort().reverse(),
           paymentDates: row.payment_dates ? (row.payment_dates as string).split('|').sort().reverse() : [],
         };
       })
     );
 
+    // Calculate total capital deployed in ALL positions (entire portfolio)
+    const totalCapitalResult = await db.$client.execute({
+      sql: `
+        SELECT COALESCE(SUM(total_shares * average_cost), 0) as total_capital
+        FROM positions
+        WHERE user_id = ?
+      `,
+      args: [userId],
+    });
+
+    const totalPortfolioCapital = Number(totalCapitalResult.rows[0]?.total_capital) || 0;
+    
+    // Calculate portfolio-wide dividend yield
+    const portfolioYield = totalPortfolioCapital > 0 
+      ? (Number(allTimeData?.total_dividends) || 0) / totalPortfolioCapital * 100 
+      : 0;
+
     return NextResponse.json({
       summary: {
         totalDividends: Number(allTimeData?.total_dividends) || 0,
         totalStocks: Number(allTimeData?.total_stocks) || 0,
+        totalPortfolioCapital: Number(totalPortfolioCapital.toFixed(2)),
+        portfolioYield: Number(portfolioYield.toFixed(2)),
         ytdDividends: Number(ytdData?.total_dividends_received) || 0,
         ytdStocks: Number(ytdData?.stocks_paid_dividends) || 0,
         ytdPayments: Number(ytdData?.total_dividend_payments) || 0,
