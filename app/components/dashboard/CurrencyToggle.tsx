@@ -14,12 +14,13 @@ export function CurrencyToggle() {
         <span className="text-blue-200 text-sm font-medium">Display Currency:</span>
         <SegmentedPills
           options={[
-            { value: tradingCurrency, label: tradingCurrency, activeColor:"bg-green-500" },
-            { value: homeCurrency, label: homeCurrency, activeColor:"bg-orange-500" },
+            { value: tradingCurrency, label: tradingCurrency, activeColor: "bg-green-500" },
+            { value: homeCurrency, label: homeCurrency, activeColor: "bg-orange-500" },
           ]}
           value={displayCurrency}
           onChange={setDisplayCurrency}
           showLabels={true}
+          className="[&_button]:py-1"
         />
       </div>
     </div>

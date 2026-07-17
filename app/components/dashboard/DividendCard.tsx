@@ -99,7 +99,7 @@ export default function DividendCard({ summary, onViewChange, activeView, displa
               onClick={() => onViewChange(activeView === 'alltime' ? null : 'alltime')}
               tooltip="All-Time Breakdown"
               variant="primary"
-              size="md"
+              size="sm"
               className={activeView === 'alltime' 
                 ? 'bg-amber-500/40 border-amber-400/80 ring-2 ring-amber-400/50 shadow-lg shadow-amber-500/50' 
                 : 'hover:bg-white/10'}
@@ -110,7 +110,7 @@ export default function DividendCard({ summary, onViewChange, activeView, displa
               onClick={() => onViewChange(activeView === 'ytd' ? null : 'ytd')}
               tooltip="YTD Breakdown"
               variant="primary"
-              size="md"
+              size="sm"
               className={activeView === 'ytd' 
                 ? 'bg-amber-500/40 border-amber-400/80 ring-2 ring-amber-400/50 shadow-lg shadow-amber-500/50' 
                 : 'hover:bg-white/10'}
