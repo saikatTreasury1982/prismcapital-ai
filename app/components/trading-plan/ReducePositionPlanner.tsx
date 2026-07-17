@@ -521,7 +521,7 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
             <TrendingUp className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-white">Step 2: Reinvest (Optional)</h3>
+            <h3 className="text-xl font-bold text-white">Step 2: Reinvest</h3>
             <p className="text-blue-200 text-sm">Use proceeds to buy another ticker</p>
           </div>
         </div>
@@ -627,8 +627,8 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
           </div>
         </div>
 
-        <div className="flex flex-wrap items-end gap-4">
-          <div>
+        <div className="flex flex-wrap items-stretch gap-4">
+          <div className="self-end">
             <label className="text-blue-200 text-sm mb-2 block font-medium">
               Withdraw to Currency
             </label>
