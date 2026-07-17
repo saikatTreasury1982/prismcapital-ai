@@ -107,7 +107,7 @@ const InvestmentCharts = memo(function InvestmentCharts({ data, displayCurrency 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Doughnut Chart - Capital Investment by Asset Type */}
-      <div className="backdrop-blur-xl bg-white/10 rounded-2xl border border-white/20 p-6">
+      <div className="backdrop-blur-xl bg-white/10 rounded-xl border border-white/20 p-6">
         <h3 className="text-lg font-semibold text-white mb-4">Capital Investment by Asset Type</h3>
         
         <div className="flex gap-6">
@@ -174,7 +174,7 @@ const InvestmentCharts = memo(function InvestmentCharts({ data, displayCurrency 
       </div>
 
       {/* Line Chart - Capital vs Current Value */}
-      <div className="backdrop-blur-xl bg-white/10 rounded-2xl border border-white/20 p-6">
+      <div className="backdrop-blur-xl bg-white/10 rounded-xl border border-white/20 p-6">
         <h3 className="text-lg font-semibold text-white mb-4">Capital Invested vs Current Value</h3>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={data}>
