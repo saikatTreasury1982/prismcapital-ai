@@ -305,19 +305,67 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
           </select>
         </div>
 
-        {/* Entry Price */}
-        <div>
-          <label className="text-blue-200 text-sm mb-2 block font-medium">Entry Price <span className="text-rose-400">*</span></label>
-          <input
-            type="number"
-            step="0.01"
-            value={formData.entry_price}
-            onChange={(e) => setFormData({ ...formData, entry_price: e.target.value })}
-            placeholder="150.00"
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
-            required
-          />
+        {/* Entry Type */}
+        <div className="md:col-span-2">
+          <label className="text-blue-200 text-sm mb-2 block font-medium">Entry Type</label>
+          <div className="flex gap-2">
+            {(['STRICT', 'RANGE'] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setFormData({ ...formData, entry_type: t })}
+                className={`flex-1 px-4 py-3 rounded-xl border transition-all text-sm font-medium ${
+                  formData.entry_type === t
+                    ? 'bg-blue-500/30 border-blue-400 text-white'
+                    : 'bg-white/5 border-white/10 text-blue-300 hover:bg-white/10'
+                }`}
+              >
+                {t === 'STRICT' ? 'Strict price' : 'Price range'}
+              </button>
+            ))}
+          </div>
         </div>
+        
+        {/* Entry Price / Range */}
+        {formData.entry_type === 'STRICT' ? (
+          <div>
+            <label className="text-blue-200 text-sm mb-2 block font-medium">Entry Price <span className="text-rose-400">*</span></label>
+            <input
+              type="number"
+              step="0.01"
+              value={formData.entry_price}
+              onChange={(e) => setFormData({ ...formData, entry_price: e.target.value })}
+              placeholder="150.00"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
+              required
+            />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-blue-200 text-sm mb-2 block font-medium">Entry Low <span className="text-rose-400">*</span></label>
+              <input
+                type="number"
+                step="0.01"
+                value={formData.entry_low}
+                onChange={(e) => setFormData({ ...formData, entry_low: e.target.value })}
+                placeholder="148.00"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
+              />
+            </div>
+            <div>
+              <label className="text-blue-200 text-sm mb-2 block font-medium">Entry High <span className="text-rose-400">*</span></label>
+              <input
+                type="number"
+                step="0.01"
+                value={formData.entry_high}
+                onChange={(e) => setFormData({ ...formData, entry_high: e.target.value })}
+                placeholder="152.00"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
+              />
+            </div>
+          </div>
+        )}
 
         {/* Position Size */}
         <div>
@@ -407,8 +455,13 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
           <div className="bg-white/5 rounded-xl p-3 border border-blue-400/20">
             <p className="text-blue-200 text-xs mb-1">Risk:Reward Ratio</p>
             <p className="text-white font-bold text-lg">
-              {metrics.riskRewardRatio ? `1:${metrics.riskRewardRatio}` : '-'}
+              {metrics.rrLow && metrics.rrHigh
+                ? `1:${metrics.rrLow} → 1:${metrics.rrHigh}`
+                : metrics.riskRewardRatio ? `1:${metrics.riskRewardRatio}` : '-'}
             </p>
+            {formData.entry_type === 'RANGE' && metrics.sharesToBuy && (
+              <p className="text-blue-300 text-xs mt-1">Midpoint entry: ${((parseFloat(formData.entry_low) + parseFloat(formData.entry_high)) / 2).toFixed(2)}</p>
+            )}
           </div>
         </div>
       </div>
