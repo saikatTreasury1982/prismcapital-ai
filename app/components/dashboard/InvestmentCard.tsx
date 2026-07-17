@@ -121,7 +121,7 @@ export default function InvestmentCard({
               disabled={isRefreshing}
               tooltip={isRefreshing ? "Refreshing..." : "Refresh Market Prices"}
               variant="primary"
-              size="md"
+              size="sm"
               className={isRefreshing ? 'animate-pulse' : ''}
             />
           )}
@@ -134,7 +134,7 @@ export default function InvestmentCard({
                 onClick={() => onViewChange(activeView === 'standard' ? null : 'standard')}
                 tooltip="Display Standard"
                 variant="primary"
-                size="md"
+                size="sm"
                 className={activeView === 'standard' 
                   ? 'bg-blue-500/40 border-blue-400/80 ring-2 ring-blue-400/50 shadow-lg shadow-blue-500/50' 
                   : 'hover:bg-white/10'}
@@ -145,7 +145,7 @@ export default function InvestmentCard({
                 onClick={() => onViewChange(activeView === 'strategy' ? null : 'strategy')}
                 tooltip="Display By Strategy"
                 variant="primary"
-                size="md"
+                size="sm"
                 className={activeView === 'strategy' 
                   ? 'bg-blue-500/40 border-blue-400/80 ring-2 ring-blue-400/50 shadow-lg shadow-blue-500/50' 
                   : 'hover:bg-white/10'}
