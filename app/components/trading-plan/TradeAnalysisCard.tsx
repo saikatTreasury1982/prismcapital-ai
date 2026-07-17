@@ -55,9 +55,8 @@ export function TradeAnalysisCard({ analysis, onEdit, onDelete, onUpdate }: Trad
   };
 
   return (
-    <div className={`backdrop-blur-xl bg-white/10 rounded-3xl p-6 border border-white/20 transition-all ${
-      analysis.is_flagged === 1 ? 'ring-2 ring-blue-400 shadow-lg shadow-blue-500/20' : ''
-    }`}>
+    <div className={`backdrop-blur-xl bg-white/10 rounded-3xl p-6 border border-white/20 transition-all ${analysis.is_flagged === 1 ? 'ring-2 ring-blue-400 shadow-lg shadow-blue-500/20' : ''
+      }`}>
       {/* Header */}
       <div className="mb-4">
         <div className="flex items-start justify-between gap-3">
@@ -85,11 +84,10 @@ export function TradeAnalysisCard({ analysis, onEdit, onDelete, onUpdate }: Trad
             <button
               onClick={toggleFlag}
               disabled={isUpdating}
-              className={`p-2 rounded-full transition-all ${
-                analysis.is_flagged === 1
+              className={`p-2 rounded-full transition-all ${analysis.is_flagged === 1
                   ? 'bg-blue-500 text-white shadow-lg'
                   : 'bg-white/10 text-blue-300 hover:bg-white/20'
-              }`}
+                }`}
               title={analysis.is_flagged === 1 ? 'Unflag' : 'Flag for trading'}
             >
               <Flag className="w-4 h-4" />
@@ -147,7 +145,7 @@ export function TradeAnalysisCard({ analysis, onEdit, onDelete, onUpdate }: Trad
                 <p className="text-white text-lg font-bold">${analysis.position_size.toFixed(0)}</p>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-white/5 rounded-xl p-3 border border-white/10">
                 <p className="text-rose-200 text-xs mb-1">Stop Loss</p>
@@ -164,7 +162,11 @@ export function TradeAnalysisCard({ analysis, onEdit, onDelete, onUpdate }: Trad
           <div className="border-t border-white/20 pt-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-blue-200 text-sm">Shares to Buy</span>
-              <span className="text-white font-semibold">{analysis.shares_to_buy?.toFixed(2) || 0}</span>
+              <span className="text-white font-semibold">
+                {analysis.entry_type === 'RANGE' && analysis.entry_low != null && analysis.entry_high != null
+                  ? `${(analysis.position_size / analysis.entry_high).toFixed(2)} – ${(analysis.position_size / analysis.entry_low).toFixed(2)}`
+                  : analysis.shares_to_buy?.toFixed(2) ?? '-'}
+              </span>
             </div>
 
             <div className="flex items-center justify-between">
