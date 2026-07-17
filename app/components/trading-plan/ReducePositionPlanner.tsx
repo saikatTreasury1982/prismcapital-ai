@@ -303,7 +303,7 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
       )}
 
       {/* Card 1: Liquidate */}
-      <div className="backdrop-blur-xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-3xl p-6 border border-blue-400/20">
+      <div className="backdrop-blur-xl rounded-xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-3xl p-6 border border-blue-400/20">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center">
             <DollarSign className="w-6 h-6 text-white" />
@@ -627,7 +627,7 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
             </div>
 
             {/* Liquidation Details */}
-            <div className="backdrop-blur-xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-2xl p-6 border border-blue-400/20 mb-4">
+            <div className="backdrop-blur-xl rounded-xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-2xl p-6 border border-blue-400/20 mb-4">
               <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <DollarSign className="w-5 h-5" />
                 Liquidation Plan
@@ -669,7 +669,7 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
 
             {/* Reinvestment Details */}
             {viewingScenario.reinvest_ticker && (
-              <div className="backdrop-blur-xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-2xl p-6 border border-green-400/20 mb-4">
+              <div className="backdrop-blur-xl rounded-xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-2xl p-6 border border-green-400/20 mb-4">
                 <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                   <TrendingUp className="w-5 h-5" />
                   Reinvestment Plan
@@ -689,7 +689,7 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
 
             {/* Withdrawal Details */}
             {viewingScenario.withdraw_currency && (
-              <div className="backdrop-blur-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-2xl p-6 border border-purple-400/20 mb-4">
+              <div className="backdrop-blur-xl rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-2xl p-6 border border-purple-400/20 mb-4">
                 <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                   <Wallet className="w-5 h-5" />
                   Withdrawal Plan
