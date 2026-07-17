@@ -108,12 +108,12 @@ export async function POST(request: Request) {
     }
 
     // Calculate metrics
-    const metrics = calculateMetrics(
-      analysisData.entry_price,
-      analysisData.stop_loss,
-      analysisData.take_profit,
-      analysisData.position_size
-    );
+    const entryType = analysisData.entry_type || 'STRICT';
+    const entryLow = entryType === 'RANGE' ? analysisData.entry_low : null;
+    const entryHigh = entryType === 'RANGE' ? analysisData.entry_high : null;
+    const effectiveEntry = entryType === 'RANGE' ? (entryLow + entryHigh) / 2 : analysisData.entry_price;
+    
+    const metrics = calculateMetrics(entryType, effectiveEntry, entryLow, entryHigh, analysisData.stop_loss, analysisData.take_profit, analysisData.position_size);
 
     const data = await db
       .insert(tradeAnalyses)
