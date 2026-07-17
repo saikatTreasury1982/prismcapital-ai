@@ -314,19 +314,34 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
           </div>
         </div>
 
-        {/* Liquidation Type Toggle */}
-        <div className="mb-4 inline-flex">
-          <SegmentedPills
-            options={[
-              { value: 1, label: 'Full Liquidation', activeColor: 'bg-rose-500' },
-              { value: 2, label: 'Partial Sale', activeColor: 'bg-orange-500' },
-            ]}
-            value={liquidationType === 'full' ? 1 : 2}
-            onChange={(value) => setLiquidationType(value === 1 ? 'full' : 'partial')}
-            showLabels={true}
-          />
+        {/* Liquidation Type + Next Action */}
+        <div className="mb-4">
+          <label className="text-blue-200 text-sm mb-2 block font-medium">
+            How much to sell, and what to do with the proceeds?
+          </label>
+          <div className="flex flex-wrap items-center gap-3">
+            <SegmentedPills
+              options={[
+                { value: 1, label: 'Full Liquidation', activeColor: 'bg-rose-500' },
+                { value: 2, label: 'Partial Sale', activeColor: 'bg-orange-500' },
+              ]}
+              value={liquidationType === 'full' ? 1 : 2}
+              onChange={(value) => setLiquidationType(value === 1 ? 'full' : 'partial')}
+              showLabels={true}
+            />
+            <SegmentedPills
+              options={[
+                { value: 1, label: 'Decide Later', activeColor: 'bg-slate-500' },
+                { value: 2, label: 'Reinvest', activeColor: 'bg-green-500' },
+                { value: 3, label: 'Withdraw', activeColor: 'bg-purple-500' },
+              ]}
+              value={nextAction === 'none' ? 1 : nextAction === 'reinvest' ? 2 : 3}
+              onChange={(value) => setNextAction(value === 1 ? 'none' : value === 2 ? 'reinvest' : 'withdraw')}
+              showLabels={true}
+            />
+          </div>
         </div>
-
+        
         {liquidationType === 'partial' && (
           <div className="mb-4">
             <label className="text-blue-200 text-sm mb-2 block font-medium">
@@ -431,25 +446,6 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
                 </p>
               );
             })()}
-          </div>
-        </div>
-
-        {/* Next Action Selector */}
-        <div className="mt-4">
-          <label className="text-blue-200 text-sm mb-2 block font-medium">
-            What would you like to do with the proceeds?
-          </label>
-          <div className="max-w-md">
-            <SegmentedControl
-              options={[
-                { value: 1, label: 'Decide Later' },
-                { value: 2, label: 'Reinvest' },
-                { value: 3, label: 'Withdraw' },
-              ]}
-              value={nextAction === 'none' ? 1 : nextAction === 'reinvest' ? 2 : 3}
-              onChange={(value) => setNextAction(value === 1 ? 'none' : value === 2 ? 'reinvest' : 'withdraw')}
-              color="blue"
-            />
           </div>
         </div>
       </div>
