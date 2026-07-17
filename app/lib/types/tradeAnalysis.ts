@@ -4,6 +4,9 @@ export interface TradeAnalysis {
   ticker: string;
   exchange_code: string | null;
   entry_price: number;
+  entry_type: 'STRICT' | 'RANGE';
+  entry_low: number | null;
+  entry_high: number | null;
   position_size: number;
   stop_loss: number | null;
   take_profit: number | null;
@@ -11,6 +14,8 @@ export interface TradeAnalysis {
   risk_percentage: number | null;
   reward_percentage: number | null;
   risk_reward_ratio: number | null;
+  risk_reward_ratio_low: number | null;
+  risk_reward_ratio_high: number | null;
   is_flagged: number; // 0 or 1
   status: 'ANALYZING' | 'FLAGGED' | 'EXECUTED' | 'ARCHIVED';
   notes: string | null;
