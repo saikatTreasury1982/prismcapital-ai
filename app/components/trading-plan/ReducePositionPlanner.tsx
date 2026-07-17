@@ -603,50 +603,6 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
           </div>
         </div>
 
-        <div className="mb-4 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-end">
-          <div>
-            <label className="text-blue-200 text-sm mb-2 block font-medium">
-              Reinvest Amount: ${reinvestAmount.toFixed(2)}
-            </label>
-            <input
-              type="range"
-              min="0"
-              max={proceeds}
-              step="0.01"
-              value={reinvestAmount}
-              onChange={(e) => handleReinvestAmountChange(parseFloat(e.target.value))}
-              className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-green-500"
-            />
-            <div className="flex justify-between text-xs text-blue-300 mt-1">
-              <span>$0</span>
-              <span>${(proceeds / 2).toFixed(0)}</span>
-              <span>${proceeds.toFixed(0)}</span>
-            </div>
-          </div>
-          <div>
-            <label className="text-blue-200 text-sm mb-2 block font-medium">Amount ($)</label>
-            <div className="flex gap-2 items-center">
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                max={proceeds}
-                value={reinvestAmount}
-                onChange={(e) => handleReinvestAmountChange(parseFloat(e.target.value) || 0)}
-                className="w-full md:w-36 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white"
-              />
-              <GlassButton
-                icon={ArrowRight}
-                onClick={() => handleReinvestAmountChange(proceeds)}
-                tooltip="Reinvest all proceeds"
-                variant="secondary"
-                size="sm"
-              />
-            </div>
-            <p className="text-blue-300 text-xs mt-1">of ${proceeds.toFixed(2)}</p>
-          </div>
-        </div>
-
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-white/5 rounded-xl p-3 border border-white/10">
             <p className="text-blue-200 text-xs mb-1">Estimated Shares</p>
@@ -671,7 +627,7 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
           </div>
         </div>
 
-        <div className="flex flex-wrap items-end gap-4 mb-4">
+        <div className="flex flex-wrap items-end gap-4">
           <div>
             <label className="text-blue-200 text-sm mb-2 block font-medium">
               Withdraw to Currency
@@ -688,35 +644,38 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
               <option value="JPY" className="bg-slate-800">JPY</option>
             </select>
           </div>
-          <div className="bg-white/5 rounded-xl p-3 border border-white/10">
-            <p className="text-blue-200 text-xs mb-1">Exchange Rate</p>
-            <p className="text-white text-lg font-bold whitespace-nowrap">
-              {isLoadingConversion ? '...' : `1 ${position.position_currency} = ${exchangeRate.toFixed(4)} ${withdrawCurrency}`}
-            </p>
-          </div>
-          <GlassButton
-            icon={RefreshCw}
-            onClick={() => setRateRefreshKey(k => k + 1)}
-            disabled={isLoadingConversion}
-            tooltip="Refresh exchange rate"
-            variant="secondary"
-            size="sm"
-            className={`mb-1 ${isLoadingConversion ? 'animate-spin' : ''}`}
-          />
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-            <p className="text-blue-200 text-sm mb-1">Remaining Cash</p>
-            <p className="text-white text-3xl font-bold">${remainingCash.toFixed(2)}</p>
-            <p className="text-blue-300 text-xs mt-1">{position.position_currency}</p>
+          <div className="bg-white/5 rounded-xl p-3 border border-white/10 flex items-center gap-3">
+            <div>
+              <p className="text-blue-200 text-xs mb-1">Exchange Rate</p>
+              <p className="text-white text-sm whitespace-nowrap">
+                {isLoadingConversion ? '...' : `1 ${position.position_currency} = ${exchangeRate.toFixed(4)} ${withdrawCurrency}`}
+              </p>
+            </div>
+            <GlassButton
+              icon={RefreshCw}
+              onClick={() => setRateRefreshKey(k => k + 1)}
+              disabled={isLoadingConversion}
+              tooltip="Refresh exchange rate"
+              variant="secondary"
+              size="sm"
+              className={isLoadingConversion ? 'animate-spin' : ''}
+            />
           </div>
-          <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl p-4 border border-purple-400/30">
-            <p className="text-purple-200 text-sm mb-1">Converted Amount</p>
-            <p className="text-white text-3xl font-bold">
-              {isLoadingConversion ? 'Converting...' : `$${convertedAmount.toFixed(2)}`}
+
+          <div className="bg-white/5 rounded-xl p-3 border border-white/10">
+            <p className="text-blue-200 text-xs mb-1">Remaining Cash</p>
+            <p className="text-white text-lg font-bold whitespace-nowrap">
+              ${remainingCash.toFixed(2)} <span className="text-blue-300 text-xs font-normal">{position.position_currency}</span>
             </p>
-            <p className="text-purple-300 text-xs mt-1">{withdrawCurrency}</p>
+          </div>
+
+          <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl p-3 border border-purple-400/30 flex-1 min-w-[180px]">
+            <p className="text-purple-200 text-xs mb-1">Converted Amount</p>
+            <p className="text-white text-2xl font-bold whitespace-nowrap">
+              {isLoadingConversion ? 'Converting...' : `$${convertedAmount.toFixed(2)}`}
+              {!isLoadingConversion && <span className="text-purple-300 text-xs font-normal ml-1">{withdrawCurrency}</span>}
+            </p>
           </div>
         </div>
       </div>
