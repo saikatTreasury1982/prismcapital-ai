@@ -34,7 +34,7 @@ export default function DividendCard({ summary, onViewChange, activeView, displa
   };
 
   return (
-    <div className="backdrop-blur-xl bg-white/10 rounded-2xl border border-white/20 overflow-hidden">
+    <div className="backdrop-blur-xl bg-white/10 rounded-xl border border-white/20 overflow-hidden">
       <div className="p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">

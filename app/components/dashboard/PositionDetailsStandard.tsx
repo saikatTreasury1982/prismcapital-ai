@@ -117,7 +117,7 @@ export default function PositionDetailsStandard({ positions, chartData, displayC
   };
 
   return (
-    <div className="backdrop-blur-xl bg-white/10 rounded-2xl border border-white/20 overflow-hidden">
+    <div className="backdrop-blur-xl bg-white/10 rounded-xl border border-white/20 overflow-hidden">
       <div className="p-6">
         <h3 className="text-lg font-semibold text-white mb-4">Position Details - Standard View</h3>
         
