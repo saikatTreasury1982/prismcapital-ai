@@ -7,34 +7,51 @@ import { sql } from 'drizzle-orm';
 const { tradeAnalyses } = schema;
 
 // Helper function to calculate metrics
-function calculateMetrics(entry: number, stopLoss: number | null | undefined, takeProfit: number | null | undefined, positionSize: number) {
+function calcAt(entry: number, stopLoss: number | null | undefined, takeProfit: number | null | undefined, positionSize: number) {
   const sharesToBuy = parseFloat((positionSize / entry).toFixed(4));
-  
   let riskPercentage = null;
   let rewardPercentage = null;
   let riskRewardRatio = null;
 
-  // Only calculate risk if stopLoss is provided (check both null and undefined)
   if (stopLoss !== null && stopLoss !== undefined && !isNaN(stopLoss)) {
     riskPercentage = parseFloat((((entry - stopLoss) / entry) * 100).toFixed(2));
   }
-
-  // Only calculate reward if takeProfit is provided (check both null and undefined)
   if (takeProfit !== null && takeProfit !== undefined && !isNaN(takeProfit)) {
     rewardPercentage = parseFloat((((takeProfit - entry) / entry) * 100).toFixed(2));
   }
-
-  // Only calculate ratio if both metrics exist
   if (riskPercentage !== null && rewardPercentage !== null && riskPercentage !== 0) {
     riskRewardRatio = parseFloat((rewardPercentage / riskPercentage).toFixed(2));
   }
+  return { sharesToBuy, riskPercentage, rewardPercentage, riskRewardRatio };
+}
 
-  return {
-    shares_to_buy: sharesToBuy,
-    risk_percentage: riskPercentage,
-    reward_percentage: rewardPercentage,
-    risk_reward_ratio: riskRewardRatio,
+function calculateMetrics(
+  entryType: string,
+  entryPrice: number,
+  entryLow: number | null | undefined,
+  entryHigh: number | null | undefined,
+  stopLoss: number | null | undefined,
+  takeProfit: number | null | undefined,
+  positionSize: number
+) {
+  const mid = calcAt(entryPrice, stopLoss, takeProfit, positionSize);
+
+  const base = {
+    shares_to_buy: mid.sharesToBuy,
+    risk_percentage: mid.riskPercentage,
+    reward_percentage: mid.rewardPercentage,
+    risk_reward_ratio: mid.riskRewardRatio,
+    risk_reward_ratio_low: null as number | null,
+    risk_reward_ratio_high: null as number | null,
   };
+
+  if (entryType === 'RANGE' && entryLow != null && entryHigh != null) {
+    // best case = buying at the low end, worst case = buying at the high end
+    base.risk_reward_ratio_low = calcAt(entryHigh, stopLoss, takeProfit, positionSize).riskRewardRatio;
+    base.risk_reward_ratio_high = calcAt(entryLow, stopLoss, takeProfit, positionSize).riskRewardRatio;
+  }
+
+  return base;
 }
 
 // GET - Fetch trade analyses
