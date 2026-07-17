@@ -27,6 +27,9 @@ export interface CreateTradeAnalysisInput {
   ticker: string;
   exchange_code?: string;
   entry_price: number;
+  entry_type?: 'STRICT' | 'RANGE';
+  entry_low?: number;
+  entry_high?: number;
   position_size: number;
   stop_loss?: number;
   take_profit?: number;
@@ -36,6 +39,9 @@ export interface CreateTradeAnalysisInput {
 export interface UpdateTradeAnalysisInput {
   exchange_code?: string | null;
   entry_price?: number;
+  entry_type?: 'STRICT' | 'RANGE';
+  entry_low?: number;
+  entry_high?: number;
   position_size?: number;
   stop_loss?: number;
   take_profit?: number;
