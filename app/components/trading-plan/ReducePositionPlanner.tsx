@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { DollarSign, TrendingUp, Wallet, Save, XCircle, ArrowRight } from 'lucide-react';
+import { DollarSign, TrendingUp, Wallet, Save, XCircle, ArrowRight, RefreshCw } from 'lucide-react';
 import { Position } from '@/app/lib/types/transaction';
 import { convertCurrency, createPositionActionPlan, updatePositionActionPlan } from '@/app/services/positionActionPlanServiceClient';
 import GlassButton from '@/app/lib/ui/GlassButton';
@@ -46,6 +46,7 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
   const [withdrawCurrency, setWithdrawCurrency] = useState('AUD');
   const [convertedAmount, setConvertedAmount] = useState(0);
   const [exchangeRate, setExchangeRate] = useState(0);
+  const [rateRefreshKey, setRateRefreshKey] = useState(0);
 
   // UI State
   const [isLoadingConversion, setIsLoadingConversion] = useState(false);
@@ -156,7 +157,7 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
     };
 
     convertAmount();
-  }, [remainingCash, withdrawCurrency, position.position_currency]);
+  }, [remainingCash, withdrawCurrency, position.position_currency, rateRefreshKey]);
 
   // Fetch saved scenarios for this position
   useEffect(() => {
@@ -380,7 +381,7 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
             <SegmentedPills
               options={[
                 { value: 1, label: 'Decide Later', activeColor: 'bg-blue-500' },
-                { value: 2, label: 'Reinvest & Withdraw', activeColor: 'bg-teal-500' },
+                { value: 2, label: 'Plan Now', activeColor: 'bg-teal-500' },
               ]}
               value={nextAction === 'none' ? 1 : 2}
               onChange={(value) => setNextAction(value === 1 ? 'none' : 'planned')}
@@ -625,46 +626,56 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
           </div>
         </div>
 
-        <div className="mb-4">
-          <label className="text-blue-200 text-sm mb-2 block font-medium">
-            Withdraw to Currency
-          </label>
-          <select
-            value={withdrawCurrency}
-            onChange={(e) => setWithdrawCurrency(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white"
-          >
-            <option value="USD" className="bg-slate-800">USD</option>
-            <option value="AUD" className="bg-slate-800">AUD</option>
-            <option value="EUR" className="bg-slate-800">EUR</option>
-            <option value="GBP" className="bg-slate-800">GBP</option>
-            <option value="JPY" className="bg-slate-800">JPY</option>
-          </select>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="bg-white/5 rounded-xl p-3 border border-white/10">
-            <p className="text-blue-200 text-xs mb-1">Remaining Cash</p>
-            <p className="text-white text-lg font-bold">
-              ${remainingCash.toFixed(2)} {position.position_currency}
-            </p>
+        <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-4 mb-4 items-end">
+          <div>
+            <label className="text-blue-200 text-sm mb-2 block font-medium">
+              Withdraw to Currency
+            </label>
+            <select
+              value={withdrawCurrency}
+              onChange={(e) => setWithdrawCurrency(e.target.value)}
+              className="w-full md:w-28 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white"
+            >
+              <option value="USD" className="bg-slate-800">USD</option>
+              <option value="AUD" className="bg-slate-800">AUD</option>
+              <option value="EUR" className="bg-slate-800">EUR</option>
+              <option value="GBP" className="bg-slate-800">GBP</option>
+              <option value="JPY" className="bg-slate-800">JPY</option>
+            </select>
           </div>
           <div className="bg-white/5 rounded-xl p-3 border border-white/10">
             <p className="text-blue-200 text-xs mb-1">Exchange Rate</p>
             <p className="text-white text-lg font-bold">
-              {isLoadingConversion ? '...' : exchangeRate.toFixed(4)}
+              {isLoadingConversion ? '...' : `1 ${position.position_currency} = ${exchangeRate.toFixed(4)} ${withdrawCurrency}`}
             </p>
           </div>
+          <GlassButton
+            icon={RefreshCw}
+            onClick={() => setRateRefreshKey(k => k + 1)}
+            disabled={isLoadingConversion}
+            tooltip="Refresh exchange rate"
+            variant="secondary"
+            size="sm"
+            className={isLoadingConversion ? 'animate-spin' : ''}
+          />
         </div>
 
-        <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl p-4 border border-purple-400/30">
-          <p className="text-purple-200 text-sm mb-1">Converted Amount</p>
-          <p className="text-white text-3xl font-bold">
-            {isLoadingConversion ? 'Converting...' : `$${convertedAmount.toFixed(2)} ${withdrawCurrency}`}
-          </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+            <p className="text-blue-200 text-sm mb-1">Remaining Cash</p>
+            <p className="text-white text-3xl font-bold">${remainingCash.toFixed(2)}</p>
+            <p className="text-blue-300 text-xs mt-1">{position.position_currency}</p>
+          </div>
+          <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl p-4 border border-purple-400/30">
+            <p className="text-purple-200 text-sm mb-1">Converted Amount</p>
+            <p className="text-white text-3xl font-bold">
+              {isLoadingConversion ? 'Converting...' : `$${convertedAmount.toFixed(2)}`}
+            </p>
+            <p className="text-purple-300 text-xs mt-1">{withdrawCurrency}</p>
+          </div>
         </div>
       </div>
-
+      
       {/* Notes */}
       <div className="backdrop-blur-xl bg-white/10 rounded-xl p-6 border border-white/20">
         <BulletTextarea
