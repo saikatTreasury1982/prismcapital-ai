@@ -8,6 +8,8 @@ import GlassButton from '@/app/lib/ui/GlassButton';
 import SegmentedPills from '@/app/lib/ui/SegmentedPills';
 import { BulletTextarea } from '@/app/lib/ui/BulletTextarea';
 import BulletDisplay from '@/app/lib/ui/BulletDisplay';
+import { useDebounce } from '@/app/lib/hooks/useDebounce';
+import { useSession } from 'next-auth/react';
 
 interface ReducePositionPlannerProps {
   position: Position;
@@ -25,12 +27,16 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
   const [sellShares, setSellShares] = useState(position.total_shares);
   const [targetSellPrice, setTargetSellPrice] = useState(position.current_market_price || position.average_cost); // Add this line
   const [proceeds, setProceeds] = useState(0);
+  const { data: session } = useSession();
 
   // Step 2: Reinvestment
   const [reinvestTicker, setReinvestTicker] = useState('');
   const [reinvestAmount, setReinvestAmount] = useState(0);
   const [reinvestPrice, setReinvestPrice] = useState(0);
   const [estimatedShares, setEstimatedShares] = useState(0);
+  const [reinvestTickerName, setReinvestTickerName] = useState('');
+  const [isLoadingReinvestTicker, setIsLoadingReinvestTicker] = useState(false);
+  const debouncedReinvestTicker = useDebounce(reinvestTicker, 500);
   const handleReinvestAmountChange = (amount: number) => {
     const clamped = Math.min(Math.max(amount, 0), proceeds);
     setReinvestAmount(parseFloat(clamped.toFixed(2)));
@@ -92,6 +98,38 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
       setEstimatedShares(0);
     }
   }, [reinvestAmount, reinvestPrice]);
+
+  // Fetch ticker name for reinvestment target
+  useEffect(() => {
+    const fetchTickerName = async () => {
+      if (!debouncedReinvestTicker) {
+        setReinvestTickerName('');
+        return;
+      }
+
+      setIsLoadingReinvestTicker(true);
+
+      try {
+        const posRes = await fetch(`/api/hasOpenPosition?ticker=${encodeURIComponent(debouncedReinvestTicker)}&userId=${session?.user?.id}`);
+        const posData = await posRes.json();
+
+        if (posData.hasPosition && posData.tickerName) {
+          setReinvestTickerName(posData.tickerName);
+        } else {
+          const tickerRes = await fetch(`/api/ticker-lookup?ticker=${encodeURIComponent(debouncedReinvestTicker)}`);
+          const tickerData = await tickerRes.json();
+          setReinvestTickerName(tickerData.name || '');
+        }
+      } catch (err) {
+        console.error('Error fetching reinvest ticker name:', err);
+        setReinvestTickerName('');
+      } finally {
+        setIsLoadingReinvestTicker(false);
+      }
+    };
+
+    fetchTickerName();
+  }, [debouncedReinvestTicker, session?.user?.id]);
 
   // Convert currency when withdrawal amount changes
   useEffect(() => {
@@ -493,16 +531,24 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-[auto_1fr_auto] gap-4 mb-4 items-end">
           <div>
             <label className="text-blue-200 text-sm mb-2 block font-medium">New Ticker</label>
             <input
               type="text"
               value={reinvestTicker}
               onChange={(e) => setReinvestTicker(e.target.value.toUpperCase())}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white uppercase"
+              className="w-full md:w-32 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white uppercase"
               placeholder="MSFT"
             />
+          </div>
+          <div className="min-w-0">
+            <p className="text-blue-200 text-xs mb-1">Company</p>
+            <p className="text-white text-sm font-medium truncate py-3">
+              {isLoadingReinvestTicker
+                ? <span className="text-blue-300/50">Loading…</span>
+                : reinvestTickerName || <span className="text-blue-300/50">—</span>}
+            </p>
           </div>
           <div>
             <label className="text-blue-200 text-sm mb-2 block font-medium">Entry Price</label>
@@ -511,7 +557,7 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
               step="0.01"
               value={reinvestPrice || ''}
               onChange={(e) => setReinvestPrice(parseFloat(e.target.value) || 0)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white"
+              className="w-full md:w-32 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white"
               placeholder="0.00"
             />
           </div>
