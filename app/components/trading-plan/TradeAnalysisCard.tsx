@@ -133,8 +133,14 @@ export function TradeAnalysisCard({ analysis, onEdit, onDelete, onUpdate }: Trad
           <div className="space-y-3 mb-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-white/5 rounded-xl p-3 border border-white/10">
-                <p className="text-blue-200 text-xs mb-1">Entry Price</p>
-                <p className="text-white text-lg font-bold">${analysis.entry_price.toFixed(2)}</p>
+                <p className="text-blue-200 text-xs mb-1">
+                  {analysis.entry_type === 'RANGE' ? 'Entry Range' : 'Entry Price'}
+                </p>
+                <p className="text-white text-lg font-bold">
+                  {analysis.entry_type === 'RANGE' && analysis.entry_low != null && analysis.entry_high != null
+                    ? `$${analysis.entry_low.toFixed(2)} – $${analysis.entry_high.toFixed(2)}`
+                    : `$${analysis.entry_price.toFixed(2)}`}
+                </p>
               </div>
               <div className="bg-white/5 rounded-xl p-3 border border-white/10">
                 <p className="text-blue-200 text-xs mb-1">Position Size</p>
@@ -181,14 +187,13 @@ export function TradeAnalysisCard({ analysis, onEdit, onDelete, onUpdate }: Trad
               </span>
             </div>
 
-            <div className="bg-white/10 rounded-xl p-3 mt-3">
-              <div className="flex items-center justify-between">
-                <span className="text-white text-sm font-medium">Risk:Reward Ratio</span>
-                <span className={`font-bold text-2xl ${getRRColor()}`}>
-                  {analysis.risk_reward_ratio && analysis.risk_reward_ratio > 0 ? `1:${analysis.risk_reward_ratio.toFixed(2)}` : '-'}
-                </span>
-              </div>
-            </div>
+            <span className={`font-bold text-2xl ${getRRColor()}`}>
+              {analysis.entry_type === 'RANGE' && analysis.risk_reward_ratio_low && analysis.risk_reward_ratio_high
+                ? `1:${analysis.risk_reward_ratio_low.toFixed(2)} → 1:${analysis.risk_reward_ratio_high.toFixed(2)}`
+                : analysis.risk_reward_ratio && analysis.risk_reward_ratio > 0
+                  ? `1:${analysis.risk_reward_ratio.toFixed(2)}`
+                  : '-'}
+            </span>
           </div>
 
           {/* Notes */}
