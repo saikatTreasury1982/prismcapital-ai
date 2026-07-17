@@ -21,7 +21,7 @@ interface ReducePositionPlannerProps {
 export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCancel }: ReducePositionPlannerProps) {
   // Step 1: Liquidation
   const [liquidationType, setLiquidationType] = useState<'full' | 'partial'>('full');
-  const [nextAction, setNextAction] = useState<'none' | 'reinvest' | 'withdraw'>('none'); // Add this line
+  const [nextAction, setNextAction] = useState<'none' | 'planned'>('none');
   const [sellPercentage, setSellPercentage] = useState(100);
   const [fees, setFees] = useState(0);
   const [sellShares, setSellShares] = useState(position.total_shares);
@@ -184,13 +184,11 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
       setTargetSellPrice(editingPlan.expected_proceeds ? editingPlan.expected_proceeds / editingPlan.sell_shares : position.current_market_price || position.average_cost);
       setProceeds(editingPlan.expected_proceeds || 0);
 
-      if (editingPlan.reinvest_ticker) {
-        setNextAction('reinvest');
-        setReinvestTicker(editingPlan.reinvest_ticker);
+      if (editingPlan.reinvest_ticker || editingPlan.withdraw_currency) {
+        setNextAction('planned');
+        setReinvestTicker(editingPlan.reinvest_ticker || '');
         setReinvestAmount(editingPlan.reinvest_amount || 0);
-      } else if (editingPlan.withdraw_currency) {
-        setNextAction('withdraw');
-        setWithdrawCurrency(editingPlan.withdraw_currency);
+        setWithdrawCurrency(editingPlan.withdraw_currency || 'AUD');
       } else {
         setNextAction('none');
       }
@@ -224,13 +222,11 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
     setProceeds(scenario.expected_proceeds || 0);
 
     // Determine next action based on scenario data
-    if (scenario.reinvest_ticker) {
-      setNextAction('reinvest');
-      setReinvestTicker(scenario.reinvest_ticker);
+    if (scenario.reinvest_ticker || scenario.withdraw_currency) {
+      setNextAction('planned');
+      setReinvestTicker(scenario.reinvest_ticker || '');
       setReinvestAmount(scenario.reinvest_amount || 0);
-    } else if (scenario.withdraw_currency) {
-      setNextAction('withdraw');
-      setWithdrawCurrency(scenario.withdraw_currency);
+      setWithdrawCurrency(scenario.withdraw_currency || 'AUD');
     } else {
       setNextAction('none');
     }
@@ -273,10 +269,10 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
           sell_percentage: liquidationType === 'partial' ? sellPercentage : 100,
           sell_shares: sellShares,
           expected_proceeds: proceeds,
-          reinvest_ticker: nextAction === 'reinvest' && reinvestTicker ? reinvestTicker : null,
-          reinvest_amount: nextAction === 'reinvest' && reinvestAmount > 0 ? reinvestAmount : null,
-          withdraw_amount: nextAction === 'withdraw' && remainingCash > 0 ? remainingCash : null,
-          withdraw_currency: nextAction === 'withdraw' ? withdrawCurrency : null,
+          reinvest_ticker: nextAction === 'planned' && reinvestTicker ? reinvestTicker : null,
+          reinvest_amount: nextAction === 'planned' && reinvestAmount > 0 ? reinvestAmount : null,
+          withdraw_amount: nextAction === 'planned' && remainingCash > 0 ? remainingCash : null,
+          withdraw_currency: nextAction === 'planned' && remainingCash > 0 ? withdrawCurrency : null,
           notes: notes || undefined,
         });
         alert('Scenario updated successfully!');
@@ -288,10 +284,10 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
           sell_percentage: liquidationType === 'partial' ? sellPercentage : 100,
           sell_shares: sellShares,
           expected_proceeds: proceeds,
-          reinvest_ticker: nextAction === 'reinvest' && reinvestTicker ? reinvestTicker : undefined,
-          reinvest_amount: nextAction === 'reinvest' && reinvestAmount > 0 ? reinvestAmount : undefined,
-          withdraw_amount: nextAction === 'withdraw' && remainingCash > 0 ? remainingCash : undefined,
-          withdraw_currency: nextAction === 'withdraw' ? withdrawCurrency : undefined,
+          reinvest_ticker: nextAction === 'planned' && reinvestTicker ? reinvestTicker : undefined,
+          reinvest_amount: nextAction === 'planned' && reinvestAmount > 0 ? reinvestAmount : undefined,
+          withdraw_amount: nextAction === 'planned' && remainingCash > 0 ? remainingCash : undefined,
+          withdraw_currency: nextAction === 'planned' && remainingCash > 0 ? withdrawCurrency : undefined,
           notes: notes || undefined,
         });
         alert('Scenario saved successfully!');
@@ -384,11 +380,10 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
             <SegmentedPills
               options={[
                 { value: 1, label: 'Decide Later', activeColor: 'bg-blue-500' },
-                { value: 2, label: 'Reinvest', activeColor: 'bg-green-500' },
-                { value: 3, label: 'Withdraw', activeColor: 'bg-purple-500' },
+                { value: 2, label: 'Reinvest & Withdraw', activeColor: 'bg-teal-500' },
               ]}
-              value={nextAction === 'none' ? 1 : nextAction === 'reinvest' ? 2 : 3}
-              onChange={(value) => setNextAction(value === 1 ? 'none' : value === 2 ? 'reinvest' : 'withdraw')}
+              value={nextAction === 'none' ? 1 : 2}
+              onChange={(value) => setNextAction(value === 1 ? 'none' : 'planned')}
               showLabels={true}
             />
           </div>
@@ -519,8 +514,7 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
       </div>
 
       {/* Card 2: Reinvest */}
-      <div className={`backdrop-blur-xl rounded-xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 p-6 border border-green-400/20 transition-all ${nextAction !== 'reinvest' ? 'opacity-50 pointer-events-none' : ''
-        }`}>
+      <div className={`backdrop-blur-xl rounded-xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 p-6 border border-green-400/20 transition-all ${nextAction !== 'planned' ? 'opacity-50 pointer-events-none' : ''}`}>
         <div className="flex items-center gap-3 mb-4">
           <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center">
             <TrendingUp className="w-6 h-6 text-white" />
@@ -620,8 +614,7 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
       </div>
 
       {/* Card 3: Withdraw */}
-      <div className={`backdrop-blur-xl rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 p-6 border border-purple-400/20 transition-all ${nextAction !== 'withdraw' ? 'opacity-50 pointer-events-none' : ''
-        }`}>
+      <div className={`backdrop-blur-xl rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 p-6 border border-purple-400/20 transition-all ${nextAction !== 'planned' || remainingCash <= 0 ? 'opacity-50 pointer-events-none' : ''}`}>
         <div className="flex items-center gap-3 mb-4">
           <div className="w-12 h-12 rounded-full bg-purple-500 flex items-center justify-center">
             <Wallet className="w-6 h-6 text-white" />
