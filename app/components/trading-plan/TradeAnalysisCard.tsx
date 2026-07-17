@@ -85,8 +85,8 @@ export function TradeAnalysisCard({ analysis, onEdit, onDelete, onUpdate }: Trad
               onClick={toggleFlag}
               disabled={isUpdating}
               className={`p-2 rounded-full transition-all ${analysis.is_flagged === 1
-                  ? 'bg-blue-500 text-white shadow-lg'
-                  : 'bg-white/10 text-blue-300 hover:bg-white/20'
+                ? 'bg-blue-500 text-white shadow-lg'
+                : 'bg-white/10 text-blue-300 hover:bg-white/20'
                 }`}
               title={analysis.is_flagged === 1 ? 'Unflag' : 'Flag for trading'}
             >
@@ -164,7 +164,7 @@ export function TradeAnalysisCard({ analysis, onEdit, onDelete, onUpdate }: Trad
               <span className="text-blue-200 text-sm">Shares to Buy</span>
               <span className="text-white font-semibold">
                 {analysis.entry_type === 'RANGE' && analysis.entry_low != null && analysis.entry_high != null
-                  ? `${(analysis.position_size / analysis.entry_high).toFixed(2)} – ${(analysis.position_size / analysis.entry_low).toFixed(2)}`
+                  ? `${(analysis.position_size / analysis.entry_low).toFixed(2)} – ${(analysis.position_size / analysis.entry_high).toFixed(2)}`
                   : analysis.shares_to_buy?.toFixed(2) ?? '-'}
               </span>
             </div>
