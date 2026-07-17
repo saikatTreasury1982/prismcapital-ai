@@ -18,6 +18,9 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
     ticker: '',
     exchange_code: '',
     entry_price: '',
+    entry_type: 'STRICT',
+    entry_low: '',
+  	entry_high: '',  
     position_size: '',
     stop_loss: '',
     take_profit: '',
@@ -36,6 +39,9 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
         ticker: editingAnalysis.ticker,
         exchange_code: editingAnalysis.exchange_code || '',
         entry_price: editingAnalysis.entry_price.toString(),
+        entry_type: editingAnalysis.entry_type || 'STRICT',
+        entry_low: editingAnalysis.entry_low?.toString() || '',
+        entry_high: editingAnalysis.entry_high?.toString() || '',
         position_size: editingAnalysis.position_size.toString(),
         stop_loss: editingAnalysis.stop_loss?.toString() || '',
         take_profit: editingAnalysis.take_profit?.toString() || '',
@@ -59,7 +65,12 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
 
   // Calculate metrics progressively
   const calculateMetrics = () => {
-    const entry = parseFloat(formData.entry_price);
+    const isRange = formData.entry_type === 'RANGE';
+    const low = parseFloat(formData.entry_low);
+    const high = parseFloat(formData.entry_high);
+    const entry = isRange
+      ? (!isNaN(low) && !isNaN(high) ? (low + high) / 2 : NaN)
+      : parseFloat(formData.entry_price);
     const stopLoss = formData.stop_loss ? parseFloat(formData.stop_loss) : null;
     const takeProfit = formData.take_profit ? parseFloat(formData.take_profit) : null;
     const positionSize = parseFloat(formData.position_size);
@@ -97,6 +108,18 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
       metrics.riskRewardRatio = (parseFloat(metrics.rewardPercentage) / parseFloat(metrics.riskPercentage)).toFixed(2);
     }
 
+    metrics.rrLow = null;
+    metrics.rrHigh = null;
+    if (isRange && !isNaN(low) && !isNaN(high) && !isNaN(positionSize) && stopLoss !== null && takeProfit !== null && !isNaN(stopLoss) && !isNaN(takeProfit)) {
+      const rrAt = (e: number) => {
+        const riskP = ((e - stopLoss) / e) * 100;
+        const rewP = ((takeProfit - e) / e) * 100;
+        return riskP !== 0 ? (rewP / riskP).toFixed(2) : null;
+      };
+      metrics.rrLow = rrAt(high);
+      metrics.rrHigh = rrAt(low);
+    }
+    
     return metrics;
   };
 
@@ -104,24 +127,42 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
 
   const handleSubmit = async () => {
     // Validation - only ticker, entry_price, and position_size are required
-    if (!formData.ticker || !formData.entry_price || !formData.position_size) {
-      setError('Ticker, Entry Price, and Position Size are required');
+    const isRange = formData.entry_type === 'RANGE';
+
+    if (!formData.ticker || !formData.position_size) {
+      setError('Ticker and Position Size are required');
       return;
     }
-
-    const entry = parseFloat(formData.entry_price);
+    if (isRange && (!formData.entry_low || !formData.entry_high)) {
+      setError('Entry low and entry high are required');
+      return;
+    }
+    if (!isRange && !formData.entry_price) {
+      setError('Entry Price is required');
+      return;
+    }
+    
+    const low = parseFloat(formData.entry_low);
+    const high = parseFloat(formData.entry_high);
+    
+    if (isRange && low >= high) {
+      setError('Entry low must be below entry high');
+      return;
+    }
+    
+    const entry = isRange ? (low + high) / 2 : parseFloat(formData.entry_price);
+    const compareLow = isRange ? low : entry;
+    const compareHigh = isRange ? high : entry;
+    
     const stopLoss = formData.stop_loss ? parseFloat(formData.stop_loss) : null;
     const takeProfit = formData.take_profit ? parseFloat(formData.take_profit) : null;
-
-    // Validate stop loss if provided
-    if (stopLoss !== null && stopLoss >= entry) {
-      setError('Stop loss must be below entry price');
+    
+    if (stopLoss !== null && stopLoss >= compareLow) {
+      setError('Stop loss must be below the entry range');
       return;
     }
-
-    // Validate take profit if provided
-    if (takeProfit !== null && takeProfit <= entry) {
-      setError('Take profit must be above entry price');
+    if (takeProfit !== null && takeProfit <= compareHigh) {
+      setError('Take profit must be above the entry range');
       return;
     }
 
@@ -133,7 +174,10 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
         // Update existing
         await updateTradeAnalysis(editingAnalysis.analysis_id, {
           exchange_code: formData.exchange_code === '' ? null : formData.exchange_code,
-          entry_price: parseFloat(formData.entry_price),
+          entry_type: formData.entry_type as 'STRICT' | 'RANGE',
+          entry_price: entry,
+          entry_low: isRange ? low : undefined,
+          entry_high: isRange ? high : undefined,
           position_size: parseFloat(formData.position_size),
           stop_loss: formData.stop_loss ? parseFloat(formData.stop_loss) : undefined,
           take_profit: formData.take_profit ? parseFloat(formData.take_profit) : undefined,
@@ -144,7 +188,10 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
         await createTradeAnalysis({
           ticker: formData.ticker.toUpperCase(),
           exchange_code: formData.exchange_code,
-          entry_price: parseFloat(formData.entry_price),
+          entry_type: formData.entry_type as 'STRICT' | 'RANGE',
+          entry_price: entry,
+          entry_low: isRange ? low : undefined,
+          entry_high: isRange ? high : undefined,
           position_size: parseFloat(formData.position_size),
           stop_loss: formData.stop_loss ? parseFloat(formData.stop_loss) : undefined,
           take_profit: formData.take_profit ? parseFloat(formData.take_profit) : undefined,
@@ -165,6 +212,9 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
       ticker: '',
       exchange_code: '',
       entry_price: '',
+      entry_type: 'STRICT',
+      entry_low: '',
+      entry_high: '',
       position_size: '',
       stop_loss: '',
       take_profit: '',
