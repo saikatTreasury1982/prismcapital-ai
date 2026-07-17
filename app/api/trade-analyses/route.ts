@@ -121,7 +121,10 @@ export async function POST(request: Request) {
         user_id: userId,
         ticker: analysisData.ticker.toUpperCase(),
         exchange_code: analysisData.exchange_code || null,
-        entry_price: analysisData.entry_price,
+        entry_price: effectiveEntry,
+        entry_type: entryType,
+        entry_low: entryLow,
+        entry_high: entryHigh,
         position_size: analysisData.position_size,
         stop_loss: analysisData.stop_loss,
         take_profit: analysisData.take_profit,
@@ -181,15 +184,27 @@ export async function PATCH(request: Request) {
     if (analysisData.is_flagged !== undefined) updateData.is_flagged = analysisData.is_flagged;
     if (analysisData.status !== undefined) updateData.status = analysisData.status;
     if (analysisData.notes !== undefined) updateData.notes = analysisData.notes;
+    if (analysisData.entry_type !== undefined) updateData.entry_type = analysisData.entry_type;
+    if (analysisData.entry_low !== undefined) updateData.entry_low = analysisData.entry_low;
+    if (analysisData.entry_high !== undefined) updateData.entry_high = analysisData.entry_high;
 
     // Recalculate metrics if any price changed
-    const entry = updateData.entry_price ?? current.entry_price;
+    const entryType = updateData.entry_type ?? current.entry_type ?? 'STRICT';
+    const entryLow = entryType === 'RANGE' ? (updateData.entry_low ?? current.entry_low) : null;
+    const entryHigh = entryType === 'RANGE' ? (updateData.entry_high ?? current.entry_high) : null;
     const stopLoss = updateData.stop_loss ?? current.stop_loss;
     const takeProfit = updateData.take_profit ?? current.take_profit;
     const positionSize = updateData.position_size ?? current.position_size;
-
-    const metrics = calculateMetrics(entry, stopLoss, takeProfit, positionSize);
-    Object.assign(updateData, metrics);
+    
+    const entry = entryType === 'RANGE' && entryLow != null && entryHigh != null
+      ? (entryLow + entryHigh) / 2
+      : (updateData.entry_price ?? current.entry_price);
+    
+    updateData.entry_price = entry;
+    if (entryType === 'STRICT') { updateData.entry_low = null; updateData.entry_high = null; }
+    
+    const metrics = calculateMetrics(entryType, entry, entryLow, entryHigh, stopLoss, takeProfit, positionSize);
+    Object.assign(updateData, metrics);  
 
     const data = await db
       .update(tradeAnalyses)
