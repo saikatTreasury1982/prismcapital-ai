@@ -148,7 +148,7 @@ export function TradeAnalyzer() {
       {/* Analysis Form Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="max-w-2xl w-full my-8">
+          <div className="max-w-6xl w-full my-8">
             <TradeAnalysisForm
               editingAnalysis={editingAnalysis}
               onSuccess={handleSuccess}

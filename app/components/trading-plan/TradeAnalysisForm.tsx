@@ -7,6 +7,8 @@ import GlassButton from '@/app/lib/ui/GlassButton';
 import { Save, XCircle, RotateCcw } from 'lucide-react';
 import { BulletTextarea } from '@/app/lib/ui/BulletTextarea';
 import SegmentedPills from '@/app/lib/ui/SegmentedPills';
+import { useDebounce } from '@/app/lib/hooks/useDebounce';
+import { useSession } from 'next-auth/react';
 
 interface TradeAnalysisFormProps {
   editingAnalysis?: TradeAnalysis | null;
@@ -29,6 +31,9 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
   });
 
   const [tickerDescription, setTickerDescription] = useState<string>('');
+  const { data: session } = useSession();
+  const [isLoadingTicker, setIsLoadingTicker] = useState(false);
+  const debouncedTicker = useDebounce(formData.ticker, 500);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exchanges, setExchanges] = useState<Array<{ exchange_code: string; exchange_name: string }>>([]);
@@ -64,6 +69,38 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
     };
     fetchExchanges();
   }, []);
+
+  // Fetch ticker name when user stops typing
+  useEffect(() => {
+    const fetchTickerName = async () => {
+      if (!debouncedTicker) {
+        setTickerDescription('');
+        return;
+      }
+
+      setIsLoadingTicker(true);
+
+      try {
+        const posRes = await fetch(`/api/hasOpenPosition?ticker=${encodeURIComponent(debouncedTicker)}&userId=${session?.user?.id}`);
+        const posData = await posRes.json();
+
+        if (posData.hasPosition && posData.tickerName) {
+          setTickerDescription(posData.tickerName);
+        } else {
+          const tickerRes = await fetch(`/api/ticker-lookup?ticker=${encodeURIComponent(debouncedTicker)}`);
+          const tickerData = await tickerRes.json();
+          setTickerDescription(tickerData.name || '');
+        }
+      } catch (err) {
+        console.error('Error fetching ticker name:', err);
+        setTickerDescription('');
+      } finally {
+        setIsLoadingTicker(false);
+      }
+    };
+
+    fetchTickerName();
+  }, [debouncedTicker, session?.user?.id]);
 
   // Calculate metrics progressively
   const calculateMetrics = () => {
@@ -271,9 +308,9 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-6">
         {/* LEFT COLUMN: Inputs */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Ticker */}
           <div>
             <label className="text-blue-200 text-sm mb-2 block font-medium">Ticker <span className="text-rose-400">*</span></label>
@@ -310,11 +347,13 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
           </div>
 
           {/* Ticker Description + Entry Type */}
-          <div className="md:col-span-2 flex items-center justify-between gap-4">
+          <div className="md:col-span-2 flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
               <p className="text-blue-200 text-xs mb-1">Company</p>
               <p className="text-white text-sm font-medium truncate">
-                {tickerDescription || <span className="text-blue-300/50">—</span>}
+                {isLoadingTicker
+                  ? <span className="text-blue-300/50">Loading…</span>
+                  : tickerDescription || <span className="text-blue-300/50">—</span>}
               </p>
             </div>
             <SegmentedPills<'STRICT' | 'RANGE'>
@@ -409,7 +448,7 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
             />
           </div>
         </div>
-        <div className="p-4 bg-white/5 rounded-2xl border border-white/10 self-start">
+        <div className="lg:col-span-2 p-4 bg-white/5 rounded-2xl border border-white/10 self-start">
           <h3 className="text-white font-semibold mb-3">Calculated Metrics</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Shares to Buy */}
