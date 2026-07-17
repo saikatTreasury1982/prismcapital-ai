@@ -102,20 +102,14 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
     fetchTickerName();
   }, [debouncedTicker, session?.user?.id]);
 
-  // Calculate metrics progressively
-  const calculateMetrics = () => {
-    const isRange = formData.entry_type === 'RANGE';
-    const low = parseFloat(formData.entry_low);
-    const high = parseFloat(formData.entry_high);
-    const entry = isRange
-      ? (!isNaN(low) && !isNaN(high) ? (low + high) / 2 : NaN)
-      : parseFloat(formData.entry_price);
-    const stopLoss = formData.stop_loss ? parseFloat(formData.stop_loss) : null;
-    const takeProfit = formData.take_profit ? parseFloat(formData.take_profit) : null;
-    const positionSize = parseFloat(formData.position_size);
+  // Calculate all metrics at a single entry price
+  const calcAt = (entry: number, stopLoss: number | null, takeProfit: number | null, positionSize: number) => {
+    if (isNaN(entry) || isNaN(positionSize) || entry <= 0) return null;
 
-    const metrics: any = {
-      sharesToBuy: null,
+    const shares = positionSize / entry;
+    const result: any = {
+      entry,
+      shares: shares.toFixed(2),
       riskAmount: null,
       riskPercentage: null,
       rewardAmount: null,
@@ -123,43 +117,47 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
       riskRewardRatio: null,
     };
 
-    // Calculate shares if entry and position size available
-    if (!isNaN(entry) && !isNaN(positionSize) && entry > 0) {
-      metrics.sharesToBuy = (positionSize / entry).toFixed(2);
+    if (stopLoss !== null && !isNaN(stopLoss)) {
+      result.riskAmount = ((entry - stopLoss) * shares).toFixed(2);
+      result.riskPercentage = (((entry - stopLoss) / entry) * 100).toFixed(2);
+    }
+    if (takeProfit !== null && !isNaN(takeProfit)) {
+      result.rewardAmount = ((takeProfit - entry) * shares).toFixed(2);
+      result.rewardPercentage = (((takeProfit - entry) / entry) * 100).toFixed(2);
+    }
+    if (result.riskPercentage && result.rewardPercentage && parseFloat(result.riskPercentage) !== 0) {
+      result.riskRewardRatio = (parseFloat(result.rewardPercentage) / parseFloat(result.riskPercentage)).toFixed(2);
     }
 
-    // Calculate risk if entry, position size, and stop loss available
-    if (!isNaN(entry) && !isNaN(positionSize) && stopLoss !== null && !isNaN(stopLoss) && entry > 0) {
-      const shares = positionSize / entry;
-      metrics.riskAmount = ((entry - stopLoss) * shares).toFixed(2);
-      metrics.riskPercentage = (((entry - stopLoss) / entry) * 100).toFixed(2);
-    }
+    return result;
+  };
 
-    // Calculate reward if entry, position size, and take profit available
-    if (!isNaN(entry) && !isNaN(positionSize) && takeProfit !== null && !isNaN(takeProfit) && entry > 0) {
-      const shares = positionSize / entry;
-      metrics.rewardAmount = ((takeProfit - entry) * shares).toFixed(2);
-      metrics.rewardPercentage = (((takeProfit - entry) / entry) * 100).toFixed(2);
-    }
+  const calculateMetrics = () => {
+    const isRange = formData.entry_type === 'RANGE';
+    const low = parseFloat(formData.entry_low);
+    const high = parseFloat(formData.entry_high);
+    const stopLoss = formData.stop_loss ? parseFloat(formData.stop_loss) : null;
+    const takeProfit = formData.take_profit ? parseFloat(formData.take_profit) : null;
+    const positionSize = parseFloat(formData.position_size);
 
-    // Calculate R:R ratio if both risk and reward percentages available
-    if (metrics.riskPercentage && metrics.rewardPercentage && parseFloat(metrics.riskPercentage) !== 0) {
-      metrics.riskRewardRatio = (parseFloat(metrics.rewardPercentage) / parseFloat(metrics.riskPercentage)).toFixed(2);
-    }
+    const mid = isRange
+      ? (!isNaN(low) && !isNaN(high) ? (low + high) / 2 : NaN)
+      : parseFloat(formData.entry_price);
 
-    metrics.rrLow = null;
-    metrics.rrHigh = null;
-    if (isRange && !isNaN(low) && !isNaN(high) && !isNaN(positionSize) && stopLoss !== null && takeProfit !== null && !isNaN(stopLoss) && !isNaN(takeProfit)) {
-      const rrAt = (e: number) => {
-        const riskP = ((e - stopLoss) / e) * 100;
-        const rewP = ((takeProfit - e) / e) * 100;
-        return riskP !== 0 ? (rewP / riskP).toFixed(2) : null;
-      };
-      metrics.rrLow = rrAt(high);
-      metrics.rrHigh = rrAt(low);
-    }
+    return {
+      isRange,
+      atLow: isRange ? calcAt(low, stopLoss, takeProfit, positionSize) : null,
+      atMid: calcAt(mid, stopLoss, takeProfit, positionSize),
+      atHigh: isRange ? calcAt(high, stopLoss, takeProfit, positionSize) : null,
+    };
+  };
 
-    return metrics;
+  const rrColor = (ratio: string | null | undefined) => {
+    if (!ratio) return 'text-white';
+    const r = parseFloat(ratio);
+    if (r >= 2) return 'text-green-400';
+    if (r >= 1) return 'text-yellow-400';
+    return 'text-rose-400';
   };
 
   const metrics = calculateMetrics();
@@ -448,50 +446,90 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
             />
           </div>
         </div>
+        {/* RIGHT COLUMN: Metrics */}
         <div className="lg:col-span-2 p-4 bg-white/5 rounded-2xl border border-white/10 self-start">
           <h3 className="text-white font-semibold mb-3">Calculated Metrics</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Shares to Buy */}
-            <div className="bg-white/5 rounded-xl p-3 border border-white/10">
-              <p className="text-blue-200 text-xs mb-1">Shares to Buy</p>
-              <p className="text-white font-bold text-lg">
-                {metrics.sharesToBuy || '-'}
-              </p>
-            </div>
 
-            {/* Risk */}
-            <div className="bg-white/5 rounded-xl p-3 border border-rose-400/20">
-              <p className="text-rose-200 text-xs mb-1">Risk Amount / Risk %</p>
-              <p className="text-rose-400 font-bold text-lg">
-                {metrics.riskAmount ? `$${metrics.riskAmount}` : '-'}
-                {metrics.riskPercentage && <span className="text-sm ml-1">({metrics.riskPercentage}%)</span>}
-              </p>
-            </div>
+          {metrics.isRange ? (
+            <div className="grid grid-cols-[auto_1fr_1fr_1fr] text-xs">
+              {/* Header row */}
+              <div className="py-2 pr-2" />
+              <div className="py-2 px-1 text-right border-b border-white/10">
+                <p className="text-blue-300/60 text-[10px]">AT LOW</p>
+                <p className="text-green-400 font-medium">{formData.entry_low ? `$${parseFloat(formData.entry_low).toFixed(2)}` : '-'}</p>
+              </div>
+              <div className="py-2 px-1 text-right border-b border-white/10 bg-white/5">
+                <p className="text-blue-300/60 text-[10px]">MIDPOINT</p>
+                <p className="text-white font-medium">{metrics.atMid ? `$${metrics.atMid.entry.toFixed(2)}` : '-'}</p>
+              </div>
+              <div className="py-2 pl-1 text-right border-b border-white/10">
+                <p className="text-blue-300/60 text-[10px]">AT HIGH</p>
+                <p className="text-rose-400 font-medium">{formData.entry_high ? `$${parseFloat(formData.entry_high).toFixed(2)}` : '-'}</p>
+              </div>
 
-            {/* Reward */}
-            <div className="bg-white/5 rounded-xl p-3 border border-green-400/20">
-              <p className="text-green-200 text-xs mb-1">Reward Amount / Reward %</p>
-              <p className="text-green-400 font-bold text-lg">
-                {metrics.rewardAmount ? `$${metrics.rewardAmount}` : '-'}
-                {metrics.rewardPercentage && <span className="text-sm ml-1">({metrics.rewardPercentage}%)</span>}
-              </p>
-            </div>
+              {/* Shares */}
+              <div className="py-2 pr-2 text-blue-200">Shares</div>
+              <div className="py-2 px-1 text-right text-white font-medium">{metrics.atLow?.shares || '-'}</div>
+              <div className="py-2 px-1 text-right text-white font-medium bg-white/5">{metrics.atMid?.shares || '-'}</div>
+              <div className="py-2 pl-1 text-right text-white font-medium">{metrics.atHigh?.shares || '-'}</div>
 
-            {/* R:R Ratio */}
-            <div className="bg-white/5 rounded-xl p-3 border border-blue-400/20">
-              <p className="text-blue-200 text-xs mb-1">Risk:Reward Ratio</p>
-              <p className="text-white font-bold text-lg">
-                {metrics.rrLow && metrics.rrHigh
-                  ? `1:${metrics.rrLow} → 1:${metrics.rrHigh}`
-                  : metrics.riskRewardRatio ? `1:${metrics.riskRewardRatio}` : '-'}
-              </p>
-              {formData.entry_type === 'RANGE' && metrics.sharesToBuy && (
-                <p className="text-blue-300 text-xs mt-1">
-                  Midpoint entry: ${((parseFloat(formData.entry_low) + parseFloat(formData.entry_high)) / 2).toFixed(2)}
-                </p>
-              )}
+              {/* Risk */}
+              <div className="py-2 pr-2 text-blue-200">Risk</div>
+              <div className="py-2 px-1 text-right text-rose-400">
+                {metrics.atLow?.riskAmount ? <>${metrics.atLow.riskAmount} <span className="text-blue-300/60 text-[11px]">{metrics.atLow.riskPercentage}%</span></> : '-'}
+              </div>
+              <div className="py-2 px-1 text-right text-rose-400 bg-white/5">
+                {metrics.atMid?.riskAmount ? <>${metrics.atMid.riskAmount} <span className="text-blue-300/60 text-[11px]">{metrics.atMid.riskPercentage}%</span></> : '-'}
+              </div>
+              <div className="py-2 pl-1 text-right text-rose-400">
+                {metrics.atHigh?.riskAmount ? <>${metrics.atHigh.riskAmount} <span className="text-blue-300/60 text-[11px]">{metrics.atHigh.riskPercentage}%</span></> : '-'}
+              </div>
+
+              {/* Reward */}
+              <div className="py-2 pr-2 text-blue-200">Reward</div>
+              <div className="py-2 px-1 text-right text-green-400">
+                {metrics.atLow?.rewardAmount ? <>${metrics.atLow.rewardAmount} <span className="text-blue-300/60 text-[11px]">{metrics.atLow.rewardPercentage}%</span></> : '-'}
+              </div>
+              <div className="py-2 px-1 text-right text-green-400 bg-white/5">
+                {metrics.atMid?.rewardAmount ? <>${metrics.atMid.rewardAmount} <span className="text-blue-300/60 text-[11px]">{metrics.atMid.rewardPercentage}%</span></> : '-'}
+              </div>
+              <div className="py-2 pl-1 text-right text-green-400">
+                {metrics.atHigh?.rewardAmount ? <>${metrics.atHigh.rewardAmount} <span className="text-blue-300/60 text-[11px]">{metrics.atHigh.rewardPercentage}%</span></> : '-'}
+              </div>
+
+              {/* R:R */}
+              <div className="pt-3 pr-2 text-blue-200 font-medium border-t border-white/10">R:R</div>
+              <div className={`pt-3 px-1 text-right font-bold text-base border-t border-white/10 ${rrColor(metrics.atLow?.riskRewardRatio)}`}>
+                {metrics.atLow?.riskRewardRatio ? `1:${metrics.atLow.riskRewardRatio}` : '-'}
+              </div>
+              <div className={`pt-3 px-1 text-right font-bold text-base border-t border-white/10 bg-white/5 ${rrColor(metrics.atMid?.riskRewardRatio)}`}>
+                {metrics.atMid?.riskRewardRatio ? `1:${metrics.atMid.riskRewardRatio}` : '-'}
+              </div>
+              <div className={`pt-3 pl-1 text-right font-bold text-base border-t border-white/10 ${rrColor(metrics.atHigh?.riskRewardRatio)}`}>
+                {metrics.atHigh?.riskRewardRatio ? `1:${metrics.atHigh.riskRewardRatio}` : '-'}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="grid grid-cols-[auto_1fr] text-xs">
+              <div className="py-2 pr-2 text-blue-200">Shares</div>
+              <div className="py-2 text-right text-white font-medium">{metrics.atMid?.shares || '-'}</div>
+
+              <div className="py-2 pr-2 text-blue-200">Risk</div>
+              <div className="py-2 text-right text-rose-400">
+                {metrics.atMid?.riskAmount ? <>${metrics.atMid.riskAmount} <span className="text-blue-300/60 text-[11px]">{metrics.atMid.riskPercentage}%</span></> : '-'}
+              </div>
+
+              <div className="py-2 pr-2 text-blue-200">Reward</div>
+              <div className="py-2 text-right text-green-400">
+                {metrics.atMid?.rewardAmount ? <>${metrics.atMid.rewardAmount} <span className="text-blue-300/60 text-[11px]">{metrics.atMid.rewardPercentage}%</span></> : '-'}
+              </div>
+
+              <div className="pt-3 pr-2 text-blue-200 font-medium border-t border-white/10">R:R</div>
+              <div className={`pt-3 text-right font-bold text-base border-t border-white/10 ${rrColor(metrics.atMid?.riskRewardRatio)}`}>
+                {metrics.atMid?.riskRewardRatio ? `1:${metrics.atMid.riskRewardRatio}` : '-'}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
