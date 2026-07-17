@@ -451,7 +451,7 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
       </div>
 
       {/* Card 2: Reinvest */}
-      <div className={`backdrop-blur-xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-3xl p-6 border border-green-400/20 transition-all ${nextAction !== 'reinvest' ? 'opacity-50 pointer-events-none' : ''
+      <div className={`backdrop-blur-xl rounded-xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-3xl p-6 border border-green-400/20 transition-all ${nextAction !== 'reinvest' ? 'opacity-50 pointer-events-none' : ''
         }`}>
         <div className="flex items-center gap-3 mb-4">
           <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center">
@@ -520,7 +520,7 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
       </div>
 
       {/* Card 3: Withdraw */}
-      <div className={`backdrop-blur-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-3xl p-6 border border-purple-400/20 transition-all ${nextAction !== 'withdraw' ? 'opacity-50 pointer-events-none' : ''
+      <div className={`backdrop-blur-xl rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-3xl p-6 border border-purple-400/20 transition-all ${nextAction !== 'withdraw' ? 'opacity-50 pointer-events-none' : ''
         }`}>
         <div className="flex items-center gap-3 mb-4">
           <div className="w-12 h-12 rounded-full bg-purple-500 flex items-center justify-center">

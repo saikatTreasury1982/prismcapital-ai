@@ -22,6 +22,19 @@ export function PositionActions() {
   const [allPlans, setAllPlans] = useState<any[]>([]);
   const [loadingAllPlans, setLoadingAllPlans] = useState(false);
   const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
+  const [expandedPositions, setExpandedPositions] = useState<Set<number>>(new Set());
+
+  const togglePositionExpansion = (positionId: number) => {
+    setExpandedPositions(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(positionId)) {
+        newSet.delete(positionId);
+      } else {
+        newSet.add(positionId);
+      }
+      return newSet;
+    });
+  };
 
   const toggleCardExpansion = (planId: number) => {
     setExpandedCards(prev => {
@@ -149,56 +162,82 @@ export function PositionActions() {
                       if (selectedPosition?.position_id === b.position_id) return 1;
                       return 0;
                     })
-                    .map((position) => (
-                      <button
-                        key={position.position_id}
-                        onClick={() => {
-                          setSelectedPosition(position);
-                          setActionType(null);
-                        }}
-                        className={`w-full text-left p-4 rounded-xl transition-all ${selectedPosition?.position_id === position.position_id
+                    .map((position) => {
+                      const isExpanded = expandedPositions.has(position.position_id);
+
+                      return (
+                        <div
+                          key={position.position_id}
+                          onClick={() => {
+                            setSelectedPosition(position);
+                            setActionType(null);
+                          }}
+                          className={`w-full text-left p-4 rounded-xl transition-all cursor-pointer ${selectedPosition?.position_id === position.position_id
                             ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-2 border-blue-400'
                             : 'bg-white/5 border border-white/10 hover:bg-white/10'
-                          }`}
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className="text-white font-bold text-lg">{position.ticker}</h3>
-                          <span className="text-blue-200 text-xs">{position.position_currency}</span>
+                            }`}
+                        >
+                          {/* Always visible */}
+                          <div className="flex items-center justify-between gap-2 mb-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  togglePositionExpansion(position.position_id);
+                                }}
+                                className="p-1 rounded-full bg-white/10 text-blue-300 hover:bg-white/20 transition-all flex-shrink-0"
+                                title={isExpanded ? 'Collapse' : 'Expand'}
+                              >
+                                {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                              </button>
+                              <h3 className="text-white font-bold text-lg truncate">{position.ticker}</h3>
+                            </div>
+                            <span className="text-blue-200 text-xs flex-shrink-0">{position.position_currency}</span>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div>
+                              <p className="text-blue-300">Shares</p>
+                              <p className="text-white font-semibold">{position.total_shares.toFixed(2)}</p>
+                            </div>
+                            <div>
+                              <p className="text-blue-300">Value</p>
+                              <p className="text-white font-semibold">
+                                ${position.current_value?.toFixed(2) || 'N/A'}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Expanded only */}
+                          {isExpanded && (
+                            <>
+                              {position.ticker_name && (
+                                <p className="text-blue-300 text-xs mt-2">{position.ticker_name}</p>
+                              )}
+                              <div className="grid grid-cols-2 gap-2 text-xs mt-2">
+                                <div>
+                                  <p className="text-blue-300">Avg Cost</p>
+                                  <p className="text-white font-semibold">${position.average_cost.toFixed(2)}</p>
+                                </div>
+                                <div>
+                                  <p className="text-blue-300">Current Price</p>
+                                  <p className="text-white font-semibold">
+                                    ${position.current_market_price?.toFixed(2) || 'N/A'}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="mt-2 pt-2 border-t border-white/10">
+                                <p className="text-xs text-blue-300">Unrealized P/L</p>
+                                <p className={`font-bold ${(position.unrealized_pnl || 0) >= 0 ? 'text-green-400' : 'text-rose-400'
+                                  }`}>
+                                  ${position.unrealized_pnl?.toFixed(2) || '0.00'}
+                                </p>
+                              </div>
+                            </>
+                          )}
                         </div>
-                        {position.ticker_name && (
-                          <p className="text-blue-300 text-xs mb-2">{position.ticker_name}</p>
-                        )}
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                          <div>
-                            <p className="text-blue-300">Shares</p>
-                            <p className="text-white font-semibold">{position.total_shares.toFixed(2)}</p>
-                          </div>
-                          <div>
-                            <p className="text-blue-300">Avg Cost</p>
-                            <p className="text-white font-semibold">${position.average_cost.toFixed(2)}</p>
-                          </div>
-                          <div>
-                            <p className="text-blue-300">Current Price</p>
-                            <p className="text-white font-semibold">
-                              ${position.current_market_price?.toFixed(2) || 'N/A'}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-blue-300">Value</p>
-                            <p className="text-white font-semibold">
-                              ${position.current_value?.toFixed(2) || 'N/A'}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="mt-2 pt-2 border-t border-white/10">
-                          <p className="text-xs text-blue-300">Unrealized P/L</p>
-                          <p className={`font-bold ${(position.unrealized_pnl || 0) >= 0 ? 'text-green-400' : 'text-rose-400'
-                            }`}>
-                            ${position.unrealized_pnl?.toFixed(2) || '0.00'}
-                          </p>
-                        </div>
-                      </button>
-                    ))}
+                      );
+                    })}
                 </div>
               )}
             </div>
@@ -224,16 +263,16 @@ export function PositionActions() {
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center gap-3">
                               <span className={`px-3 py-1 rounded-full text-xs font-semibold ${plan.action_type === 'ADD_POSITION'
-                                  ? 'bg-green-500/20 text-green-300'
-                                  : 'bg-blue-500/20 text-blue-300'
+                                ? 'bg-green-500/20 text-green-300'
+                                : 'bg-blue-500/20 text-blue-300'
                                 }`}>
                                 {plan.action_type === 'ADD_POSITION' ? 'Increase' : 'Reduce'} Position
                               </span>
                               <span className={`px-3 py-1 rounded-full text-xs font-semibold ${plan.status === 'DRAFT'
-                                  ? 'bg-yellow-500/20 text-yellow-300'
-                                  : plan.status === 'EXECUTED'
-                                    ? 'bg-green-500/20 text-green-300'
-                                    : 'bg-slate-500/20 text-slate-300'
+                                ? 'bg-yellow-500/20 text-yellow-300'
+                                : plan.status === 'EXECUTED'
+                                  ? 'bg-green-500/20 text-green-300'
+                                  : 'bg-slate-500/20 text-slate-300'
                                 }`}>
                                 {plan.status}
                               </span>
@@ -469,16 +508,16 @@ export function PositionActions() {
                           <h3 className="text-white font-bold text-lg">{plan.ticker}</h3>
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
                             <span className={`px-2 py-1 rounded-full text-xs font-semibold ${plan.action_type === 'ADD_POSITION'
-                                ? 'bg-green-500/20 text-green-300'
-                                : 'bg-blue-500/20 text-blue-300'
+                              ? 'bg-green-500/20 text-green-300'
+                              : 'bg-blue-500/20 text-blue-300'
                               }`}>
                               {plan.action_type === 'ADD_POSITION' ? 'Increase' : 'Reduce'}
                             </span>
                             <span className={`px-2 py-1 rounded-full text-xs font-semibold ${plan.status === 'DRAFT'
-                                ? 'bg-yellow-500/20 text-yellow-300'
-                                : plan.status === 'EXECUTED'
-                                  ? 'bg-green-500/20 text-green-300'
-                                  : 'bg-slate-500/20 text-slate-300'
+                              ? 'bg-yellow-500/20 text-yellow-300'
+                              : plan.status === 'EXECUTED'
+                                ? 'bg-green-500/20 text-green-300'
+                                : 'bg-slate-500/20 text-slate-300'
                               }`}>
                               {plan.status}
                             </span>
@@ -642,16 +681,16 @@ export function PositionActions() {
             {/* Status Badges */}
             <div className="flex items-center gap-3 mb-6">
               <span className={`px-4 py-2 rounded-full text-sm font-semibold ${viewingPlan.action_type === 'ADD_POSITION'
-                  ? 'bg-green-500/20 text-green-300 border border-green-400/30'
-                  : 'bg-blue-500/20 text-blue-300 border border-blue-400/30'
+                ? 'bg-green-500/20 text-green-300 border border-green-400/30'
+                : 'bg-blue-500/20 text-blue-300 border border-blue-400/30'
                 }`}>
                 {viewingPlan.action_type === 'ADD_POSITION' ? 'Increase Position' : 'Reduce Position'}
               </span>
               <span className={`px-4 py-2 rounded-full text-sm font-semibold ${viewingPlan.status === 'DRAFT'
-                  ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-400/30'
-                  : viewingPlan.status === 'EXECUTED'
-                    ? 'bg-green-500/20 text-green-300 border border-green-400/30'
-                    : 'bg-slate-500/20 text-slate-300 border border-slate-400/30'
+                ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-400/30'
+                : viewingPlan.status === 'EXECUTED'
+                  ? 'bg-green-500/20 text-green-300 border border-green-400/30'
+                  : 'bg-slate-500/20 text-slate-300 border border-slate-400/30'
                 }`}>
                 {viewingPlan.status}
               </span>
