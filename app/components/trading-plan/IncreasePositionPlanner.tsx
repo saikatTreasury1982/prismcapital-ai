@@ -383,7 +383,7 @@ export function IncreasePositionPlanner({ position, editingPlan, onSuccess, onCa
       </div>
 
       {/* Notes */}
-      <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-6 border border-white/20">
+      <div className="backdrop-blur-xl bg-white/10 rounded-xl p-6 border border-white/20">
         <BulletTextarea
           value={notes}
           onChange={(value) => setNotes(value)}
@@ -398,7 +398,7 @@ export function IncreasePositionPlanner({ position, editingPlan, onSuccess, onCa
       {/* View Scenario Modal */}
       {viewingScenario && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="backdrop-blur-xl bg-white/10 rounded-xl p-8 border border-white/20 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-2xl font-bold text-white mb-1">

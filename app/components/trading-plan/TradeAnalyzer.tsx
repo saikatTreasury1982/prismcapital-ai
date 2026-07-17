@@ -75,7 +75,7 @@ export function TradeAnalyzer() {
 
   if (loading) {
     return (
-      <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20">
+      <div className="backdrop-blur-xl bg-white/10 rounded-xl p-8 border border-white/20">
         <p className="text-blue-200 text-center">Loading analyses...</p>
       </div>
     );
@@ -163,7 +163,7 @@ export function TradeAnalyzer() {
 
       {/* Analysis Cards Grid */}
       {filteredAnalyses.length === 0 ? (
-        <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-12 border border-white/20 text-center">
+        <div className="backdrop-blur-xl bg-white/10 rounded-xl p-12 border border-white/20 text-center">
           <p className="text-blue-200 text-lg mb-2">No trade analyses yet</p>
           <p className="text-blue-300 text-sm">Click "Add Analysis" to start analyzing trade opportunities</p>
         </div>
