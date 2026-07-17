@@ -59,13 +59,24 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
 
   // Update sell shares when percentage changes
   useEffect(() => {
-    if (liquidationType === 'partial') {
-      const shares = (position.total_shares * sellPercentage) / 100;
-      setSellShares(parseFloat(shares.toFixed(4)));
-    } else {
+    if (liquidationType === 'full') {
       setSellShares(position.total_shares);
+      setSellPercentage(100);
     }
-  }, [sellPercentage, liquidationType, position.total_shares]);
+  }, [liquidationType, position.total_shares]);
+
+  // Slider drives shares
+  const handlePercentageChange = (pct: number) => {
+    setSellPercentage(pct);
+    setSellShares(parseFloat(((position.total_shares * pct) / 100).toFixed(4)));
+  };
+
+  // Input drives percentage
+  const handleSharesChange = (shares: number) => {
+    const clamped = Math.min(Math.max(shares, 0), position.total_shares);
+    setSellShares(clamped);
+    setSellPercentage(parseFloat(((clamped / position.total_shares) * 100).toFixed(2)));
+  };
 
   // Calculate remaining cash after reinvestment
   const remainingCash = proceeds - reinvestAmount;
@@ -322,8 +333,8 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
           <div className="flex flex-wrap items-center gap-3">
             <SegmentedPills
               options={[
-                { value: 1, label: 'Full Liquidation', activeColor: 'bg-rose-500' },
-                { value: 2, label: 'Partial Sale', activeColor: 'bg-orange-500' },
+                { value: 1, label: 'Full Sale', activeColor: 'bg-rose-500' },
+                { value: 2, label: 'Part Sale', activeColor: 'bg-orange-500' },
               ]}
               value={liquidationType === 'full' ? 1 : 2}
               onChange={(value) => setLiquidationType(value === 1 ? 'full' : 'partial')}
@@ -331,7 +342,7 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
             />
             <SegmentedPills
               options={[
-                { value: 1, label: 'Decide Later', activeColor: 'bg-slate-500' },
+                { value: 1, label: 'Decide Later', activeColor: 'bg-blue-500' },
                 { value: 2, label: 'Reinvest', activeColor: 'bg-green-500' },
                 { value: 3, label: 'Withdraw', activeColor: 'bg-purple-500' },
               ]}
@@ -341,24 +352,39 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
             />
           </div>
         </div>
-        
+
         {liquidationType === 'partial' && (
-          <div className="mb-4">
-            <label className="text-blue-200 text-sm mb-2 block font-medium">
-              Sell Percentage: {sellPercentage}%
-            </label>
-            <input
-              type="range"
-              min="1"
-              max="100"
-              value={sellPercentage}
-              onChange={(e) => setSellPercentage(parseInt(e.target.value))}
-              className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
-            />
-            <div className="flex justify-between text-xs text-blue-300 mt-1">
-              <span>1%</span>
-              <span>50%</span>
-              <span>100%</span>
+          <div className="mb-4 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-end">
+            <div>
+              <label className="text-blue-200 text-sm mb-2 block font-medium">
+                Sell Percentage: {sellPercentage}%
+              </label>
+              <input
+                type="range"
+                min="1"
+                max="100"
+                step="0.01"
+                value={sellPercentage}
+                onChange={(e) => handlePercentageChange(parseFloat(e.target.value))}
+                className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
+              />
+              <div className="flex justify-between text-xs text-blue-300 mt-1">
+                <span>1%</span>
+                <span>50%</span>
+                <span>100%</span>
+              </div>
+            </div>
+            <div>
+              <input
+                type="number"
+                step="0.0001"
+                min="0"
+                max={position.total_shares}
+                value={sellShares}
+                onChange={(e) => handleSharesChange(parseFloat(e.target.value) || 0)}
+                className="w-full md:w-40 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white"
+              />
+              <p className="text-blue-300 text-xs mt-1">of {position.total_shares.toFixed(4)}</p>
             </div>
           </div>
         )}
