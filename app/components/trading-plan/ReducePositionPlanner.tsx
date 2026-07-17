@@ -526,25 +526,30 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-[auto_1fr_auto] gap-4 mb-4 items-end">
+        {/* Row 1: Ticker + Company */}
+        <div className="flex flex-wrap items-end gap-4 mb-4">
           <div>
             <label className="text-blue-200 text-sm mb-2 block font-medium">New Ticker</label>
             <input
               type="text"
               value={reinvestTicker}
               onChange={(e) => setReinvestTicker(e.target.value.toUpperCase())}
-              className="w-full md:w-32 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white uppercase"
+              className="w-32 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white uppercase"
               placeholder="MSFT"
             />
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1 pb-3">
             <p className="text-blue-200 text-xs mb-1">Company</p>
-            <p className="text-white text-sm font-medium truncate py-3">
+            <p className="text-white text-sm font-medium truncate">
               {isLoadingReinvestTicker
                 ? <span className="text-blue-300/50">Loading…</span>
                 : reinvestTickerName || <span className="text-blue-300/50">—</span>}
             </p>
           </div>
+        </div>
+
+        {/* Row 2: Entry Price + Reinvest Amount */}
+        <div className="flex flex-wrap items-end gap-4 mb-4">
           <div>
             <label className="text-blue-200 text-sm mb-2 block font-medium">Entry Price</label>
             <input
@@ -552,9 +557,49 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
               step="0.01"
               value={reinvestPrice || ''}
               onChange={(e) => setReinvestPrice(parseFloat(e.target.value) || 0)}
-              className="w-full md:w-32 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white"
+              className="w-32 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white"
               placeholder="0.00"
             />
+          </div>
+          <div className="flex-1 min-w-[200px]">
+            <label className="text-blue-200 text-sm mb-2 block font-medium">
+              Reinvest Amount: ${reinvestAmount.toFixed(2)}
+            </label>
+            <input
+              type="range"
+              min="0"
+              max={proceeds}
+              step="0.01"
+              value={reinvestAmount}
+              onChange={(e) => handleReinvestAmountChange(parseFloat(e.target.value))}
+              className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-green-500 mb-1"
+            />
+            <div className="flex justify-between text-xs text-blue-300">
+              <span>$0</span>
+              <span>${(proceeds / 2).toFixed(0)}</span>
+              <span>${proceeds.toFixed(0)}</span>
+            </div>
+          </div>
+          <div>
+            <label className="text-blue-200 text-sm mb-2 block font-medium">Amount ($)</label>
+            <div className="flex gap-2 items-center">
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                max={proceeds}
+                value={reinvestAmount}
+                onChange={(e) => handleReinvestAmountChange(parseFloat(e.target.value) || 0)}
+                className="w-32 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white"
+              />
+              <GlassButton
+                icon={ArrowRight}
+                onClick={() => handleReinvestAmountChange(proceeds)}
+                tooltip="Reinvest all proceeds"
+                variant="secondary"
+                size="sm"
+              />
+            </div>
           </div>
         </div>
 
@@ -626,7 +671,7 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-4 mb-4 items-end">
+        <div className="flex flex-wrap items-end gap-4 mb-4">
           <div>
             <label className="text-blue-200 text-sm mb-2 block font-medium">
               Withdraw to Currency
@@ -634,7 +679,7 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
             <select
               value={withdrawCurrency}
               onChange={(e) => setWithdrawCurrency(e.target.value)}
-              className="w-full md:w-28 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white"
+              className="w-28 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white"
             >
               <option value="USD" className="bg-slate-800">USD</option>
               <option value="AUD" className="bg-slate-800">AUD</option>
@@ -645,7 +690,7 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
           </div>
           <div className="bg-white/5 rounded-xl p-3 border border-white/10">
             <p className="text-blue-200 text-xs mb-1">Exchange Rate</p>
-            <p className="text-white text-lg font-bold">
+            <p className="text-white text-lg font-bold whitespace-nowrap">
               {isLoadingConversion ? '...' : `1 ${position.position_currency} = ${exchangeRate.toFixed(4)} ${withdrawCurrency}`}
             </p>
           </div>
@@ -656,7 +701,7 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
             tooltip="Refresh exchange rate"
             variant="secondary"
             size="sm"
-            className={isLoadingConversion ? 'animate-spin' : ''}
+            className={`mb-1 ${isLoadingConversion ? 'animate-spin' : ''}`}
           />
         </div>
 
@@ -675,7 +720,7 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
           </div>
         </div>
       </div>
-      
+
       {/* Notes */}
       <div className="backdrop-blur-xl bg-white/10 rounded-xl p-6 border border-white/20">
         <BulletTextarea
