@@ -110,7 +110,7 @@ export function PositionActions() {
 
   if (loading) {
     return (
-      <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20">
+      <div className="backdrop-blur-xl bg-white/10 rounded-xl p-8 border border-white/20">
         <p className="text-blue-200 text-center">Loading positions...</p>
       </div>
     );
@@ -136,7 +136,7 @@ export function PositionActions() {
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Left Panel - Positions List (30%) */}
           <div className="lg:w-[30%]">
-            <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-6 border border-white/20">
+            <div className="backdrop-blur-xl bg-white/10 rounded-xl p-6 border border-white/20">
               <h2 className="text-xl font-bold text-white mb-4">Your Positions</h2>
 
               {positions.length === 0 ? (
@@ -213,7 +213,7 @@ export function PositionActions() {
               <div className="space-y-6">
                 {/* Saved Plans Section */}
                 {!loadingPlans && savedPlans.length > 0 && (
-                  <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-6 border border-white/20">
+                  <div className="backdrop-blur-xl bg-white/10 rounded-xl p-6 border border-white/20">
                     <h3 className="text-xl font-bold text-white mb-4">Saved Action Plans</h3>
                     <div className="space-y-3">
                       {savedPlans.map((plan) => (
@@ -362,7 +362,7 @@ export function PositionActions() {
 
                 {/* Action Type Selector */}
                 {!actionType && (
-                  <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20">
+                  <div className="backdrop-blur-xl bg-white/10 rounded-xl p-8 border border-white/20">
                     <div className="text-center mb-8">
                       <h2 className="text-2xl font-bold text-white mb-2">{selectedPosition.ticker}</h2>
                       <p className="text-blue-200">
@@ -425,7 +425,7 @@ export function PositionActions() {
                 )}
               </div>
             ) : (
-              <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-12 border border-white/20 text-center">
+              <div className="backdrop-blur-xl bg-white/10 rounded-xl p-12 border border-white/20 text-center">
                 <p className="text-blue-200 text-lg mb-2">Select a Position</p>
                 <p className="text-blue-300 text-sm">Choose a position from the left to plan your actions</p>
               </div>
@@ -438,11 +438,11 @@ export function PositionActions() {
       {viewMode === 'all-plans' && (
         <div className="w-full">
           {loadingAllPlans ? (
-            <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20">
+            <div className="backdrop-blur-xl bg-white/10 rounded-xl p-8 border border-white/20">
               <p className="text-blue-200 text-center">Loading all plans...</p>
             </div>
           ) : allPlans.length === 0 ? (
-            <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20">
+            <div className="backdrop-blur-xl bg-white/10 rounded-xl p-8 border border-white/20">
               <p className="text-blue-200 text-center">No action plans found</p>
             </div>
           ) : (
@@ -619,7 +619,7 @@ export function PositionActions() {
       {/* View Plan Modal */}
       {viewingPlan && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20 max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-hide">
+          <div className="backdrop-blur-xl bg-white/10 rounded-xl p-8 border border-white/20 max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-hide">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-2xl font-bold text-white mb-1">
