@@ -1,11 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { DollarSign, TrendingUp, Wallet, Save, XCircle } from 'lucide-react';
+import { DollarSign, TrendingUp, Wallet, Save, XCircle, ArrowRight } from 'lucide-react';
 import { Position } from '@/app/lib/types/transaction';
 import { convertCurrency, createPositionActionPlan, updatePositionActionPlan } from '@/app/services/positionActionPlanServiceClient';
 import GlassButton from '@/app/lib/ui/GlassButton';
-import SegmentedControl from '@/app/lib/ui/SegmentedControl';
 import SegmentedPills from '@/app/lib/ui/SegmentedPills';
 import { BulletTextarea } from '@/app/lib/ui/BulletTextarea';
 import BulletDisplay from '@/app/lib/ui/BulletDisplay';
@@ -32,6 +31,10 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
   const [reinvestAmount, setReinvestAmount] = useState(0);
   const [reinvestPrice, setReinvestPrice] = useState(0);
   const [estimatedShares, setEstimatedShares] = useState(0);
+  const handleReinvestAmountChange = (amount: number) => {
+    const clamped = Math.min(Math.max(amount, 0), proceeds);
+    setReinvestAmount(parseFloat(clamped.toFixed(2)));
+  };
 
   // Step 3: Withdrawal
   const [withdrawCurrency, setWithdrawCurrency] = useState('AUD');
@@ -375,6 +378,7 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
               </div>
             </div>
             <div>
+              <label className="text-blue-200 text-sm mb-2 block font-medium">Shares to Sell</label>
               <input
                 type="number"
                 step="0.0001"
@@ -433,7 +437,7 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-xl p-4 border border-green-400/30">
-            <p className="text-green-200 text-sm mb-1">Expected Net Proceeds</p>
+            <p className="text-green-200 text-sm mb-1">Planned Net Proceeds</p>
             <p className="text-white text-3xl font-bold">${proceeds.toFixed(2)}</p>
             <p className="text-green-300 text-xs mt-1">
               {position.position_currency || 'USD'}
@@ -443,7 +447,7 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
           {/* Expected Gain/Loss */}
           <div className="bg-white/5 rounded-xl p-4 border border-white/10">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-blue-200 text-sm font-medium">Expected Gain/Loss</p>
+              <p className="text-blue-200 text-sm font-medium">Planned Gain/Loss</p>
               <div className="flex items-center gap-2">
                 <span className={`text-xs ${!showFeesInGainLoss ? 'text-white' : 'text-blue-300'}`}>
                   Without Fees
@@ -513,23 +517,47 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
           </div>
         </div>
 
-        <div className="mb-4">
-          <label className="text-blue-200 text-sm mb-2 block font-medium">
-            Reinvest Amount: ${reinvestAmount.toFixed(2)}
-          </label>
-          <input
-            type="range"
-            min="0"
-            max={proceeds}
-            step="100"
-            value={reinvestAmount}
-            onChange={(e) => setReinvestAmount(parseFloat(e.target.value))}
-            className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-green-500"
-          />
-          <div className="flex justify-between text-xs text-blue-300 mt-1">
-            <span>$0</span>
-            <span>${(proceeds / 2).toFixed(0)}</span>
-            <span>${proceeds.toFixed(0)}</span>
+        <div className="mb-4 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-end">
+          <div>
+            <label className="text-blue-200 text-sm mb-2 block font-medium">
+              Reinvest Amount: ${reinvestAmount.toFixed(2)}
+            </label>
+            <input
+              type="range"
+              min="0"
+              max={proceeds}
+              step="0.01"
+              value={reinvestAmount}
+              onChange={(e) => handleReinvestAmountChange(parseFloat(e.target.value))}
+              className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-green-500"
+            />
+            <div className="flex justify-between text-xs text-blue-300 mt-1">
+              <span>$0</span>
+              <span>${(proceeds / 2).toFixed(0)}</span>
+              <span>${proceeds.toFixed(0)}</span>
+            </div>
+          </div>
+          <div>
+            <label className="text-blue-200 text-sm mb-2 block font-medium">Amount ($)</label>
+            <div className="flex gap-2 items-center">
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                max={proceeds}
+                value={reinvestAmount}
+                onChange={(e) => handleReinvestAmountChange(parseFloat(e.target.value) || 0)}
+                className="w-full md:w-36 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white"
+              />
+              <GlassButton
+                icon={ArrowRight}
+                onClick={() => handleReinvestAmountChange(proceeds)}
+                tooltip="Reinvest all proceeds"
+                variant="secondary"
+                size="sm"
+              />
+            </div>
+            <p className="text-blue-300 text-xs mt-1">of ${proceeds.toFixed(2)}</p>
           </div>
         </div>
 
