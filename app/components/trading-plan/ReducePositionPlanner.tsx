@@ -303,7 +303,7 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
       )}
 
       {/* Card 1: Liquidate */}
-      <div className="backdrop-blur-xl rounded-xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-3xl p-6 border border-blue-400/20">
+      <div className="backdrop-blur-xl rounded-xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 p-6 border border-blue-400/20">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center">
             <DollarSign className="w-6 h-6 text-white" />
@@ -390,46 +390,48 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
           </div>
         </div>
 
-        <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-xl p-4 border border-green-400/30">
-          <p className="text-green-200 text-sm mb-1">Expected Net Proceeds</p>
-          <p className="text-white text-3xl font-bold">${proceeds.toFixed(2)}</p>
-          <p className="text-green-300 text-xs mt-1">
-            {position.position_currency || 'USD'}
-          </p>
-        </div>
-
-        {/* Expected Gain/Loss */}
-        <div className="mt-4 bg-white/5 rounded-xl p-4 border border-white/10">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-blue-200 text-sm font-medium">Expected Gain/Loss</p>
-            <div className="flex items-center gap-2">
-              <span className={`text-xs ${!showFeesInGainLoss ? 'text-white' : 'text-blue-300'}`}>
-                Without Fees
-              </span>
-              <button
-                onClick={() => setShowFeesInGainLoss(!showFeesInGainLoss)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${showFeesInGainLoss ? 'bg-blue-500' : 'bg-white/20'
-                  }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showFeesInGainLoss ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                />
-              </button>
-              <span className={`text-xs ${showFeesInGainLoss ? 'text-white' : 'text-blue-300'}`}>
-                With Fees
-              </span>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-xl p-4 border border-green-400/30">
+            <p className="text-green-200 text-sm mb-1">Expected Net Proceeds</p>
+            <p className="text-white text-3xl font-bold">${proceeds.toFixed(2)}</p>
+            <p className="text-green-300 text-xs mt-1">
+              {position.position_currency || 'USD'}
+            </p>
           </div>
-          {(() => {
-            const gainLoss = calculateExpectedGainLoss(showFeesInGainLoss);
-            const isPositive = gainLoss.amount >= 0;
-            return (
-              <p className={`text-2xl font-bold ${isPositive ? 'text-green-400' : 'text-rose-400'}`}>
-                {isPositive ? '+' : ''}${gainLoss.amount.toFixed(2)} ({isPositive ? '+' : ''}{gainLoss.percentage.toFixed(1)}%)
-              </p>
-            );
-          })()}
+
+          {/* Expected Gain/Loss */}
+          <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-blue-200 text-sm font-medium">Expected Gain/Loss</p>
+              <div className="flex items-center gap-2">
+                <span className={`text-xs ${!showFeesInGainLoss ? 'text-white' : 'text-blue-300'}`}>
+                  Without Fees
+                </span>
+                <button
+                  onClick={() => setShowFeesInGainLoss(!showFeesInGainLoss)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${showFeesInGainLoss ? 'bg-blue-500' : 'bg-white/20'
+                    }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${showFeesInGainLoss ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                  />
+                </button>
+                <span className={`text-xs ${showFeesInGainLoss ? 'text-white' : 'text-blue-300'}`}>
+                  With Fees
+                </span>
+              </div>
+            </div>
+            {(() => {
+              const gainLoss = calculateExpectedGainLoss(showFeesInGainLoss);
+              const isPositive = gainLoss.amount >= 0;
+              return (
+                <p className={`text-2xl font-bold ${isPositive ? 'text-green-400' : 'text-rose-400'}`}>
+                  {isPositive ? '+' : ''}${gainLoss.amount.toFixed(2)} ({isPositive ? '+' : ''}{gainLoss.percentage.toFixed(1)}%)
+                </p>
+              );
+            })()}
+          </div>
         </div>
 
         {/* Next Action Selector */}
@@ -437,21 +439,23 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
           <label className="text-blue-200 text-sm mb-2 block font-medium">
             What would you like to do with the proceeds?
           </label>
-          <SegmentedControl
-            options={[
-              { value: 1, label: 'Decide Later' },
-              { value: 2, label: 'Reinvest' },
-              { value: 3, label: 'Withdraw' },
-            ]}
-            value={nextAction === 'none' ? 1 : nextAction === 'reinvest' ? 2 : 3}
-            onChange={(value) => setNextAction(value === 1 ? 'none' : value === 2 ? 'reinvest' : 'withdraw')}
-            color="blue"
-          />
+          <div className="max-w-md">
+            <SegmentedControl
+              options={[
+                { value: 1, label: 'Decide Later' },
+                { value: 2, label: 'Reinvest' },
+                { value: 3, label: 'Withdraw' },
+              ]}
+              value={nextAction === 'none' ? 1 : nextAction === 'reinvest' ? 2 : 3}
+              onChange={(value) => setNextAction(value === 1 ? 'none' : value === 2 ? 'reinvest' : 'withdraw')}
+              color="blue"
+            />
+          </div>
         </div>
       </div>
 
       {/* Card 2: Reinvest */}
-      <div className={`backdrop-blur-xl rounded-xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-3xl p-6 border border-green-400/20 transition-all ${nextAction !== 'reinvest' ? 'opacity-50 pointer-events-none' : ''
+      <div className={`backdrop-blur-xl rounded-xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 p-6 border border-green-400/20 transition-all ${nextAction !== 'reinvest' ? 'opacity-50 pointer-events-none' : ''
         }`}>
         <div className="flex items-center gap-3 mb-4">
           <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center">
@@ -520,7 +524,7 @@ export function ReducePositionPlanner({ position, editingPlan, onSuccess, onCanc
       </div>
 
       {/* Card 3: Withdraw */}
-      <div className={`backdrop-blur-xl rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-3xl p-6 border border-purple-400/20 transition-all ${nextAction !== 'withdraw' ? 'opacity-50 pointer-events-none' : ''
+      <div className={`backdrop-blur-xl rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 p-6 border border-purple-400/20 transition-all ${nextAction !== 'withdraw' ? 'opacity-50 pointer-events-none' : ''
         }`}>
         <div className="flex items-center gap-3 mb-4">
           <div className="w-12 h-12 rounded-full bg-purple-500 flex items-center justify-center">

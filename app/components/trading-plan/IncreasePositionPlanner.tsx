@@ -223,7 +223,7 @@ export function IncreasePositionPlanner({ position, editingPlan, onSuccess, onCa
       )}
 
       {/* Investment Input Card */}
-      <div className="backdrop-blur-xl rounded-xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-3xl p-6 border border-green-400/20">
+      <div className="backdrop-blur-xl rounded-xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 p-6 border border-green-400/20">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center">
             <TrendingUp className="w-6 h-6 text-white" />
@@ -347,7 +347,7 @@ export function IncreasePositionPlanner({ position, editingPlan, onSuccess, onCa
       </div>
 
       {/* New Position Metrics Card */}
-      <div className="backdrop-blur-xl rounded-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-3xl p-6 border border-blue-400/20">
+      <div className="backdrop-blur-xl rounded-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 p-6 border border-blue-400/20">
         <h3 className="text-xl font-bold text-white mb-4">New Position Metrics</h3>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
