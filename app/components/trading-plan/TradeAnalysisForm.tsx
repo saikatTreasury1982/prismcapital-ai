@@ -6,6 +6,7 @@ import { createTradeAnalysis, updateTradeAnalysis } from '@/app/services/tradeAn
 import GlassButton from '@/app/lib/ui/GlassButton';
 import { Save, XCircle, RotateCcw } from 'lucide-react';
 import { BulletTextarea } from '@/app/lib/ui/BulletTextarea';
+import SegmentedPills from '@/app/lib/ui/SegmentedPills';
 
 interface TradeAnalysisFormProps {
   editingAnalysis?: TradeAnalysis | null;
@@ -20,13 +21,14 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
     entry_price: '',
     entry_type: 'STRICT',
     entry_low: '',
-  	entry_high: '',  
+    entry_high: '',
     position_size: '',
     stop_loss: '',
     take_profit: '',
     notes: '',
   });
 
+  const [tickerDescription, setTickerDescription] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exchanges, setExchanges] = useState<Array<{ exchange_code: string; exchange_name: string }>>([]);
@@ -119,7 +121,7 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
       metrics.rrLow = rrAt(high);
       metrics.rrHigh = rrAt(low);
     }
-    
+
     return metrics;
   };
 
@@ -141,22 +143,22 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
       setError('Entry Price is required');
       return;
     }
-    
+
     const low = parseFloat(formData.entry_low);
     const high = parseFloat(formData.entry_high);
-    
+
     if (isRange && low >= high) {
       setError('Entry low must be below entry high');
       return;
     }
-    
+
     const entry = isRange ? (low + high) / 2 : parseFloat(formData.entry_price);
     const compareLow = isRange ? low : entry;
     const compareHigh = isRange ? high : entry;
-    
+
     const stopLoss = formData.stop_loss ? parseFloat(formData.stop_loss) : null;
     const takeProfit = formData.take_profit ? parseFloat(formData.take_profit) : null;
-    
+
     if (stopLoss !== null && stopLoss >= compareLow) {
       setError('Stop loss must be below the entry range');
       return;
@@ -269,202 +271,203 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        {/* Ticker */}
-        <div>
-          <label className="text-blue-200 text-sm mb-2 block font-medium">Ticker <span className="text-rose-400">*</span></label>
-          <input
-            type="text"
-            value={formData.ticker}
-            onChange={(e) => setFormData({ ...formData, ticker: e.target.value.toUpperCase() })}
-            placeholder="AAPL"
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 uppercase"
-            disabled={!!editingAnalysis}
-            required
-          />
-        </div>
-
-        {/* Exchange */}
-        <div>
-          <label className="text-blue-200 text-sm mb-2 block font-medium">Exchange</label>
-          <select
-            value={formData.exchange_code || ''}
-            onChange={(e) => setFormData({ ...formData, exchange_code: e.target.value })}
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
-          >
-            <option value="">-- Select an exchange --</option>
-            {exchanges.length > 0 ? (
-              exchanges.map((exchange) => (
-                <option key={exchange.exchange_code} value={exchange.exchange_code} className="bg-slate-800 text-white">
-                  {exchange.exchange_code} - {exchange.exchange_name}
-                </option>
-              ))
-            ) : (
-              <option disabled>Loading exchanges...</option>
-            )}
-          </select>
-        </div>
-
-        {/* Entry Type */}
-        <div className="md:col-span-2">
-          <label className="text-blue-200 text-sm mb-2 block font-medium">Entry Type</label>
-          <div className="flex gap-2">
-            {(['STRICT', 'RANGE'] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setFormData({ ...formData, entry_type: t })}
-                className={`flex-1 px-4 py-3 rounded-xl border transition-all text-sm font-medium ${
-                  formData.entry_type === t
-                    ? 'bg-blue-500/30 border-blue-400 text-white'
-                    : 'bg-white/5 border-white/10 text-blue-300 hover:bg-white/10'
-                }`}
-              >
-                {t === 'STRICT' ? 'Strict price' : 'Price range'}
-              </button>
-            ))}
-          </div>
-        </div>
-        
-        {/* Entry Price / Range */}
-        {formData.entry_type === 'STRICT' ? (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* LEFT COLUMN: Inputs */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Ticker */}
           <div>
-            <label className="text-blue-200 text-sm mb-2 block font-medium">Entry Price <span className="text-rose-400">*</span></label>
+            <label className="text-blue-200 text-sm mb-2 block font-medium">Ticker <span className="text-rose-400">*</span></label>
+            <input
+              type="text"
+              value={formData.ticker}
+              onChange={(e) => setFormData({ ...formData, ticker: e.target.value.toUpperCase() })}
+              placeholder="AAPL"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20 uppercase"
+              disabled={!!editingAnalysis}
+              required
+            />
+          </div>
+
+          {/* Exchange */}
+          <div>
+            <label className="text-blue-200 text-sm mb-2 block font-medium">Exchange</label>
+            <select
+              value={formData.exchange_code || ''}
+              onChange={(e) => setFormData({ ...formData, exchange_code: e.target.value })}
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
+            >
+              <option value="">-- Select an exchange --</option>
+              {exchanges.length > 0 ? (
+                exchanges.map((exchange) => (
+                  <option key={exchange.exchange_code} value={exchange.exchange_code} className="bg-slate-800 text-white">
+                    {exchange.exchange_code} - {exchange.exchange_name}
+                  </option>
+                ))
+              ) : (
+                <option disabled>Loading exchanges...</option>
+              )}
+            </select>
+          </div>
+
+          {/* Ticker Description + Entry Type */}
+          <div className="md:col-span-2 flex items-center justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <p className="text-blue-200 text-xs mb-1">Company</p>
+              <p className="text-white text-sm font-medium truncate">
+                {tickerDescription || <span className="text-blue-300/50">—</span>}
+              </p>
+            </div>
+            <SegmentedPills<'STRICT' | 'RANGE'>
+              options={[
+                { value: 'STRICT', label: 'Strict price' },
+                { value: 'RANGE', label: 'Price range' },
+              ]}
+              value={formData.entry_type as 'STRICT' | 'RANGE'}
+              onChange={(v) => setFormData({ ...formData, entry_type: v })}
+              activeColor="bg-blue-500"
+            />
+          </div>
+
+          {/* Entry Price / Range */}
+          {formData.entry_type === 'STRICT' ? (
+            <div>
+              <label className="text-blue-200 text-sm mb-2 block font-medium">Entry Price <span className="text-rose-400">*</span></label>
+              <input
+                type="number"
+                step="0.01"
+                value={formData.entry_price}
+                onChange={(e) => setFormData({ ...formData, entry_price: e.target.value })}
+                placeholder="150.00"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
+                required
+              />
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-blue-200 text-sm mb-2 block font-medium">Entry Low <span className="text-rose-400">*</span></label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.entry_low}
+                  onChange={(e) => setFormData({ ...formData, entry_low: e.target.value })}
+                  placeholder="148.00"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
+                />
+              </div>
+              <div>
+                <label className="text-blue-200 text-sm mb-2 block font-medium">Entry High <span className="text-rose-400">*</span></label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.entry_high}
+                  onChange={(e) => setFormData({ ...formData, entry_high: e.target.value })}
+                  placeholder="152.00"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Position Size */}
+          <div>
+            <label className="text-blue-200 text-sm mb-2 block font-medium">Position Size ($) <span className="text-rose-400">*</span></label>
             <input
               type="number"
-              step="0.01"
-              value={formData.entry_price}
-              onChange={(e) => setFormData({ ...formData, entry_price: e.target.value })}
-              placeholder="150.00"
+              step="100"
+              value={formData.position_size}
+              onChange={(e) => setFormData({ ...formData, position_size: e.target.value })}
+              placeholder="10000"
               className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
               required
             />
           </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-blue-200 text-sm mb-2 block font-medium">Entry Low <span className="text-rose-400">*</span></label>
-              <input
-                type="number"
-                step="0.01"
-                value={formData.entry_low}
-                onChange={(e) => setFormData({ ...formData, entry_low: e.target.value })}
-                placeholder="148.00"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
-              />
+
+          {/* Stop Loss */}
+          <div>
+            <label className="text-rose-200 text-sm mb-2 block font-medium">Stop Loss</label>
+            <input
+              type="number"
+              step="0.01"
+              value={formData.stop_loss}
+              onChange={(e) => setFormData({ ...formData, stop_loss: e.target.value })}
+              placeholder="145.00"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
+            />
+          </div>
+
+          {/* Take Profit */}
+          <div>
+            <label className="text-green-200 text-sm mb-2 block font-medium">Take Profit</label>
+            <input
+              type="number"
+              step="0.01"
+              value={formData.take_profit}
+              onChange={(e) => setFormData({ ...formData, take_profit: e.target.value })}
+              placeholder="165.00"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
+            />
+          </div>
+        </div>
+        <div className="p-4 bg-white/5 rounded-2xl border border-white/10 self-start">
+          <h3 className="text-white font-semibold mb-3">Calculated Metrics</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Shares to Buy */}
+            <div className="bg-white/5 rounded-xl p-3 border border-white/10">
+              <p className="text-blue-200 text-xs mb-1">Shares to Buy</p>
+              <p className="text-white font-bold text-lg">
+                {metrics.sharesToBuy || '-'}
+              </p>
             </div>
-            <div>
-              <label className="text-blue-200 text-sm mb-2 block font-medium">Entry High <span className="text-rose-400">*</span></label>
-              <input
-                type="number"
-                step="0.01"
-                value={formData.entry_high}
-                onChange={(e) => setFormData({ ...formData, entry_high: e.target.value })}
-                placeholder="152.00"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
-              />
+
+            {/* Risk */}
+            <div className="bg-white/5 rounded-xl p-3 border border-rose-400/20">
+              <p className="text-rose-200 text-xs mb-1">Risk Amount / Risk %</p>
+              <p className="text-rose-400 font-bold text-lg">
+                {metrics.riskAmount ? `$${metrics.riskAmount}` : '-'}
+                {metrics.riskPercentage && <span className="text-sm ml-1">({metrics.riskPercentage}%)</span>}
+              </p>
+            </div>
+
+            {/* Reward */}
+            <div className="bg-white/5 rounded-xl p-3 border border-green-400/20">
+              <p className="text-green-200 text-xs mb-1">Reward Amount / Reward %</p>
+              <p className="text-green-400 font-bold text-lg">
+                {metrics.rewardAmount ? `$${metrics.rewardAmount}` : '-'}
+                {metrics.rewardPercentage && <span className="text-sm ml-1">({metrics.rewardPercentage}%)</span>}
+              </p>
+            </div>
+
+            {/* R:R Ratio */}
+            <div className="bg-white/5 rounded-xl p-3 border border-blue-400/20">
+              <p className="text-blue-200 text-xs mb-1">Risk:Reward Ratio</p>
+              <p className="text-white font-bold text-lg">
+                {metrics.rrLow && metrics.rrHigh
+                  ? `1:${metrics.rrLow} → 1:${metrics.rrHigh}`
+                  : metrics.riskRewardRatio ? `1:${metrics.riskRewardRatio}` : '-'}
+              </p>
+              {formData.entry_type === 'RANGE' && metrics.sharesToBuy && (
+                <p className="text-blue-300 text-xs mt-1">
+                  Midpoint entry: ${((parseFloat(formData.entry_low) + parseFloat(formData.entry_high)) / 2).toFixed(2)}
+                </p>
+              )}
             </div>
           </div>
-        )}
-
-        {/* Position Size */}
-        <div>
-          <label className="text-blue-200 text-sm mb-2 block font-medium">Position Size ($) <span className="text-rose-400">*</span></label>
-          <input
-            type="number"
-            step="100"
-            value={formData.position_size}
-            onChange={(e) => setFormData({ ...formData, position_size: e.target.value })}
-            placeholder="10000"
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
-            required
-          />
-        </div>
-
-        {/* Stop Loss */}
-        <div>
-          <label className="text-rose-200 text-sm mb-2 block font-medium">Stop Loss</label>
-          <input
-            type="number"
-            step="0.01"
-            value={formData.stop_loss}
-            onChange={(e) => setFormData({ ...formData, stop_loss: e.target.value })}
-            placeholder="145.00"
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
-          />
-        </div>
-
-        {/* Take Profit */}
-        <div>
-          <label className="text-green-200 text-sm mb-2 block font-medium">Take Profit</label>
-          <input
-            type="number"
-            step="0.01"
-            value={formData.take_profit}
-            onChange={(e) => setFormData({ ...formData, take_profit: e.target.value })}
-            placeholder="165.00"
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-blue-300/50 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-400/20"
-          />
-        </div>
-
-        {/* Notes */}
-        <div className="md:col-span-2">
-          <BulletTextarea
-            value={formData.notes}
-            onChange={(value) => setFormData({ ...formData, notes: value })}
-            placeholder="Add any additional notes (each line becomes a bullet point)..."
-            rows={4}
-            label="Notes (Optional)"
-            rounded={false}
-            scrollable={true}
-          />
         </div>
       </div>
 
-      {/* Real-time Metrics Preview - Always Visible */}
-      <div className="mb-6 p-4 bg-white/5 rounded-2xl border border-white/10">
-        <h3 className="text-white font-semibold mb-3">Calculated Metrics</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Shares to Buy */}
-          <div className="bg-white/5 rounded-xl p-3 border border-white/10">
-            <p className="text-blue-200 text-xs mb-1">Shares to Buy</p>
-            <p className="text-white font-bold text-lg">
-              {metrics.sharesToBuy || '-'}
-            </p>
-          </div>
-
-          {/* Risk */}
-          <div className="bg-white/5 rounded-xl p-3 border border-rose-400/20">
-            <p className="text-rose-200 text-xs mb-1">Risk Amount / Risk %</p>
-            <p className="text-rose-400 font-bold text-lg">
-              {metrics.riskAmount ? `$${metrics.riskAmount}` : '-'}
-              {metrics.riskPercentage && <span className="text-sm ml-1">({metrics.riskPercentage}%)</span>}
-            </p>
-          </div>
-
-          {/* Reward */}
-          <div className="bg-white/5 rounded-xl p-3 border border-green-400/20">
-            <p className="text-green-200 text-xs mb-1">Reward Amount / Reward %</p>
-            <p className="text-green-400 font-bold text-lg">
-              {metrics.rewardAmount ? `$${metrics.rewardAmount}` : '-'}
-              {metrics.rewardPercentage && <span className="text-sm ml-1">({metrics.rewardPercentage}%)</span>}
-            </p>
-          </div>
-
-          {/* R:R Ratio */}
-          <div className="bg-white/5 rounded-xl p-3 border border-blue-400/20">
-            <p className="text-blue-200 text-xs mb-1">Risk:Reward Ratio</p>
-            <p className="text-white font-bold text-lg">
-              {metrics.rrLow && metrics.rrHigh
-                ? `1:${metrics.rrLow} → 1:${metrics.rrHigh}`
-                : metrics.riskRewardRatio ? `1:${metrics.riskRewardRatio}` : '-'}
-            </p>
-            {formData.entry_type === 'RANGE' && metrics.sharesToBuy && (
-              <p className="text-blue-300 text-xs mt-1">Midpoint entry: ${((parseFloat(formData.entry_low) + parseFloat(formData.entry_high)) / 2).toFixed(2)}</p>
-            )}
-          </div>
-        </div>
+      {/* Notes */}
+      <div className="mb-6">
+        <BulletTextarea
+          value={formData.notes}
+          onChange={(value) => setFormData({ ...formData, notes: value })}
+          placeholder="Add any additional notes (each line becomes a bullet point)..."
+          rows={4}
+          label="Notes (Optional)"
+          rounded={false}
+          scrollable={true}
+        />
       </div>
-    </div>
+    </div >
   );
 }
