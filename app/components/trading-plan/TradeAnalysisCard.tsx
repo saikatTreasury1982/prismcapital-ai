@@ -55,7 +55,7 @@ export function TradeAnalysisCard({ analysis, onEdit, onDelete, onUpdate }: Trad
   };
 
   return (
-    <div className={`backdrop-blur-xl bg-white/10 rounded-3xl p-6 border border-white/20 transition-all ${analysis.is_flagged === 1 ? 'ring-2 ring-blue-400 shadow-lg shadow-blue-500/20' : ''
+    <div className={`backdrop-blur-xl bg-white/10 rounded-xl p-6 border border-white/20 transition-all ${analysis.is_flagged === 1 ? 'ring-2 ring-blue-400 shadow-lg shadow-blue-500/20' : ''
       }`}>
       {/* Header */}
       <div className="mb-4">
