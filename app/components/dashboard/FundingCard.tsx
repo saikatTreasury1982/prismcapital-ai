@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { ChevronDown, ChevronUp, Wallet, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
 
 interface FundingCardProps {
@@ -25,7 +24,6 @@ interface FundingCardProps {
 }
 
 export default function FundingCard({ summary, details }: FundingCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
 
   const formatCurrency = (value: number, currency: string = 'USD') => {
     return new Intl.NumberFormat('en-US', {
@@ -47,109 +45,39 @@ export default function FundingCard({ summary, details }: FundingCardProps) {
   return (
     <div className="backdrop-blur-xl bg-white/10 rounded-xl border border-white/20 overflow-hidden">
       {/* Summary Section */}
-      <div className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold text-white flex items-center gap-2">
-            <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
-              <Wallet className="w-5 h-5 text-emerald-400" />
-            </div>
-            Funding Overview
-          </h3>
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="text-blue-300 hover:text-white transition-colors"
-          >
-            {isExpanded ? (
-              <ChevronUp className="w-5 h-5" />
-            ) : (
-              <ChevronDown className="w-5 h-5" />
-            )}
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-            <p className="text-blue-200 text-sm mb-1">Total Deposited</p>
-            <p className="text-2xl font-bold text-emerald-400">
-              {formatCurrency(summary.totalDeposited, summary.currency)}
-            </p>
-          </div>
-
-          <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-            <p className="text-blue-200 text-sm mb-1">Total Withdrawn</p>
-            <p className="text-2xl font-bold text-orange-400">
-              {formatCurrency(summary.totalWithdrawn, summary.currency)}
-            </p>
-          </div>
-
-          <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+          <p className="text-blue-200 text-sm mb-1">Total Deposited</p>
+          <p className="text-2xl font-bold text-emerald-400 mb-3">{formatCurrency(summary.totalDeposited, summary.currency)}</p>
+          <p className="text-blue-200 text-sm mb-1">Total Withdrawn</p>
+          <p className="text-2xl font-bold text-orange-400 mb-3">{formatCurrency(summary.totalWithdrawn, summary.currency)}</p>
+          <div className="border-t border-white/10 pt-3">
             <p className="text-blue-200 text-sm mb-1">Net Cash Balance</p>
-            <p
-              className={`text-2xl font-bold ${
-                summary.netCashBalance >= 0 ? 'text-white' : 'text-red-400'
-              }`}
-            >
+            <p className={`text-2xl font-bold ${summary.netCashBalance >= 0 ? 'text-white' : 'text-red-400'}`}>
               {formatCurrency(summary.netCashBalance, summary.currency)}
             </p>
           </div>
         </div>
-      </div>
 
-      {/* Expanded Details Section */}
-      {isExpanded && details && (
-        <div className="border-t border-white/10">
-          <div className="p-6">
-            <h4 className="text-lg font-semibold text-white mb-4">Funding Details</h4>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Transaction Stats */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between bg-white/5 rounded-lg p-3 border border-white/10">
-                  <div className="flex items-center gap-2">
-                    <ArrowDownCircle className="w-4 h-4 text-emerald-400" />
-                    <span className="text-blue-200 text-sm">Deposits</span>
-                  </div>
-                  <span className="text-white font-medium">{details.depositCount}</span>
-                </div>
-
-                <div className="flex items-center justify-between bg-white/5 rounded-lg p-3 border border-white/10">
-                  <div className="flex items-center gap-2">
-                    <ArrowUpCircle className="w-4 h-4 text-orange-400" />
-                    <span className="text-blue-200 text-sm">Withdrawals</span>
-                  </div>
-                  <span className="text-white font-medium">{details.withdrawalCount}</span>
-                </div>
-
-                {details.weightedAvgRate > 0 && (
-                  <div className="flex items-center justify-between bg-white/5 rounded-lg p-3 border border-white/10">
-                    <span className="text-blue-200 text-sm">Avg Exchange Rate</span>
-                    <span className="text-white font-medium">
-                      {details.weightedAvgRate.toFixed(4)}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Date Range */}
-              <div className="space-y-3">
-                <div className="bg-white/5 rounded-lg p-3 border border-white/10">
-                  <p className="text-blue-200 text-sm mb-1">First Transaction</p>
-                  <p className="text-white font-medium">
-                    {formatDate(details.firstTransactionDate)}
-                  </p>
-                </div>
-
-                <div className="bg-white/5 rounded-lg p-3 border border-white/10">
-                  <p className="text-blue-200 text-sm mb-1">Last Transaction</p>
-                  <p className="text-white font-medium">
-                    {formatDate(details.lastTransactionDate)}
-                  </p>
-                </div>
-              </div>
-            </div>
+        <div className="bg-white/5 rounded-xl p-4 border border-white/10 space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-blue-300">Deposits</span>
+            <span className="text-white font-medium">{details?.depositCount ?? '-'}</span>
+          </div>
+          <div className="flex justify-between pb-2 border-b border-white/10">
+            <span className="text-blue-300">Withdrawals</span>
+            <span className="text-white font-medium">{details?.withdrawalCount ?? '-'}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-blue-300">First transaction</span>
+            <span className="text-white font-medium">{details ? formatDate(details.firstTransactionDate) : '-'}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-blue-300">Last transaction</span>
+            <span className="text-white font-medium">{details ? formatDate(details.lastTransactionDate) : '-'}</span>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

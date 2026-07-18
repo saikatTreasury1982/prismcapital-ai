@@ -46,77 +46,53 @@ export default function DividendCard({ summary, onViewChange, activeView, displa
           </h3>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Total Dividends — unchanged */}
           <div className="bg-gradient-to-br from-amber-500/5 to-transparent rounded-xl p-4 border border-white/10">
             <p className="text-blue-200 text-sm mb-1">Total Dividends</p>
-            <p className="text-2xl font-bold text-amber-400">
-              {formatCurrency(summary.totalDividends)}
-            </p>
-            
+            <p className="text-2xl font-bold text-amber-400">{formatCurrency(summary.totalDividends)}</p>
             <div className="border-t border-white/10 my-2" />
-            
             <div className="space-y-1">
-              <p className="text-blue-300 text-xs">
-                Portfolio: {formatCurrency(summary.totalPortfolioCapital)}
-              </p>
-              <p className="text-emerald-300 text-xs font-semibold">
-                Yield: {summary.portfolioYield.toFixed(2)}%
+              <p className="text-blue-300 text-xs">Portfolio: {formatCurrency(summary.totalPortfolioCapital)}</p>
+              <p className="text-emerald-300 text-xs font-semibold">Yield: {summary.portfolioYield.toFixed(2)}%</p>
+            </div>
+            <p className="text-blue-300 text-xs mt-2">{summary.totalStocks} stocks</p>
+          </div>
+
+          {/* YTD + Upcoming + buttons */}
+          <div className="bg-gradient-to-br from-cyan-500/5 to-transparent rounded-xl p-4 border border-white/10 flex justify-between gap-3">
+            <div>
+              <p className="text-blue-200 text-sm mb-1">Year-to-Date</p>
+              <p className="text-2xl font-bold text-white">{formatCurrency(summary.ytdDividends)}</p>
+              <p className="text-blue-300 text-xs mt-1 mb-4">{summary.ytdPayments} payments</p>
+              <p className="text-blue-200 text-sm mb-1">Upcoming</p>
+              <p className="text-2xl font-bold text-cyan-400">{formatCurrency(summary.upcomingDividends)}</p>
+              <p className="text-cyan-300 text-xs mt-1">
+                {summary.upcomingPayments} {summary.upcomingPayments === 1 ? 'payment' : 'payments'}
               </p>
             </div>
-            
-            <p className="text-blue-300 text-xs mt-2">
-              {summary.totalStocks} stocks
-            </p>
-          </div>
-
-          <div className="bg-gradient-to-br from-cyan-500/5 to-transparent rounded-xl p-4 border border-white/10">
-            <p className="text-blue-200 text-sm mb-1">Year-to-Date</p>
-            <p className="text-2xl font-bold text-white">
-              {formatCurrency(summary.ytdDividends)}
-            </p>
-            <p className="text-blue-300 text-xs mt-1">
-              {summary.ytdPayments} payments
-            </p>
-          </div>
-
-          <div className="bg-gradient-to-br from-emerald-500/10 to-transparent rounded-xl p-4 border border-white/10">
-            <p className="text-blue-200 text-sm mb-1">Upcoming</p>
-            <p className="text-2xl font-bold text-cyan-400">
-              {formatCurrency(summary.upcomingDividends)}
-            </p>
-            <p className="text-cyan-300 text-xs mt-1">
-              {summary.upcomingPayments} {summary.upcomingPayments === 1 ? 'payment' : 'payments'}
-            </p>
+            {onViewChange && (
+              <div className="hidden md:flex flex-col gap-2 flex-shrink-0 [&_button]:p-1.5">
+                <GlassButton
+                  icon={Calendar}
+                  onClick={() => onViewChange(activeView === 'alltime' ? null : 'alltime')}
+                  tooltip="All-Time Breakdown"
+                  variant="primary"
+                  size="sm"
+                  className={activeView === 'alltime' ? 'bg-amber-500/40 border-amber-400/80 ring-2 ring-amber-400/50' : 'hover:bg-white/10'}
+                />
+                <GlassButton
+                  icon={CalendarDays}
+                  onClick={() => onViewChange(activeView === 'ytd' ? null : 'ytd')}
+                  tooltip="YTD Breakdown"
+                  variant="primary"
+                  size="sm"
+                  className={activeView === 'ytd' ? 'bg-amber-500/40 border-amber-400/80 ring-2 ring-amber-400/50' : 'hover:bg-white/10'}
+                />
+              </div>
+            )}
           </div>
         </div>
-
-        {/* Action Buttons - Hidden on mobile */}
-        {onViewChange && (
-          <div className="hidden md:flex items-center gap-3">
-            <GlassButton
-              icon={Calendar}
-              onClick={() => onViewChange(activeView === 'alltime' ? null : 'alltime')}
-              tooltip="All-Time Breakdown"
-              variant="primary"
-              size="sm"
-              className={activeView === 'alltime' 
-                ? 'bg-amber-500/40 border-amber-400/80 ring-2 ring-amber-400/50 shadow-lg shadow-amber-500/50' 
-                : 'hover:bg-white/10'}
-            />
-            
-            <GlassButton
-              icon={CalendarDays}
-              onClick={() => onViewChange(activeView === 'ytd' ? null : 'ytd')}
-              tooltip="YTD Breakdown"
-              variant="primary"
-              size="sm"
-              className={activeView === 'ytd' 
-                ? 'bg-amber-500/40 border-amber-400/80 ring-2 ring-amber-400/50 shadow-lg shadow-amber-500/50' 
-                : 'hover:bg-white/10'}
-            />
-          </div>
-        )}
       </div>
     </div>
   );

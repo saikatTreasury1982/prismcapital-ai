@@ -10,8 +10,8 @@ interface InvestmentCardProps {
     totalUnrealizedPnL: number;
     totalRealizedPnL: number;
   };
-  onRefresh?: () => void;  
-  isRefreshing?: boolean;  
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
   refreshMessage?: string | null;
   onViewChange?: (view: 'standard' | 'strategy' | null) => void;
   activeView?: 'standard' | 'strategy' | null;
@@ -19,8 +19,8 @@ interface InvestmentCardProps {
   fxRate: number;
 }
 
-export default function InvestmentCard({ 
-  summary, 
+export default function InvestmentCard({
+  summary,
   onRefresh,
   isRefreshing = false,
   refreshMessage,
@@ -66,42 +66,65 @@ export default function InvestmentCard({
         )}
 
         {/* Summary Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <div className="bg-gradient-to-br from-blue-500/5 to-transparent rounded-xl p-4 border border-white/10">
-            <p className="text-blue-200 text-sm mb-1">Capital Invested</p>
-            <p className="text-2xl font-bold text-white">
-              {formatCurrency(summary.totalInvested)}
-            </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Capital + Market Value + buttons */}
+          <div className="bg-gradient-to-br from-blue-500/5 to-transparent rounded-xl p-4 border border-white/10 flex justify-between gap-3">
+            <div>
+              <p className="text-blue-200 text-sm mb-1">Capital Invested</p>
+              <p className="text-2xl font-bold text-white mb-4">{formatCurrency(summary.totalInvested)}</p>
+              <p className="text-blue-200 text-sm mb-1">Market Value</p>
+              <p className="text-2xl font-bold text-white">{formatCurrency(summary.totalMarketValue)}</p>
+            </div>
+            <div className="flex flex-col gap-2 flex-shrink-0 [&_button]:p-1.5">
+              {onRefresh && (
+                <GlassButton
+                  icon={BarChart3}
+                  onClick={onRefresh}
+                  disabled={isRefreshing}
+                  tooltip={isRefreshing ? "Refreshing..." : "Refresh Market Prices"}
+                  variant="primary"
+                  size="sm"
+                  className={isRefreshing ? 'animate-pulse' : ''}
+                />
+              )}
+              {onViewChange && (
+                <>
+                  <GlassButton
+                    icon={Table2}
+                    onClick={() => onViewChange(activeView === 'standard' ? null : 'standard')}
+                    tooltip="Display Standard"
+                    variant="primary"
+                    size="sm"
+                    className={activeView === 'standard' ? 'bg-blue-500/40 border-blue-400/80 ring-2 ring-blue-400/50' : 'hover:bg-white/10'}
+                  />
+                  <GlassButton
+                    icon={GitBranch}
+                    onClick={() => onViewChange(activeView === 'strategy' ? null : 'strategy')}
+                    tooltip="Display By Strategy"
+                    variant="primary"
+                    size="sm"
+                    className={activeView === 'strategy' ? 'bg-blue-500/40 border-blue-400/80 ring-2 ring-blue-400/50' : 'hover:bg-white/10'}
+                  />
+                </>
+              )}
+            </div>
           </div>
 
-          <div className="bg-gradient-to-br from-purple-500/5 to-transparent rounded-xl p-4 border border-white/10">
-            <p className="text-blue-200 text-sm mb-1">Market Value</p>
-            <p className="text-2xl font-bold text-white">
-              {formatCurrency(summary.totalMarketValue)}
-            </p>
-          </div>
-
-          {/* Profit / Loss */}
+          {/* Profit / Loss — unchanged */}
           <div className="bg-gradient-to-br from-green-500/5 to-transparent rounded-xl p-4 border border-white/10">
             <p className="text-blue-200 text-sm mb-3">Profit / Loss</p>
-            
-            {/* Unrealized P/L */}
             <div className="flex items-center justify-between mb-2">
               <span className="text-blue-300 text-xs">Unrealized</span>
               <span className={`text-lg font-semibold ${summary.totalUnrealizedPnL >= 0 ? 'text-green-400' : 'text-rose-400'}`}>
                 {formatCurrency(Math.abs(summary.totalUnrealizedPnL))}
               </span>
             </div>
-            
-            {/* Realized P/L */}
             <div className="flex items-center justify-between mb-3 pb-3 border-b border-white/10">
               <span className="text-blue-300 text-xs">Realized</span>
               <span className={`text-lg font-semibold ${summary.totalRealizedPnL >= 0 ? 'text-green-400' : 'text-rose-400'}`}>
                 {formatCurrency(Math.abs(summary.totalRealizedPnL))}
               </span>
             </div>
-            
-            {/* Total P/L */}
             <div className="flex items-center justify-between">
               <span className="text-white text-sm font-medium">Total</span>
               <span className={`text-2xl font-bold ${(summary.totalUnrealizedPnL + summary.totalRealizedPnL) >= 0 ? 'text-green-400' : 'text-rose-400'}`}>
@@ -110,48 +133,6 @@ export default function InvestmentCard({
               </span>
             </div>
           </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex items-center gap-3">
-          {onRefresh && (
-            <GlassButton
-              icon={BarChart3}
-              onClick={onRefresh}
-              disabled={isRefreshing}
-              tooltip={isRefreshing ? "Refreshing..." : "Refresh Market Prices"}
-              variant="primary"
-              size="sm"
-              className={isRefreshing ? 'animate-pulse' : ''}
-            />
-          )}
-          
-          {/* Hide detail view buttons on mobile (md:flex) */}
-          {onViewChange && (
-            <div className="hidden md:flex items-center gap-3">
-              <GlassButton
-                icon={Table2}
-                onClick={() => onViewChange(activeView === 'standard' ? null : 'standard')}
-                tooltip="Display Standard"
-                variant="primary"
-                size="sm"
-                className={activeView === 'standard' 
-                  ? 'bg-blue-500/40 border-blue-400/80 ring-2 ring-blue-400/50 shadow-lg shadow-blue-500/50' 
-                  : 'hover:bg-white/10'}
-              />
-              
-              <GlassButton
-                icon={GitBranch}
-                onClick={() => onViewChange(activeView === 'strategy' ? null : 'strategy')}
-                tooltip="Display By Strategy"
-                variant="primary"
-                size="sm"
-                className={activeView === 'strategy' 
-                  ? 'bg-blue-500/40 border-blue-400/80 ring-2 ring-blue-400/50 shadow-lg shadow-blue-500/50' 
-                  : 'hover:bg-white/10'}
-              />
-            </div>
-          )}
         </div>
       </div>
     </div>
