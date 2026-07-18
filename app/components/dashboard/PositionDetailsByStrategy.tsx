@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, Info, GripVertical, XCircle, Save } from 'lucide-react';
 import { DndContext, DragEndEvent, DragOverlay, useDraggable, useDroppable, DragStartEvent, closestCorners } from '@dnd-kit/core';
 import GlassButton from '@/app/lib/ui/GlassButton';
-import MiniCharts from './MiniCharts';
 
 interface Position {
   position_id: number;
@@ -26,23 +25,8 @@ interface Strategy {
   positions: Position[];
 }
 
-interface ChartData {
-  typeCode: string;
-  typeName: string;
-  description: string;
-  capitalInvested: number;
-  currentValue: number;
-  tickers: {
-    ticker: string;
-    tickerName: string;
-    capitalInvested: number;
-    currentValue: number;
-  }[];
-}
-
 interface PositionDetailsByStrategyProps {
   strategies: Strategy[];
-  chartData: ChartData[];
   displayCurrency: string;
   fxRate: number;
 }
@@ -57,7 +41,6 @@ interface ConfirmationDialog {
 
 export default function PositionDetailsByStrategy({ 
   strategies: initialStrategies,
-  chartData,
   displayCurrency,
   fxRate
 }: PositionDetailsByStrategyProps) {
@@ -195,10 +178,6 @@ export default function PositionDetailsByStrategy({
         <div className="backdrop-blur-xl bg-white/10 rounded-xl border border-white/20 overflow-hidden">
           <div className="p-6">
             <h3 className="text-lg font-semibold text-white mb-4">Position Details - By Strategy</h3>
-            
-            {/* Mini Charts */}
-            <MiniCharts data={chartData} displayCurrency={displayCurrency} fxRate={fxRate} />
-
             {/* Strategy Groups with Tables */}
             <div className="space-y-6">
               {strategies.map((strategy) => (

@@ -3,7 +3,6 @@
 import { useState, useMemo } from 'react';
 import { DollarSign, Info, ArrowUpDown, TrendingUp, TrendingDown } from 'lucide-react';
 import { NotesPopover } from '@/app/lib/ui/NotesPopover';
-import MiniCharts from './MiniCharts';
 
 interface TickerBreakdown {
   ticker: string;
@@ -33,7 +32,6 @@ interface ChartData {
 
 interface DividendBreakdownTableProps {
   data: TickerBreakdown[];
-  chartData: ChartData[];
   title: string;
   displayCurrency: string;
   fxRate: number;
@@ -42,7 +40,7 @@ interface DividendBreakdownTableProps {
 type SortField = 'ticker' | 'totalPayments' | 'totalReceived' | 'avgPerShare' | 'currentShares' | 'latestDividendPerShare';
 type SortDirection = 'asc' | 'desc';
 
-export default function DividendBreakdownTable({ data, chartData, title, displayCurrency, fxRate }: DividendBreakdownTableProps) {
+export default function DividendBreakdownTable({ data, title, displayCurrency, fxRate }: DividendBreakdownTableProps) {
   const [sortField, setSortField] = useState<SortField>('totalReceived');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
@@ -112,10 +110,6 @@ export default function DividendBreakdownTable({ data, chartData, title, display
     <div className="backdrop-blur-xl bg-white/10 rounded-xl border border-white/20 overflow-hidden">
       <div className="p-6">
         <h3 className="text-lg font-semibold text-white mb-4">{title}</h3>
-        
-        {/* Mini Charts */}
-        <MiniCharts data={chartData} displayCurrency={displayCurrency} fxRate={fxRate} />
-
         {/* Sortable Table */}
         {sortedData.length === 0 ? (
           <div className="text-center py-8">
