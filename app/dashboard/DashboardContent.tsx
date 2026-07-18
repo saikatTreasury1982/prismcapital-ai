@@ -348,7 +348,7 @@ export default function DashboardPage() {
         {/* 40/60 Split Layout */}
         <div className="flex flex-col lg:flex-row gap-6 max-w-[2000px] mx-auto" key={displayCurrency}>
           {/* LEFT SECTION - 40% */}
-          <div className="w-full lg:w-[30%] space-y-6">
+          <div className="w-full lg:w-[35%] space-y-6">
             {/* Investment Overview - Non-collapsible */}
             {investmentData && (
               <InvestmentCard
@@ -387,7 +387,7 @@ export default function DashboardPage() {
           <div className="hidden lg:block w-px bg-gradient-to-b from-transparent via-white/20 to-transparent" />
 
           {/* RIGHT SECTION - 60% */}
-          <div className="w-full lg:w-[70%] space-y-6">
+          <div className="w-full lg:w-[65%] space-y-6">
             {/* Show charts by default when no views are active */}
             {!investmentView && !dividendView && chartData.length > 0 && (
               <>
