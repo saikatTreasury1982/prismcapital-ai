@@ -16,20 +16,6 @@ interface TickerBreakdown {
   paymentDates: string[];
 }
 
-interface ChartData {
-  typeCode: string;
-  typeName: string;
-  description: string;
-  capitalInvested: number;
-  currentValue: number;
-  tickers: {
-    ticker: string;
-    tickerName: string;
-    capitalInvested: number;
-    currentValue: number;
-  }[];
-}
-
 interface DividendBreakdownTableProps {
   data: TickerBreakdown[];
   title: string;
