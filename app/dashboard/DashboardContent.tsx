@@ -354,7 +354,7 @@ export default function DashboardPage() {
     <div className="p-8 pt-4">
       {/* 40/60 Split Layout */}
       <div className="flex flex-col lg:flex-row gap-6 max-w-[2000px] mx-auto" key={displayCurrency}>
-        {/* LEFT SECTION - 40% */}
+        {/* LEFT SECTION - 35% */}
         <div className="w-full lg:w-[35%] space-y-6">
           {/* Investment Overview - Non-collapsible */}
           {investmentData && (
@@ -393,12 +393,11 @@ export default function DashboardPage() {
         {/* GRADIENT DIVIDER */}
         <div className="hidden lg:block w-px bg-gradient-to-b from-transparent via-white/20 to-transparent" />
 
-        {/* RIGHT SECTION - 60% */}
+        {/* RIGHT SECTION - 65% */}
         <div className="w-full lg:w-[65%] space-y-6">
-          {/* Show charts by default when no views are active */}
-          {!investmentView && !dividendView && chartData.length > 0 && (
+          {/* Permanent: charts + shared panel */}
+          {chartData.length > 0 && (
             <>
-              {/* Desktop/Tablet: Side-by-side charts + shared panel */}
               <div className="hidden md:block">
                 <div className="backdrop-blur-xl bg-white/10 rounded-xl border border-white/20 p-6 space-y-6">
                   <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -408,50 +407,41 @@ export default function DashboardPage() {
                   <AssetDetailPanel asset={hoveredAsset} displayCurrency={displayCurrency} fxRate={fxRate} />
                 </div>
               </div>
-              
-              {/* Mobile: Card Summary (<768px) */}
               <div className="md:hidden">
                 <AssetTypeMobileCards data={chartData} displayCurrency={displayCurrency} fxRate={fxRate} />
               </div>
             </>
           )}
 
-          {/* Investment Standard View */}
+          {/* Below: whichever table a button selected */}
           {investmentView === 'standard' && investmentData && (
             <PositionDetailsStandard
               positions={investmentData.positions}
-              chartData={chartData}
               displayCurrency={displayCurrency}
               fxRate={fxRate}
             />
           )}
 
-          {/* Investment By Strategy View */}
           {investmentView === 'strategy' && strategyData && (
             <PositionDetailsByStrategy
               strategies={strategyData.strategies}
-              chartData={chartData}
               displayCurrency={displayCurrency}
               fxRate={fxRate}
             />
           )}
 
-          {/* Dividend All-Time View */}
           {dividendView === 'alltime' && dividendData && (
             <DividendBreakdownTable
               data={dividendData.allTimeBreakdown}
-              chartData={chartData}
               title="All-Time Dividend Breakdown"
               displayCurrency={displayCurrency}
               fxRate={fxRate}
             />
           )}
 
-          {/* Dividend YTD View */}
           {dividendView === 'ytd' && dividendData && (
             <DividendBreakdownTable
               data={dividendData.ytdBreakdown}
-              chartData={chartData}
               title="YTD Dividend Breakdown"
               displayCurrency={displayCurrency}
               fxRate={fxRate}
