@@ -52,7 +52,7 @@ export function AssetTypeMobileCards({ data, displayCurrency, fxRate }: AssetTyp
         return (
           <div
             key={assetType.typeCode}
-            className="backdrop-blur-xl bg-white/10 rounded-2xl border border-white/20 overflow-hidden"
+            className="backdrop-blur-xl bg-white/10 rounded-xl border border-white/20 overflow-hidden"
           >
             {/* Header */}
             <div className="p-4 border-b border-white/20">
