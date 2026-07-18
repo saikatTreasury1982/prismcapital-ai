@@ -12,6 +12,7 @@ import PositionDetailsStandard from '../components/dashboard/PositionDetailsStan
 import PositionDetailsByStrategy from '../components/dashboard/PositionDetailsByStrategy';
 import DividendBreakdownTable from '../components/dashboard/DividendBreakdownTable';
 import { AssetTypeMobileCards } from '../components/dashboard/AssetTypeMobileCards';
+import AssetDetailPanel from '../components/dashboard/AssetDetailPanel';
 
 interface StrategyData {
   strategies: any[];
@@ -72,19 +73,19 @@ type DividendView = 'alltime' | 'ytd' | null;
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
-  
+
   // Get currency state from context
-  const { 
-    homeCurrency, 
-    tradingCurrency, 
-    displayCurrency, 
-    fxRate, 
-    setHomeCurrency, 
-    setTradingCurrency, 
-    setDisplayCurrency, 
-    setFxRate 
+  const {
+    homeCurrency,
+    tradingCurrency,
+    displayCurrency,
+    fxRate,
+    setHomeCurrency,
+    setTradingCurrency,
+    setDisplayCurrency,
+    setFxRate
   } = useCurrency();
-  
+
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const [investmentData, setInvestmentData] = useState<InvestmentData | null>(null);
   const [fundingData, setFundingData] = useState<FundingData | null>(null);
@@ -98,7 +99,7 @@ export default function DashboardPage() {
   // View states
   const [investmentView, setInvestmentView] = useState<InvestmentView>(null);
   const [dividendView, setDividendView] = useState<DividendView>(null);
-  const [chartView, setChartView] = useState<'pie' | 'line'>('pie');
+  const [hoveredAsset, setHoveredAsset] = useState<any>(null);
 
   // Initial setup - fetch currencies once
   useEffect(() => {
@@ -303,6 +304,12 @@ export default function DashboardPage() {
     }
   };
 
+  const totalInvestment = chartData.reduce((sum, item) => sum + item.capitalInvested, 0);
+  const enrichedAssets = chartData.map(item => ({
+    ...item,
+    percentage: totalInvestment > 0 ? ((item.capitalInvested / totalInvestment) * 100).toFixed(1) : '0.0',
+  }));
+
   if (status === 'loading' || loading) {
     return (
       <div className="p-8">
@@ -344,139 +351,114 @@ export default function DashboardPage() {
   }
 
   return (
-      <div className="p-8 pt-4">
-        {/* 40/60 Split Layout */}
-        <div className="flex flex-col lg:flex-row gap-6 max-w-[2000px] mx-auto" key={displayCurrency}>
-          {/* LEFT SECTION - 40% */}
-          <div className="w-full lg:w-[35%] space-y-6">
-            {/* Investment Overview - Non-collapsible */}
-            {investmentData && (
-              <InvestmentCard
-                summary={investmentData.summary}
-                onRefresh={handleRefreshPrices}
-                isRefreshing={isRefreshingPrices}
-                refreshMessage={refreshMessage}
-                onViewChange={handleInvestmentViewChange}
-                activeView={investmentView}
-                displayCurrency={displayCurrency}
-                fxRate={fxRate}
-              />
-            )}
+    <div className="p-8 pt-4">
+      {/* 40/60 Split Layout */}
+      <div className="flex flex-col lg:flex-row gap-6 max-w-[2000px] mx-auto" key={displayCurrency}>
+        {/* LEFT SECTION - 40% */}
+        <div className="w-full lg:w-[35%] space-y-6">
+          {/* Investment Overview - Non-collapsible */}
+          {investmentData && (
+            <InvestmentCard
+              summary={investmentData.summary}
+              onRefresh={handleRefreshPrices}
+              isRefreshing={isRefreshingPrices}
+              refreshMessage={refreshMessage}
+              onViewChange={handleInvestmentViewChange}
+              activeView={investmentView}
+              displayCurrency={displayCurrency}
+              fxRate={fxRate}
+            />
+          )}
 
-            {/* Dividend Overview - Non-collapsible */}
-            {dividendData && (
-              <DividendCard
-                summary={dividendData.summary}
-                onViewChange={handleDividendViewChange}
-                activeView={dividendView}
-                displayCurrency={displayCurrency}
-                fxRate={fxRate}
-              />
-            )}
+          {/* Dividend Overview - Non-collapsible */}
+          {dividendData && (
+            <DividendCard
+              summary={dividendData.summary}
+              onViewChange={handleDividendViewChange}
+              activeView={dividendView}
+              displayCurrency={displayCurrency}
+              fxRate={fxRate}
+            />
+          )}
 
-            {/* Funding Overview - Collapsible */}
-            {fundingData && (
-              <FundingCard
-                summary={fundingData.summary}
-                details={fundingData.details}
-              />
-            )}
-          </div>
+          {/* Funding Overview - Collapsible */}
+          {fundingData && (
+            <FundingCard
+              summary={fundingData.summary}
+              details={fundingData.details}
+            />
+          )}
+        </div>
 
-          {/* GRADIENT DIVIDER */}
-          <div className="hidden lg:block w-px bg-gradient-to-b from-transparent via-white/20 to-transparent" />
+        {/* GRADIENT DIVIDER */}
+        <div className="hidden lg:block w-px bg-gradient-to-b from-transparent via-white/20 to-transparent" />
 
-          {/* RIGHT SECTION - 60% */}
-          <div className="w-full lg:w-[65%] space-y-6">
-            {/* Show charts by default when no views are active */}
-            {!investmentView && !dividendView && chartData.length > 0 && (
-              <>
-                {/* Desktop/Tablet: Tabbed Charts (≥768px) */}
-                <div className="hidden md:block">
-                  <div className="backdrop-blur-xl bg-white/10 rounded-xl border border-white/20 overflow-hidden">
-                    {/* Tab Navigation */}
-                    <div className="flex border-b border-white/20">
-                      <button
-                        onClick={() => setChartView('pie')}
-                        className={`flex-1 px-6 py-4 text-sm font-semibold transition-colors ${chartView === 'pie'
-                          ? 'text-white bg-white/10 border-b-2 border-blue-400'
-                          : 'text-blue-300 hover:text-white hover:bg-white/5'
-                          }`}
-                      >
-                        By Asset Type
-                      </button>
-                      <button
-                        onClick={() => setChartView('line')}
-                        className={`flex-1 px-6 py-4 text-sm font-semibold transition-colors ${chartView === 'line'
-                          ? 'text-white bg-white/10 border-b-2 border-blue-400'
-                          : 'text-blue-300 hover:text-white hover:bg-white/5'
-                          }`}
-                      >
-                        Capital vs Value
-                      </button>
-                    </div>
-
-                    {/* Chart Content */}
-                    <div className="px-10 py-15">
-                      {chartView === 'pie' ? (
-                        <CapitalByAssetChart data={chartData} displayCurrency={displayCurrency} fxRate={fxRate} />
-                      ) : (
-                        <CapitalVsValueChart data={chartData} displayCurrency={displayCurrency} fxRate={fxRate} />
-                      )}
-                    </div>
+        {/* RIGHT SECTION - 60% */}
+        <div className="w-full lg:w-[65%] space-y-6">
+          {/* Show charts by default when no views are active */}
+          {!investmentView && !dividendView && chartData.length > 0 && (
+            <>
+              {/* Desktop/Tablet: Side-by-side charts + shared panel */}
+              <div className="hidden md:block">
+                <div className="backdrop-blur-xl bg-white/10 rounded-xl border border-white/20 p-6 space-y-6">
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    <CapitalByAssetChart data={enrichedAssets} displayCurrency={displayCurrency} fxRate={fxRate} onHover={setHoveredAsset} />
+                    <CapitalVsValueChart data={enrichedAssets} displayCurrency={displayCurrency} fxRate={fxRate} onHover={setHoveredAsset} />
                   </div>
+                  <AssetDetailPanel asset={hoveredAsset} displayCurrency={displayCurrency} fxRate={fxRate} />
                 </div>
+              </div>
+              
+              {/* Mobile: Card Summary (<768px) */}
+              <div className="md:hidden">
+                <AssetTypeMobileCards data={chartData} displayCurrency={displayCurrency} fxRate={fxRate} />
+              </div>
+            </>
+          )}
 
-                {/* Mobile: Card Summary (<768px) */}
-                <div className="md:hidden">
-                  <AssetTypeMobileCards data={chartData} displayCurrency={displayCurrency} fxRate={fxRate} />
-                </div>
-              </>
-            )}
+          {/* Investment Standard View */}
+          {investmentView === 'standard' && investmentData && (
+            <PositionDetailsStandard
+              positions={investmentData.positions}
+              chartData={chartData}
+              displayCurrency={displayCurrency}
+              fxRate={fxRate}
+            />
+          )}
 
-            {/* Investment Standard View */}
-            {investmentView === 'standard' && investmentData && (
-              <PositionDetailsStandard
-                positions={investmentData.positions}
-                chartData={chartData}
-                displayCurrency={displayCurrency}
-                fxRate={fxRate}
-              />
-            )}
+          {/* Investment By Strategy View */}
+          {investmentView === 'strategy' && strategyData && (
+            <PositionDetailsByStrategy
+              strategies={strategyData.strategies}
+              chartData={chartData}
+              displayCurrency={displayCurrency}
+              fxRate={fxRate}
+            />
+          )}
 
-            {/* Investment By Strategy View */}
-            {investmentView === 'strategy' && strategyData && (
-              <PositionDetailsByStrategy
-                strategies={strategyData.strategies}
-                chartData={chartData}
-                displayCurrency={displayCurrency}
-                fxRate={fxRate}
-              />
-            )}
+          {/* Dividend All-Time View */}
+          {dividendView === 'alltime' && dividendData && (
+            <DividendBreakdownTable
+              data={dividendData.allTimeBreakdown}
+              chartData={chartData}
+              title="All-Time Dividend Breakdown"
+              displayCurrency={displayCurrency}
+              fxRate={fxRate}
+            />
+          )}
 
-            {/* Dividend All-Time View */}
-            {dividendView === 'alltime' && dividendData && (
-              <DividendBreakdownTable
-                data={dividendData.allTimeBreakdown}
-                chartData={chartData}
-                title="All-Time Dividend Breakdown"
-                displayCurrency={displayCurrency}
-                fxRate={fxRate}
-              />
-            )}
-
-            {/* Dividend YTD View */}
-            {dividendView === 'ytd' && dividendData && (
-              <DividendBreakdownTable
-                data={dividendData.ytdBreakdown}
-                chartData={chartData}
-                title="YTD Dividend Breakdown"
-                displayCurrency={displayCurrency}
-                fxRate={fxRate}
-              />
-            )}
-          </div>
+          {/* Dividend YTD View */}
+          {dividendView === 'ytd' && dividendData && (
+            <DividendBreakdownTable
+              data={dividendData.ytdBreakdown}
+              chartData={chartData}
+              title="YTD Dividend Breakdown"
+              displayCurrency={displayCurrency}
+              fxRate={fxRate}
+            />
+          )}
         </div>
       </div>
+    </div>
   );
 }
