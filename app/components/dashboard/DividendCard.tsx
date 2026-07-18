@@ -63,13 +63,17 @@ export default function DividendCard({ summary, onViewChange, activeView, displa
           <div className="bg-gradient-to-br from-cyan-500/5 to-transparent rounded-xl p-4 border border-white/10 flex justify-between gap-3">
             <div>
               <p className="text-blue-200 text-sm mb-1">Year-to-Date</p>
-              <p className="text-2xl font-bold text-white">{formatCurrency(summary.ytdDividends)}</p>
-              <p className="text-blue-300 text-xs mt-1 mb-4">{summary.ytdPayments} payments</p>
+              <div className="flex items-baseline gap-2 mb-4">
+                <p className="text-2xl font-bold text-white">{formatCurrency(summary.ytdDividends)}</p>
+                <span className="text-blue-300 text-xs">{summary.ytdPayments} payments</span>
+              </div>
               <p className="text-blue-200 text-sm mb-1">Upcoming</p>
-              <p className="text-2xl font-bold text-cyan-400">{formatCurrency(summary.upcomingDividends)}</p>
-              <p className="text-cyan-300 text-xs mt-1">
-                {summary.upcomingPayments} {summary.upcomingPayments === 1 ? 'payment' : 'payments'}
-              </p>
+              <div className="flex items-baseline gap-2">
+                <p className="text-2xl font-bold text-cyan-400">{formatCurrency(summary.upcomingDividends)}</p>
+                <span className="text-cyan-300 text-xs">
+                  {summary.upcomingPayments} {summary.upcomingPayments === 1 ? 'payment' : 'payments'}
+                </span>
+              </div>
             </div>
             {onViewChange && (
               <div className="hidden md:flex flex-col gap-2 flex-shrink-0 [&_button]:p-1.5">
