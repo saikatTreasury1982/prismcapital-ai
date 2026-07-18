@@ -328,7 +328,7 @@ export default function DashboardPage() {
     return (
       <div className="p-8">
         <div className="flex items-center justify-center min-h-screen">
-          <div className="backdrop-blur-xl bg-red-500/10 rounded-3xl p-8 border border-red-500/30 max-w-md">
+          <div className="backdrop-blur-xl bg-red-500/10 rounded-xl p-8 border border-red-500/30 max-w-md">
             <h2 className="text-2xl font-bold text-red-400 mb-4">Configuration Required</h2>
             <p className="text-white mb-6">{error}</p>
             <a
@@ -348,7 +348,7 @@ export default function DashboardPage() {
         {/* 40/60 Split Layout */}
         <div className="flex flex-col lg:flex-row gap-6 max-w-[2000px] mx-auto" key={displayCurrency}>
           {/* LEFT SECTION - 40% */}
-          <div className="w-full lg:w-[40%] space-y-6">
+          <div className="w-full lg:w-[30%] space-y-6">
             {/* Investment Overview - Non-collapsible */}
             {investmentData && (
               <InvestmentCard
@@ -387,13 +387,13 @@ export default function DashboardPage() {
           <div className="hidden lg:block w-px bg-gradient-to-b from-transparent via-white/20 to-transparent" />
 
           {/* RIGHT SECTION - 60% */}
-          <div className="w-full lg:w-[60%] space-y-6">
+          <div className="w-full lg:w-[70%] space-y-6">
             {/* Show charts by default when no views are active */}
             {!investmentView && !dividendView && chartData.length > 0 && (
               <>
                 {/* Desktop/Tablet: Tabbed Charts (≥768px) */}
                 <div className="hidden md:block">
-                  <div className="backdrop-blur-xl bg-white/10 rounded-2xl border border-white/20 overflow-hidden">
+                  <div className="backdrop-blur-xl bg-white/10 rounded-xl border border-white/20 overflow-hidden">
                     {/* Tab Navigation */}
                     <div className="flex border-b border-white/20">
                       <button
