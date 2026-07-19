@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { TrendingUp, TrendingDown, DollarSign, Info, GripVertical, XCircle, Save } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Info, GripVertical, XCircle, Save, PlusCircle } from 'lucide-react';
 import { DndContext, DragEndEvent, DragOverlay, useDraggable, useDroppable, DragStartEvent, closestCorners } from '@dnd-kit/core';
 import GlassButton from '@/app/lib/ui/GlassButton';
 
@@ -39,7 +39,7 @@ interface ConfirmationDialog {
   toStrategy: string;
 }
 
-export default function PositionDetailsByStrategy({ 
+export default function PositionDetailsByStrategy({
   strategies: initialStrategies,
   displayCurrency,
   fxRate
@@ -54,12 +54,16 @@ export default function PositionDetailsByStrategy({
     fromStrategy: '',
     toStrategy: '',
   });
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerLoading, setPickerLoading] = useState(false);
+  const [availableStrategies, setAvailableStrategies] = useState<{ strategy_code: string; strategy_name: string }[]>([]);
+  const [pendingMove, setPendingMove] = useState<{ positionId: number; ticker: string; fromStrategy: string } | null>(null);
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveId(null);
 
@@ -68,12 +72,37 @@ export default function PositionDetailsByStrategy({
     const [positionId, fromStrategy] = (active.id as string).split('|');
     const toStrategy = over.id as string;
 
-    if (fromStrategy === toStrategy) return;
-
     const fromStrategyData = strategies.find(s => s.strategy_code === fromStrategy);
     const position = fromStrategyData?.positions.find(p => p.position_id === parseInt(positionId));
-
     if (!position) return;
+
+    // Dropped on the shared reallocate zone → open picker
+    if (toStrategy === '__REALLOCATE__') {
+      setPendingMove({ positionId: parseInt(positionId), ticker: position.ticker, fromStrategy });
+      setPickerOpen(true);
+      setPickerLoading(true);
+      try {
+        const res = await fetch('/api/strategies');
+        if (!res.ok) throw new Error('Failed to fetch strategies');
+        const json = await res.json();
+        // remaining = master list − strategies already present in the positions dataset
+        const presentCodes = new Set(strategies.map(s => s.strategy_code));
+        const remaining = (json.data as { strategy_code: string; strategy_name: string }[])
+          .filter(s => !presentCodes.has(s.strategy_code));
+        setAvailableStrategies(remaining);
+      } catch (err) {
+        console.error('Error fetching strategies:', err);
+        alert('Failed to load strategies');
+        setPickerOpen(false);
+        setPendingMove(null);
+      } finally {
+        setPickerLoading(false);
+      }
+      return;
+    }
+
+    // Normal drop onto an existing strategy table
+    if (fromStrategy === toStrategy) return;
 
     setConfirmation({
       show: true,
@@ -82,6 +111,25 @@ export default function PositionDetailsByStrategy({
       fromStrategy,
       toStrategy,
     });
+  };
+
+  const handlePickStrategy = (toStrategy: string) => {
+    if (!pendingMove) return;
+    setPickerOpen(false);
+    setConfirmation({
+      show: true,
+      ticker: pendingMove.ticker,
+      positionId: pendingMove.positionId,
+      fromStrategy: pendingMove.fromStrategy,
+      toStrategy,
+    });
+    setPendingMove(null);
+  };
+
+  const handlePickerCancel = () => {
+    setPickerOpen(false);
+    setPendingMove(null);
+    setAvailableStrategies([]);
   };
 
   const handleConfirm = async () => {
@@ -157,19 +205,19 @@ export default function PositionDetailsByStrategy({
     const remainingDays = days % 365;
     const months = Math.floor(remainingDays / 30);
     const finalDays = remainingDays % 30;
-    
+
     const parts = [];
     if (years > 0) parts.push(`${years} ${years === 1 ? 'year' : 'years'}`);
     if (months > 0) parts.push(`${months} ${months === 1 ? 'month' : 'months'}`);
     if (finalDays > 0) parts.push(`${finalDays} ${finalDays === 1 ? 'day' : 'days'}`);
-    
+
     return parts.length > 0 ? parts.join(', ') : '0 days';
   };
 
   const activePosition = activeId
     ? strategies
-        .flatMap(s => s.positions.map(p => ({ ...p, strategy: s.strategy_code })))
-        .find(p => `${p.position_id}|${p.strategy}` === activeId)
+      .flatMap(s => s.positions.map(p => ({ ...p, strategy: s.strategy_code })))
+      .find(p => `${p.position_id}|${p.strategy}` === activeId)
     : null;
 
   return (
@@ -189,6 +237,7 @@ export default function PositionDetailsByStrategy({
                   formatDaysHeld={formatDaysHeld}
                 />
               ))}
+              <SharedReallocateZone />
             </div>
           </div>
         </div>
@@ -216,14 +265,14 @@ export default function PositionDetailsByStrategy({
               to{' '}
               <span className="text-emerald-400">{strategies.find(s => s.strategy_code === confirmation.toStrategy)?.strategy_name}</span>?
             </p>
-            
+
             {isUpdating && (
               <div className="mb-4 p-3 bg-blue-500/20 border border-blue-400/30 rounded-lg flex items-center gap-2">
                 <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
                 <span className="text-blue-200 text-sm">Updating strategy...</span>
               </div>
             )}
-            
+
             <div className="flex gap-3 justify-center">
               <GlassButton
                 icon={XCircle}
@@ -245,6 +294,47 @@ export default function PositionDetailsByStrategy({
           </div>
         </div>
       )}
+      {pickerOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20 max-w-md w-full">
+            <h3 className="text-2xl font-bold text-white mb-2">Choose Strategy</h3>
+            <p className="text-blue-200 mb-6">
+              Reallocate <span className="text-white font-bold">{pendingMove?.ticker}</span> to:
+            </p>
+
+            {pickerLoading ? (
+              <div className="p-3 bg-blue-500/20 border border-blue-400/30 rounded-lg flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-blue-200 text-sm">Loading strategies...</span>
+              </div>
+            ) : availableStrategies.length === 0 ? (
+              <p className="text-blue-300 text-sm py-4">No other strategies available to reallocate to.</p>
+            ) : (
+              <div className="space-y-2 mb-6">
+                {availableStrategies.map(s => (
+                  <button
+                    key={s.strategy_code}
+                    onClick={() => handlePickStrategy(s.strategy_code)}
+                    className="w-full text-left px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white hover:bg-white/15 hover:border-cyan-400/50 transition-all"
+                  >
+                    {s.strategy_name}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="flex justify-center">
+              <GlassButton
+                icon={XCircle}
+                onClick={handlePickerCancel}
+                tooltip="Cancel"
+                variant="secondary"
+                size="lg"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -258,11 +348,10 @@ function StrategyTableSection({ strategy, formatCurrency, formatNumber, formatDa
   return (
     <div
       ref={setNodeRef}
-      className={`transition-all rounded-xl overflow-hidden ${
-        isOver  
-          ? 'ring-2 ring-cyan-400 ring-offset-2 ring-offset-transparent'
-          : ''
-      }`}
+      className={`transition-all rounded-xl overflow-hidden ${isOver
+        ? 'ring-2 ring-cyan-400 ring-offset-2 ring-offset-transparent'
+        : ''
+        }`}
     >
       {/* Strategy Header */}
       <div className="bg-white/5 border border-white/10 rounded-t-xl px-4 py-3">
@@ -326,11 +415,10 @@ function DraggableTableRow({ position, strategyCode, formatCurrency, formatNumbe
   return (
     <tr
       ref={setNodeRef}
-      className={`border-b border-white/5 transition-all ${
-        isDragging
-          ? 'opacity-50 bg-cyan-500/20'
-          : 'hover:bg-white/10'
-      }`}
+      className={`border-b border-white/5 transition-all ${isDragging
+        ? 'opacity-50 bg-cyan-500/20'
+        : 'hover:bg-white/10'
+        }`}
     >
       <td className="py-2 pl-4">
         <div {...listeners} {...attributes} className="cursor-grab active:cursor-grabbing">
@@ -342,7 +430,7 @@ function DraggableTableRow({ position, strategyCode, formatCurrency, formatNumbe
           <DollarSign className="w-4 h-4 text-blue-400 flex-shrink-0" />
           <span className="text-white font-medium text-sm">{position.ticker}</span>
           <Info className="w-3 h-3 text-blue-300 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-          
+
           <div className="absolute left-0 top-full mt-1 bg-gray-900 text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
             {position.ticker_name}
           </div>
@@ -368,9 +456,8 @@ function DraggableTableRow({ position, strategyCode, formatCurrency, formatNumbe
         {formatCurrency(position.current_value || position.current_market_price * position.total_shares)}
       </td>
       <td className="text-right py-2 pr-4">
-        <div className={`font-medium text-sm flex items-center justify-end gap-1 ${
-          position.unrealized_pnl >= 0 ? 'text-green-400' : 'text-red-400'
-        }`}>
+        <div className={`font-medium text-sm flex items-center justify-end gap-1 ${position.unrealized_pnl >= 0 ? 'text-green-400' : 'text-red-400'
+          }`}>
           {position.unrealized_pnl >= 0 ? (
             <TrendingUp className="w-3 h-3" />
           ) : (
@@ -378,9 +465,8 @@ function DraggableTableRow({ position, strategyCode, formatCurrency, formatNumbe
           )}
           {formatCurrency(position.unrealized_pnl)}
         </div>
-        <div className={`text-xs font-medium ${
-          position.unrealized_pnl >= 0 ? 'text-green-300' : 'text-red-300'
-        }`}>
+        <div className={`text-xs font-medium ${position.unrealized_pnl >= 0 ? 'text-green-300' : 'text-red-300'
+          }`}>
           {(() => {
             const costBasis = position.average_cost * position.total_shares;
             const percentage = costBasis > 0 ? (position.unrealized_pnl / costBasis) * 100 : 0;
@@ -389,5 +475,25 @@ function DraggableTableRow({ position, strategyCode, formatCurrency, formatNumbe
         </div>
       </td>
     </tr>
+  );
+}
+
+// Shared droppable zone for reallocating to a strategy not currently shown
+function SharedReallocateZone() {
+  const { setNodeRef, isOver } = useDroppable({ id: '__REALLOCATE__' });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`rounded-xl border-2 border-dashed transition-all px-4 py-6 flex items-center justify-center gap-2 ${isOver
+          ? 'border-cyan-400 bg-cyan-500/10'
+          : 'border-white/20 bg-white/5'
+        }`}
+    >
+      <PlusCircle className={`w-5 h-5 ${isOver ? 'text-cyan-400' : 'text-blue-300'}`} />
+      <span className={`text-sm font-medium ${isOver ? 'text-cyan-300' : 'text-blue-300'}`}>
+        Drop here to reallocate to another strategy
+      </span>
+    </div>
   );
 }

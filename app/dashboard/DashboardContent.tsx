@@ -91,6 +91,7 @@ export default function DashboardPage() {
   const [fundingData, setFundingData] = useState<FundingData | null>(null);
   const [dividendData, setDividendData] = useState<DividendData | null>(null);
   const [strategyData, setStrategyData] = useState<StrategyData | null>(null);
+  const [allStrategies, setAllStrategies] = useState<{ strategy_code: string; strategy_name: string; description: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshingPrices, setIsRefreshingPrices] = useState(false);
