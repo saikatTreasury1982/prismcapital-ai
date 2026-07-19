@@ -29,6 +29,7 @@ interface PositionDetailsByStrategyProps {
   strategies: Strategy[];
   displayCurrency: string;
   fxRate: number;
+  onReallocated?: () => void | Promise<void>;
 }
 
 interface ConfirmationDialog {
@@ -42,7 +43,8 @@ interface ConfirmationDialog {
 export default function PositionDetailsByStrategy({
   strategies: initialStrategies,
   displayCurrency,
-  fxRate
+  fxRate,
+  onReallocated
 }: PositionDetailsByStrategyProps) {
   const [strategies, setStrategies] = useState(initialStrategies);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -146,29 +148,10 @@ export default function PositionDetailsByStrategy({
 
       if (!response.ok) throw new Error('Failed to update strategy');
 
-      setStrategies(prev => {
-        const newStrategies = prev.map(strategy => {
-          if (strategy.strategy_code === confirmation.fromStrategy) {
-            return {
-              ...strategy,
-              positions: strategy.positions.filter(p => p.position_id !== confirmation.positionId),
-              position_count: strategy.position_count - 1,
-            };
-          } else if (strategy.strategy_code === confirmation.toStrategy) {
-            const fromStrategy = prev.find(s => s.strategy_code === confirmation.fromStrategy);
-            const position = fromStrategy?.positions.find(p => p.position_id === confirmation.positionId);
-            if (position) {
-              return {
-                ...strategy,
-                positions: [...strategy.positions, position],
-                position_count: strategy.position_count + 1,
-              };
-            }
-          }
-          return strategy;
-        });
-        return newStrategies;
-      });
+      // Re-fetch grouped strategy data so the tables re-render with the new grouping
+      if (onReallocated) {
+        await onReallocated();
+      }
 
       setConfirmation({ show: false, ticker: '', positionId: 0, fromStrategy: '', toStrategy: '' });
     } catch (error) {
@@ -486,8 +469,8 @@ function SharedReallocateZone() {
     <div
       ref={setNodeRef}
       className={`rounded-xl border-2 border-dashed transition-all px-4 py-6 flex items-center justify-center gap-2 ${isOver
-          ? 'border-cyan-400 bg-cyan-500/10'
-          : 'border-white/20 bg-white/5'
+        ? 'border-cyan-400 bg-cyan-500/10'
+        : 'border-white/20 bg-white/5'
         }`}
     >
       <PlusCircle className={`w-5 h-5 ${isOver ? 'text-cyan-400' : 'text-blue-300'}`} />

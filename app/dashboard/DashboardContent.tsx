@@ -428,6 +428,7 @@ export default function DashboardPage() {
               strategies={strategyData.strategies}
               displayCurrency={displayCurrency}
               fxRate={fxRate}
+              onReallocated={fetchStrategyData}
             />
           )}
 
