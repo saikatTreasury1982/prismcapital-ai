@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, Info, GripVertical, XCircle, Save, PlusCircle } from 'lucide-react';
 import { DndContext, DragEndEvent, DragOverlay, useDraggable, useDroppable, DragStartEvent, closestCorners } from '@dnd-kit/core';
 import GlassButton from '@/app/lib/ui/GlassButton';
@@ -47,6 +47,11 @@ export default function PositionDetailsByStrategy({
   onReallocated
 }: PositionDetailsByStrategyProps) {
   const [strategies, setStrategies] = useState(initialStrategies);
+
+  useEffect(() => {
+    setStrategies(initialStrategies);
+  }, [initialStrategies]);
+
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [confirmation, setConfirmation] = useState<ConfirmationDialog>({
