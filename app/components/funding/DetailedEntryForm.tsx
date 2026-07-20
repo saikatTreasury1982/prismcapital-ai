@@ -207,33 +207,43 @@ export const DetailedEntryForm = forwardRef<DetailedEntryFormRef, DetailedEntryF
           <div className="hidden lg:block bg-gradient-to-b from-transparent via-white/20 to-transparent" />
 
           <div>
-            <span className={groupLabel}>Dates <span className="text-rose-400">*</span></span>
+            <span className={groupLabel}>Currencies &amp; Amount <span className="text-rose-400">*</span></span>
             <div className="flex gap-3 flex-wrap">
               <div>
                 <span className={smallLabel}>Transaction</span>
-                <input
-                  type="date"
-                  value={formData.txnDate}
-                  onChange={(e) => setFormData({ ...formData, txnDate: e.target.value })}
-                  className={`${inputCls} w-40`}
-                />
+                <select
+                  value={formData.homeCurrency}
+                  onChange={(e) => setFormData({ ...formData, homeCurrency: e.target.value })}
+                  className={`${inputCls} w-24`}
+                >
+                  <option value="">Select</option>
+                  {currencies.map(curr => (
+                    <option key={curr} value={curr}>{curr}</option>
+                  ))}
+                </select>
               </div>
               <div>
-                <span className={smallLabel}>Period from</span>
-                <input
-                  type="date"
-                  value={formData.periodFrom}
-                  onChange={(e) => setFormData({ ...formData, periodFrom: e.target.value })}
-                  className={`${inputCls} w-40`}
-                />
+                <span className={smallLabel}>Exchange</span>
+                <select
+                  value={formData.exchangeCurrency}
+                  onChange={(e) => setFormData({ ...formData, exchangeCurrency: e.target.value })}
+                  className={`${inputCls} w-24`}
+                >
+                  <option value="">Select</option>
+                  {currencies.map(curr => (
+                    <option key={curr} value={curr}>{curr}</option>
+                  ))}
+                </select>
               </div>
               <div>
-                <span className={smallLabel}>Period to</span>
+                <span className={smallLabel}>Amount <span className="text-rose-400">*</span></span>
                 <input
-                  type="date"
-                  value={formData.periodTo}
-                  onChange={(e) => setFormData({ ...formData, periodTo: e.target.value })}
-                  className={`${inputCls} w-40`}
+                  type="number"
+                  step="0.01"
+                  value={formData.transactionAmount}
+                  onChange={(e) => setFormData({ ...formData, transactionAmount: e.target.value })}
+                  placeholder="1000.00"
+                  className={`${inputCls} w-32`}
                 />
               </div>
             </div>
