@@ -8,7 +8,7 @@ export default async function DividendsPage() {
   if (!session?.user?.id) {
     return (
       <div className="min-h-screen p-6 flex items-center justify-center">
-        <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20">
+        <div className="backdrop-blur-xl bg-white/10 rounded-xl p-8 border border-white/20">
           <p className="text-rose-200">Please log in to view dividends</p>
         </div>
       </div>

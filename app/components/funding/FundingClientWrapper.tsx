@@ -59,7 +59,7 @@ export function FundingClientWrapper({
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Entry Form */}
-            <div className="flex-1 backdrop-blur-xl bg-white/10 rounded-3xl p-6 sm:p-8 border border-white/20">
+            <div className="flex-1 backdrop-blur-xl bg-white/10 rounded-xl p-6 sm:p-8 border border-white/20">
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-3">

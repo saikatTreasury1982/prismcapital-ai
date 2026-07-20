@@ -213,7 +213,7 @@ export default function DashboardLayout({
       {/* User Preferences Modal */}
       {showPreferences && preferences && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 max-w-2xl w-full p-4 sm:p-6 md:p-8 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white/10 backdrop-blur-xl rounded-xl border border-white/20 max-w-2xl w-full p-4 sm:p-6 md:p-8 max-h-[90vh] overflow-y-auto">
             {/* Header with Action Buttons */}
             <div className="flex items-center justify-between mb-4 sm:mb-6 gap-2">
               <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-white truncate">User Preferences</h2>

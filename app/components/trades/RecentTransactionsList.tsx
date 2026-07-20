@@ -31,7 +31,7 @@ export function RecentTransactionsList({ refreshKey = 0 }: RecentTransactionsLis
 
   if (loading) {
     return (
-      <div className="backdrop-blur-xl bg-white/10 rounded-lg p-6 border border-white/20">
+      <div className="backdrop-blur-xl bg-white/10 rounded-xl p-6 border border-white/20">
         <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
           <Clock className="w-5 h-5" />
           Recent Transactions
@@ -42,7 +42,7 @@ export function RecentTransactionsList({ refreshKey = 0 }: RecentTransactionsLis
   }
 
   return (
-    <div className="backdrop-blur-xl bg-white/10 rounded-lg p-6 border border-white/20">
+    <div className="backdrop-blur-xl bg-white/10 rounded-xl p-6 border border-white/20">
       <h2 className="text-lg font-bold text-white flex items-center gap-2">
         <Clock className="w-5 h-5" />
         Recent Transactions

@@ -16,7 +16,7 @@ export function PeriodTimeline({ periods, homeCurrency, tradingCurrency }: Perio
 
   if (periods.length === 0) {
     return (
-      <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20">
+      <div className="backdrop-blur-xl bg-white/10 rounded-xl p-8 border border-white/20">
         <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
           <BarChart3 className="w-6 h-6" />
           Capital Flow Timeline
@@ -81,7 +81,7 @@ export function PeriodTimeline({ periods, homeCurrency, tradingCurrency }: Perio
   const zeroLine = chartHeight - ((0 - minValue) / valueRange) * chartHeight;
 
   return (
-    <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20">
+    <div className="backdrop-blur-xl bg-white/10 rounded-xl p-8 border border-white/20">
       <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
         <BarChart3 className="w-6 h-6" />
         Capital Flow Timeline

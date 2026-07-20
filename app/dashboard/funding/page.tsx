@@ -33,7 +33,7 @@ export default async function FundingPage() {
     console.error('Error loading funding data:', error);
     return (
       <div className="min-h-screen p-6 flex items-center justify-center">
-        <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20 max-w-2xl">
+        <div className="backdrop-blur-xl bg-white/10 rounded-xl p-8 border border-white/20 max-w-2xl">
           <h2 className="text-2xl font-bold text-white mb-4">Setup Required</h2>
           <div className="text-blue-200 space-y-4">
             <p>Before using the Funding page, you need to:</p>
