@@ -10,6 +10,9 @@ import SegmentedPills from '@/app/lib/ui/SegmentedPills';
 import { Plus, Save, XCircle, TrendingUp, TrendingDown, Edit2 } from 'lucide-react';
 import { BulletTextarea } from '@/app/lib/ui/BulletTextarea';
 import { StagingRecord } from '@/app/lib/types/moomoo';
+import { RecentTransactionsList } from './RecentTransactionsList';
+import { Position } from '../../lib/types/transaction';
+import { RefreshCw, Clock } from 'lucide-react';
 
 
 interface TransactionEntryFormProps {
@@ -17,7 +20,10 @@ interface TransactionEntryFormProps {
   editingTransaction?: Transaction | null;
   onCancelEdit?: () => void;
   mode?: 'create' | 'edit' | 'staging';
-  stagingRecord?: StagingRecord; // ✅ Full staging record, not just metadata
+  stagingRecord?: StagingRecord;
+  selectedPosition?: Position | null;
+  onClearSelection?: () => void;
+  refreshKey?: number;
 }
 
 interface Strategy {
@@ -31,10 +37,14 @@ export function TransactionEntryForm({
   editingTransaction,
   onCancelEdit,
   mode = 'create',
-  stagingRecord
+  stagingRecord,
+  selectedPosition,
+  onClearSelection,
+  refreshKey
 }: TransactionEntryFormProps) {
   const [isStagingEditMode, setIsStagingEditMode] = useState(false);
   const [strategies, setStrategies] = useState<Strategy[]>([]);
+  const [showRecent, setShowRecent] = useState(false);
   const [formData, setFormData] = useState({
     ticker: '',
     transaction_type_id: 1, // Default to Buy
@@ -57,6 +67,7 @@ export function TransactionEntryForm({
   const [positionStrategy, setPositionStrategy] = useState<string | null>(null);
 
   const debouncedTicker = useDebounce(formData.ticker, 500);
+  const isPositionLocked = !!selectedPosition;
 
   // Fetch strategies on mount
   useEffect(() => {
@@ -71,6 +82,21 @@ export function TransactionEntryForm({
     };
     fetchStrategies();
   }, []);
+
+  // Prefill + lock when a position is selected from the list
+  useEffect(() => {
+    if (selectedPosition) {
+      setFormData(prev => ({
+        ...prev,
+        ticker: selectedPosition.ticker,
+        strategy_code: selectedPosition.strategy || prev.strategy_code,
+        transaction_currency: selectedPosition.position_currency || prev.transaction_currency,
+      }));
+      if (selectedPosition.ticker_name) {
+        setCompanyName(selectedPosition.ticker_name);
+      }
+    }
+  }, [selectedPosition]);
 
   // Auto-calculate trade value
   useEffect(() => {
@@ -342,6 +368,9 @@ export function TransactionEntryForm({
     if (onCancelEdit) {
       onCancelEdit();
     }
+
+    setPositionStrategy(null);
+    if (onClearSelection) onClearSelection();
   };
 
   return (
@@ -420,19 +449,26 @@ export function TransactionEntryForm({
             // Normal mode buttons
             <>
               <GlassButton
+                icon={Clock}
+                onClick={() => setShowRecent(true)}
+                tooltip="Recent Transactions"
+                variant="secondary"
+                size="sm"
+              />
+              <GlassButton
                 icon={Save}
                 onClick={handleSubmit}
                 disabled={isSubmitting || !formData.ticker || !formData.quantity || !formData.price}
                 tooltip={editingTransaction ? 'Update Transaction' : 'Save Transaction'}
                 variant="primary"
-                size="md"
+                size="sm"
               />
               <GlassButton
-                icon={XCircle}
+                icon={RefreshCw}
                 onClick={handleCancel}
-                tooltip="Clear Form"
+                tooltip="Reset Form"
                 variant="secondary"
-                size="md"
+                size="sm"
               />
             </>
           )}
@@ -509,8 +545,8 @@ export function TransactionEntryForm({
               onChange={(e) => setFormData({ ...formData, ticker: e.target.value.toUpperCase() })}
               placeholder="AAPL"
               className={`flex-1 funding-input rounded-xl px-4 py-3 uppercase max-w-[70%] ${tickerError ? 'border-2 border-rose-400' : ''
-                } ${editingTransaction || mode === 'staging' ? 'bg-white/5 cursor-not-allowed' : ''}`}
-              disabled={!!editingTransaction || mode === 'staging'}
+                } ${editingTransaction || mode === 'staging' || isPositionLocked ? 'bg-white/5 cursor-not-allowed' : ''}`}
+              disabled={!!editingTransaction || mode === 'staging' || isPositionLocked}
               required
             />
             {isLoadingTicker ? (
@@ -586,7 +622,7 @@ export function TransactionEntryForm({
             value={formData.strategy_code}
             onChange={(e) => setFormData({ ...formData, strategy_code: e.target.value })}
             className={`w-full funding-input rounded-xl px-4 py-3 ${editingTransaction ? 'bg-white/5 cursor-not-allowed' : ''}`}
-            disabled={mode === 'staging' && !isStagingEditMode}
+            disabled={(mode === 'staging' && !isStagingEditMode) || isPositionLocked}
           >
             {strategies.map(strategy => (
               <option key={strategy.strategy_code} value={strategy.strategy_code} className="bg-slate-800 text-white">
@@ -619,7 +655,7 @@ export function TransactionEntryForm({
             type="date"
             value={formData.transaction_date}
             onChange={(e) => setFormData({ ...formData, transaction_date: e.target.value })}
-            className={`w-full funding-input rounded-xl px-4 py-3 ${editingTransaction ? 'bg-white/5 cursor-not-allowed' : ''}`}
+            className={`w-full funding-input rounded-xl px-4 py-3 ${editingTransaction || isPositionLocked ? 'bg-white/5 cursor-not-allowed' : ''}`}
             disabled={mode === 'staging' && !isStagingEditMode}
             required
           />
@@ -688,8 +724,8 @@ export function TransactionEntryForm({
             value={formData.transaction_currency}
             onChange={(e) => setFormData({ ...formData, transaction_currency: e.target.value.toUpperCase() })}
             placeholder="USD"
-            className={`w-full funding-input rounded-xl px-4 py-3 uppercase ${editingTransaction ? 'bg-white/5 cursor-not-allowed' : ''}`}
-            disabled={!!editingTransaction || mode === 'staging'}
+            className={`w-full funding-input rounded-xl px-4 py-3 uppercase ${editingTransaction || isPositionLocked ? 'bg-white/5 cursor-not-allowed' : ''}`}
+            disabled={!!editingTransaction || mode === 'staging' || isPositionLocked}
             maxLength={3}
           />
         </div>
@@ -707,6 +743,26 @@ export function TransactionEntryForm({
           />
         </div>
       </div>
+      {showRecent && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-6 border border-white/20 max-w-lg w-full max-h-[85vh] overflow-y-auto scrollbar-hide">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-white">Recent Transactions</h2>
+              <button
+                onClick={() => setShowRecent(false)}
+                className="p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+            <RecentTransactionsList
+              refreshKey={refreshKey ?? 0}
+              onTransactionClick={() => setShowRecent(false)}
+              editingTransactionId={null}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -38,7 +38,7 @@ export function RecentTransactionsList({ refreshKey = 0, onTransactionClick, edi
 
   if (loading) {
     return (
-      <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-6 sm:p-8 border border-white/20">
+      <div className="backdrop-blur-xl bg-white/10 rounded-xl p-6 sm:p-8 border border-white/20">
         <h2 className="text-xl sm:text-2xl font-bold text-white mb-6 flex items-center gap-3">
           <Clock className="w-6 h-6" />
           Recent Transactions
@@ -49,7 +49,7 @@ export function RecentTransactionsList({ refreshKey = 0, onTransactionClick, edi
   }
 
   return (
-    <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-6 sm:p-8 border border-white/20">
+    <div className="backdrop-blur-xl bg-white/10 rounded-xl p-6 sm:p-8 border border-white/20">
       <div className="mb-4">
         <h2 className="text-xl sm:text-2xl font-bold text-white mb-6 flex items-center gap-3">
           <Clock className="w-6 h-6" />

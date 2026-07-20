@@ -47,7 +47,7 @@ export interface Position {
   opened_date?: string;
   created_at: string;
   updated_at: string;
-  strategy_id?: number;
+  strategy?: string;
   position_currency: string;
   ticker_name?: string;
 }
