@@ -266,6 +266,7 @@ export function TransactionEntryForm({
   const labelCls = 'text-blue-200 text-sm font-medium';
   const inputCls = 'funding-input rounded-lg px-3 py-2 text-sm';
   const smallLabelCls = 'text-blue-300 text-[11px] mb-1 block';
+  const groupTagCls = 'text-blue-300 text-[11px] mb-1 block font-medium';
 
   return (
     <div>
@@ -308,7 +309,8 @@ export function TransactionEntryForm({
         </div>
       )}
 
-      <div className="grid grid-cols-[110px_1fr] gap-x-4 gap-y-4 items-center">
+      {/* ROW 1: Ticker + Company */}
+      <div className="grid grid-cols-[92px_1fr] gap-4 items-center mb-5">
         <label className={labelCls}>Ticker <span className="text-rose-400">*</span></label>
         <div className="flex items-center gap-3">
           <input
@@ -353,122 +355,149 @@ export function TransactionEntryForm({
             </div>
           ) : null}
         </div>
+      </div>
 
-        {tickerError && (
-          <>
-            <div />
-            <p className="text-rose-400 text-sm">{tickerError}</p>
-          </>
-        )}
+      {tickerError && (
+        <div className="grid grid-cols-[92px_1fr] gap-4 mb-3">
+          <div />
+          <p className="text-rose-400 text-sm">{tickerError}</p>
+        </div>
+      )}
 
-        {hasPosition && positionStrategy && !isPositionLocked && (
-          <>
-            <div />
-            <div className="p-2 bg-green-500/10 border border-green-400/30 rounded-md">
-              <p className="text-green-300 text-xs font-medium">Current Strategy: {positionStrategy}</p>
-            </div>
-          </>
-        )}
+      {hasPosition && positionStrategy && !isPositionLocked && (
+        <div className="grid grid-cols-[92px_1fr] gap-4 mb-3">
+          <div />
+          <div className="p-2 bg-green-500/10 border border-green-400/30 rounded-md w-fit">
+            <p className="text-green-300 text-xs font-medium">Current Strategy: {positionStrategy}</p>
+          </div>
+        </div>
+      )}
 
-        <label className={labelCls}>Strategy <span className="text-rose-400">*</span></label>
-        <select
-          value={formData.strategy_code}
-          onChange={(e) => setFormData({ ...formData, strategy_code: e.target.value })}
-          className={`${inputCls} w-full max-w-xs ${editingTransaction || isPositionLocked ? 'bg-white/5 cursor-not-allowed' : ''}`}
-          disabled={(mode === 'staging') || editingTransaction != null || isPositionLocked}
-        >
-          {strategies.map(strategy => (
-            <option key={strategy.strategy_code} value={strategy.strategy_code} className="bg-slate-800 text-white">
-              {strategy.strategy_name}
-            </option>
-          ))}
-        </select>
+      {/* ROWS 2 & 3: 2x2 grid (Strategy/Date left, Type/Details right) with single spanning divider */}
+      <div
+        className="grid gap-x-4 gap-y-5 items-start mb-5"
+        style={{ gridTemplateColumns: '92px 220px 1px 1fr' }}
+      >
+        {/* Strategy (col 2, row 1) */}
+        <div style={{ gridColumn: 2, gridRow: 1 }}>
+          <span className={groupTagCls}>Strategy <span className="text-rose-400">*</span></span>
+          <select
+            value={formData.strategy_code}
+            onChange={(e) => setFormData({ ...formData, strategy_code: e.target.value })}
+            className={`${inputCls} w-full ${editingTransaction || isPositionLocked ? 'bg-white/5 cursor-not-allowed' : ''}`}
+            disabled={(mode === 'staging') || editingTransaction != null || isPositionLocked}
+          >
+            {strategies.map(strategy => (
+              <option key={strategy.strategy_code} value={strategy.strategy_code} className="bg-slate-800 text-white">
+                {strategy.strategy_name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        <label className={labelCls}>Type <span className="text-rose-400">*</span></label>
-        <div className={`${editingTransaction || mode === 'staging' ? 'opacity-50 pointer-events-none' : ''} w-fit`}>
-          <SegmentedPills
-            options={[
-              { value: 1, label: 'Buy', icon: <TrendingUp className="w-5 h-5" />, activeColor: 'bg-emerald-500' },
-              { value: 2, label: 'Sell', icon: <TrendingDown className="w-5 h-5" />, activeColor: 'bg-rose-500' },
-            ]}
-            value={formData.transaction_type_id}
-            onChange={(value) => setFormData({ ...formData, transaction_type_id: value })}
-            showLabels={true}
+        {/* Type (col 4, row 1) */}
+        <div style={{ gridColumn: 4, gridRow: 1 }}>
+          <span className={groupTagCls}>Type <span className="text-rose-400">*</span></span>
+          <div className={`${editingTransaction || mode === 'staging' ? 'opacity-50 pointer-events-none' : ''} w-fit`}>
+            <SegmentedPills
+              options={[
+                { value: 1, label: 'Buy', icon: <TrendingUp className="w-5 h-5" />, activeColor: 'bg-emerald-500' },
+                { value: 2, label: 'Sell', icon: <TrendingDown className="w-5 h-5" />, activeColor: 'bg-rose-500' },
+              ]}
+              value={formData.transaction_type_id}
+              onChange={(value) => setFormData({ ...formData, transaction_type_id: value })}
+              showLabels={true}
+            />
+          </div>
+        </div>
+
+        {/* Single divider spanning both rows (col 3, rows 1-2) */}
+        <div
+          className="bg-gradient-to-b from-transparent via-white/20 to-transparent"
+          style={{ gridColumn: 3, gridRow: '1 / span 2', width: '1px' }}
+        />
+
+        {/* Date (col 2, row 2) */}
+        <div style={{ gridColumn: 2, gridRow: 2 }}>
+          <span className={groupTagCls}>Date <span className="text-rose-400">*</span></span>
+          <input
+            type="date"
+            value={formData.transaction_date}
+            onChange={(e) => setFormData({ ...formData, transaction_date: e.target.value })}
+            className={`${inputCls} w-full ${editingTransaction ? 'bg-white/5 cursor-not-allowed' : ''}`}
+            disabled={editingTransaction != null}
           />
         </div>
 
-        <label className={labelCls}>Date <span className="text-rose-400">*</span></label>
-        <input
-          type="date"
-          value={formData.transaction_date}
-          onChange={(e) => setFormData({ ...formData, transaction_date: e.target.value })}
-          className={`${inputCls} w-44 ${editingTransaction ? 'bg-white/5 cursor-not-allowed' : ''}`}
-          disabled={editingTransaction != null}
-        />
-
-        <label className={`${labelCls} self-start pt-1`}>Details</label>
-        <div className="flex gap-3 flex-wrap">
-          <div>
-            <span className={smallLabelCls}>Qty <span className="text-rose-400">*</span></span>
-            <input
-              type="number"
-              step="0.0001"
-              value={formData.quantity}
-              onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-              placeholder="100"
-              className={`${inputCls} w-24 ${editingTransaction ? 'bg-white/5 cursor-not-allowed' : ''}`}
-              disabled={editingTransaction != null}
-            />
-          </div>
-          <div>
-            <span className={smallLabelCls}>Price <span className="text-rose-400">*</span></span>
-            <input
-              type="number"
-              step="0.01"
-              value={formData.price}
-              onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-              placeholder="150.00"
-              className={`${inputCls} w-28 ${editingTransaction ? 'bg-white/5 cursor-not-allowed' : ''}`}
-              disabled={editingTransaction != null}
-            />
-          </div>
-          <div>
-            <span className={smallLabelCls}>Fees</span>
-            <input
-              type="number"
-              step="0.01"
-              value={formData.fees}
-              onChange={(e) => setFormData({ ...formData, fees: e.target.value })}
-              placeholder="0.00"
-              className={`${inputCls} w-20`}
-            />
-          </div>
-          <div>
-            <span className={smallLabelCls}>Currency</span>
-            <input
-              type="text"
-              value={formData.transaction_currency}
-              onChange={(e) => setFormData({ ...formData, transaction_currency: e.target.value.toUpperCase() })}
-              placeholder="USD"
-              maxLength={3}
-              className={`${inputCls} w-20 uppercase ${
-                editingTransaction || mode === 'staging' || isPositionLocked ? 'bg-white/5 cursor-not-allowed' : ''
-              }`}
-              disabled={!!editingTransaction || mode === 'staging' || isPositionLocked}
-            />
-          </div>
-          <div>
-            <span className={smallLabelCls}>Trade Value</span>
-            <input
-              type="text"
-              value={`$${formData.trade_value}`}
-              readOnly
-              className={`${inputCls} w-28 bg-white/5 cursor-not-allowed`}
-            />
+        {/* Details (col 4, row 2) */}
+        <div style={{ gridColumn: 4, gridRow: 2 }}>
+          <span className={groupTagCls}>Details</span>
+          <div className="flex gap-2 flex-nowrap">
+            <div>
+              <span className={smallLabelCls}>Qty <span className="text-rose-400">*</span></span>
+              <input
+                type="number"
+                step="0.0001"
+                value={formData.quantity}
+                onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                placeholder="100"
+                className={`${inputCls} w-16 ${editingTransaction ? 'bg-white/5 cursor-not-allowed' : ''}`}
+                disabled={editingTransaction != null}
+              />
+            </div>
+            <div>
+              <span className={smallLabelCls}>Price <span className="text-rose-400">*</span></span>
+              <input
+                type="number"
+                step="0.01"
+                value={formData.price}
+                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                placeholder="150.00"
+                className={`${inputCls} w-20 ${editingTransaction ? 'bg-white/5 cursor-not-allowed' : ''}`}
+                disabled={editingTransaction != null}
+              />
+            </div>
+            <div>
+              <span className={smallLabelCls}>Fees</span>
+              <input
+                type="number"
+                step="0.01"
+                value={formData.fees}
+                onChange={(e) => setFormData({ ...formData, fees: e.target.value })}
+                placeholder="0.00"
+                className={`${inputCls} w-14`}
+              />
+            </div>
+            <div>
+              <span className={smallLabelCls}>Currency</span>
+              <input
+                type="text"
+                value={formData.transaction_currency}
+                onChange={(e) => setFormData({ ...formData, transaction_currency: e.target.value.toUpperCase() })}
+                placeholder="USD"
+                maxLength={3}
+                className={`${inputCls} w-16 uppercase ${
+                  editingTransaction || mode === 'staging' || isPositionLocked ? 'bg-white/5 cursor-not-allowed' : ''
+                }`}
+                disabled={!!editingTransaction || mode === 'staging' || isPositionLocked}
+              />
+            </div>
+            <div>
+              <span className={smallLabelCls}>Trade Value</span>
+              <input
+                type="text"
+                value={`$${formData.trade_value}`}
+                readOnly
+                className={`${inputCls} w-20 bg-white/5 cursor-not-allowed`}
+              />
+            </div>
           </div>
         </div>
+      </div>
 
-        <label className={`${labelCls} self-start pt-1`}>Notes</label>
+      {/* ROW 4: Notes */}
+      <div className="grid grid-cols-[92px_1fr] gap-4 items-start">
+        <label className={`${labelCls} pt-1`}>Notes</label>
         <BulletTextarea
           value={formData.notes}
           onChange={(value) => setFormData({ ...formData, notes: value })}
