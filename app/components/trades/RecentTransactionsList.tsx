@@ -38,7 +38,7 @@ export function RecentTransactionsList({ refreshKey = 0, onTransactionClick, edi
 
   if (loading) {
     return (
-      <div className="backdrop-blur-xl bg-white/10 rounded-xl p-6 sm:p-8 border border-white/20">
+      <div className="backdrop-blur-xl bg-white/10 rounded-lg p-6 sm:p-8 border border-white/20">
         <h2 className="text-xl sm:text-2xl font-bold text-white mb-6 flex items-center gap-3">
           <Clock className="w-6 h-6" />
           Recent Transactions
@@ -49,7 +49,7 @@ export function RecentTransactionsList({ refreshKey = 0, onTransactionClick, edi
   }
 
   return (
-    <div className="backdrop-blur-xl bg-white/10 rounded-xl p-6 sm:p-8 border border-white/20">
+    <div className="backdrop-blur-xl bg-white/10 rounded-lg p-6 sm:p-8 border border-white/20">
       <div className="mb-4">
         <h2 className="text-xl sm:text-2xl font-bold text-white mb-6 flex items-center gap-3">
           <Clock className="w-6 h-6" />
@@ -70,7 +70,7 @@ export function RecentTransactionsList({ refreshKey = 0, onTransactionClick, edi
               key={transaction.transaction_id}
               onClick={() => onTransactionClick?.(transaction)}
               className={`
-                rounded-xl p-4 border transition-all cursor-pointer
+                rounded-lg p-4 border transition-all cursor-pointer
                 ${editingTransactionId === transaction.transaction_id
                   ? 'bg-blue-500/20 border-blue-400/50 ring-2 ring-blue-400/30'
                   : 'bg-gradient-to-r from-white/5 to-white/10 border-white/10 hover:border-white/20'

@@ -5,14 +5,12 @@ import { Transaction } from '../../lib/types/transaction';
 import { createTransaction, updateTransaction } from '../../services/transactionServiceClient';
 import { useDebounce } from '../../lib/hooks/useDebounce';
 import GlassButton from '@/app/lib/ui/GlassButton';
-import SegmentedControl from '@/app/lib/ui/SegmentedControl';
 import SegmentedPills from '@/app/lib/ui/SegmentedPills';
 import { Plus, Save, XCircle, TrendingUp, TrendingDown, Edit2 } from 'lucide-react';
 import { BulletTextarea } from '@/app/lib/ui/BulletTextarea';
 import { StagingRecord } from '@/app/lib/types/moomoo';
-import { RecentTransactionsList } from './RecentTransactionsList';
 import { Position } from '../../lib/types/transaction';
-import { RefreshCw, Clock } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 
 
 interface TransactionEntryFormProps {
@@ -44,7 +42,6 @@ export function TransactionEntryForm({
 }: TransactionEntryFormProps) {
   const [isStagingEditMode, setIsStagingEditMode] = useState(false);
   const [strategies, setStrategies] = useState<Strategy[]>([]);
-  const [showRecent, setShowRecent] = useState(false);
   const [formData, setFormData] = useState({
     ticker: '',
     transaction_type_id: 1, // Default to Buy
@@ -449,13 +446,6 @@ export function TransactionEntryForm({
             // Normal mode buttons
             <>
               <GlassButton
-                icon={Clock}
-                onClick={() => setShowRecent(true)}
-                tooltip="Recent Transactions"
-                variant="secondary"
-                size="sm"
-              />
-              <GlassButton
                 icon={Save}
                 onClick={handleSubmit}
                 disabled={isSubmitting || !formData.ticker || !formData.quantity || !formData.price}
@@ -544,7 +534,7 @@ export function TransactionEntryForm({
               value={formData.ticker}
               onChange={(e) => setFormData({ ...formData, ticker: e.target.value.toUpperCase() })}
               placeholder="AAPL"
-              className={`flex-1 funding-input rounded-xl px-4 py-3 uppercase max-w-[70%] ${tickerError ? 'border-2 border-rose-400' : ''
+              className={`flex-1 funding-input rounded-lg px-4 py-3 uppercase max-w-[70%] ${tickerError ? 'border-2 border-rose-400' : ''
                 } ${editingTransaction || mode === 'staging' || isPositionLocked ? 'bg-white/5 cursor-not-allowed' : ''}`}
               disabled={!!editingTransaction || mode === 'staging' || isPositionLocked}
               required
@@ -595,7 +585,7 @@ export function TransactionEntryForm({
             <p className="text-rose-400 text-sm mt-2">{tickerError}</p>
           )}
           {hasPosition && positionStrategy && (
-            <div className="mt-2 p-2 bg-green-500/10 border border-green-400/30 rounded-lg">
+            <div className="mt-2 p-2 bg-green-500/10 border border-green-400/30 rounded-md">
               <p className="text-green-300 text-xs font-medium">
                 Current Strategy: {positionStrategy}
               </p>
@@ -610,7 +600,7 @@ export function TransactionEntryForm({
             type="text"
             value={companyName}
             placeholder="Company name will appear here"
-            className="w-full funding-input rounded-xl px-4 py-3 bg-white/5 cursor-not-allowed"
+            className="w-full funding-input rounded-lg px-4 py-3 bg-white/5 cursor-not-allowed"
             disabled
           />
         </div>
@@ -621,7 +611,7 @@ export function TransactionEntryForm({
           <select
             value={formData.strategy_code}
             onChange={(e) => setFormData({ ...formData, strategy_code: e.target.value })}
-            className={`w-full funding-input rounded-xl px-4 py-3 ${editingTransaction ? 'bg-white/5 cursor-not-allowed' : ''}`}
+            className={`w-fulllg px-4 py-3 ${editingTransaction ? 'bg-white/5 cursor-not-allowed' : ''}`}
             disabled={(mode === 'staging' && !isStagingEditMode) || isPositionLocked}
           >
             {strategies.map(strategy => (
@@ -655,7 +645,7 @@ export function TransactionEntryForm({
             type="date"
             value={formData.transaction_date}
             onChange={(e) => setFormData({ ...formData, transaction_date: e.target.value })}
-            className={`w-full funding-input rounded-xl px-4 py-3 ${editingTransaction || isPositionLocked ? 'bg-white/5 cursor-not-allowed' : ''}`}
+            className={`w-full funding-input rounded-lg px-4 py-3 ${editingTransaction || isPositionLocked ? 'bg-white/5 cursor-not-allowed' : ''}`}
             disabled={mode === 'staging' && !isStagingEditMode}
             required
           />
@@ -670,7 +660,7 @@ export function TransactionEntryForm({
             value={formData.quantity}
             onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
             placeholder="100"
-            className={`w-full funding-input rounded-xl px-4 py-3 ${editingTransaction ? 'bg-white/5 cursor-not-allowed' : ''}`}
+            className={`w-full funding-input rounded-lg px-4 py-3 ${editingTransaction ? 'bg-white/5 cursor-not-allowed' : ''}`}
             disabled={mode === 'staging' && !isStagingEditMode}
             required
           />
@@ -685,7 +675,7 @@ export function TransactionEntryForm({
             value={formData.price}
             onChange={(e) => setFormData({ ...formData, price: e.target.value })}
             placeholder="150.00"
-            className={`w-full funding-input rounded-xl px-4 py-3 ${editingTransaction ? 'bg-white/5 cursor-not-allowed' : ''}`}
+            className={`w-full funding-input rounded-lg px-4 py-3 ${editingTransaction ? 'bg-white/5 cursor-not-allowed' : ''}`}
             disabled={mode === 'staging' && !isStagingEditMode}
             required
           />
@@ -700,7 +690,7 @@ export function TransactionEntryForm({
             value={formData.fees}
             onChange={(e) => setFormData({ ...formData, fees: e.target.value })}
             placeholder="0.00"
-            className="w-full funding-input rounded-xl px-4 py-3"
+            className="w-full funding-input rounded-lg px-4 py-3"
             disabled={mode === 'staging' && !isStagingEditMode}
           />
         </div>
@@ -712,7 +702,7 @@ export function TransactionEntryForm({
             type="text"
             value={`$${formData.trade_value}`}
             readOnly
-            className="w-full funding-input rounded-xl px-4 py-3 bg-white/5 cursor-not-allowed"
+            className="w-full funding-input rounded-lg px-4 py-3 bg-white/5 cursor-not-allowed"
           />
         </div>
 
@@ -724,7 +714,7 @@ export function TransactionEntryForm({
             value={formData.transaction_currency}
             onChange={(e) => setFormData({ ...formData, transaction_currency: e.target.value.toUpperCase() })}
             placeholder="USD"
-            className={`w-full funding-input rounded-xl px-4 py-3 uppercase ${editingTransaction || isPositionLocked ? 'bg-white/5 cursor-not-allowed' : ''}`}
+            className={`w-full funding-input rounded-lg px-4 py-3 uppercase ${editingTransaction || isPositionLocked ? 'bg-white/5 cursor-not-allowed' : ''}`}
             disabled={!!editingTransaction || mode === 'staging' || isPositionLocked}
             maxLength={3}
           />
@@ -743,26 +733,6 @@ export function TransactionEntryForm({
           />
         </div>
       </div>
-      {showRecent && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-6 border border-white/20 max-w-lg w-full max-h-[85vh] overflow-y-auto scrollbar-hide">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-white">Recent Transactions</h2>
-              <button
-                onClick={() => setShowRecent(false)}
-                className="p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all"
-              >
-                <XCircle className="w-5 h-5" />
-              </button>
-            </div>
-            <RecentTransactionsList
-              refreshKey={refreshKey ?? 0}
-              onTransactionClick={() => setShowRecent(false)}
-              editingTransactionId={null}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 }

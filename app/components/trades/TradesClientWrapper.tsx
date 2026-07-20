@@ -13,16 +13,15 @@ import { getPositions } from '../../services/positionServiceClient';
 import { Position } from '../../lib/types/transaction';
 import { useEffect } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { RecentTransactionsList } from './RecentTransactionsList';
 
 export function TradesClientWrapper() {
   const [activeTab, setActiveTab] = useState<'entry' | 'ticker' | 'status' | 'date' | 'import'>('entry');
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [editingTransactionId, setEditingTransactionId] = useState<number | null>(null);
 
   const handleSuccess = () => {
     setEditingTransaction(null);
-    setEditingTransactionId(null);
     setRefreshKey(prev => prev + 1);
   };
 
@@ -31,11 +30,6 @@ export function TradesClientWrapper() {
     setActiveTab('entry');
   };
 
-  const handleTransactionClick = (transaction: Transaction) => {
-    setEditingTransaction(transaction);
-    setEditingTransactionId(transaction.transaction_id);
-    // Already on entry tab, just highlight the row
-  };
 
   const handleDelete = () => {
     setRefreshKey(prev => prev + 1);
@@ -43,7 +37,6 @@ export function TradesClientWrapper() {
 
   const handleCancelEdit = () => {
     setEditingTransaction(null);
-    setEditingTransactionId(null);
   };
 
   const [positions, setPositions] = useState<Position[]>([]);
@@ -90,7 +83,7 @@ export function TradesClientWrapper() {
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Left Panel - Positions List (30%) */}
             <div className="lg:w-[30%]">
-              <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-6 border border-white/20">
+              <div className="backdrop-blur-xl bg-white/10 rounded-xl p-6 border border-white/20">
                 <h2 className="text-xl font-bold text-white mb-4">Your Positions</h2>
                 {positions.length === 0 ? (
                   <p className="text-blue-200 text-sm text-center py-8">No active positions found</p>
@@ -164,18 +157,23 @@ export function TradesClientWrapper() {
               </div>
             </div>
 
-            {/* GRADIENT DIVIDER */}
-            <div className="hidden lg:block w-px bg-gradient-to-b from-transparent via-white/20 to-transparent mx-3" />
-
-            {/* Right Panel - Entry Form (70%) */}
-            <div className="lg:w-[70%] backdrop-blur-xl bg-white/10 rounded-3xl p-6 sm:p-8 border border-white/20">
+            {/* Middle Panel - Entry Form (50%) */}
+            <div className="lg:w-[50%] backdrop-blur-xl bg-white/10 rounded-xl p-6 sm:p-8 border border-white/20">
               <TransactionEntryForm
                 onSuccess={handleSuccess}
                 editingTransaction={editingTransaction}
                 onCancelEdit={handleCancelEdit}
                 selectedPosition={selectedPosition}
                 onClearSelection={() => setSelectedPosition(null)}
+              />
+            </div>
+
+            {/* Right Panel - Recent Transactions (20%) */}
+            <div className="lg:w-[20%]">
+              <RecentTransactionsList
                 refreshKey={refreshKey}
+                onTransactionClick={() => { }}
+                editingTransactionId={null}
               />
             </div>
           </div>
