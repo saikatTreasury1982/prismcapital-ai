@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Edit3, BarChart3, ArrowLeftRight, Save, XCircle, Plus, List } from 'lucide-react';
+import { Edit3, BarChart3, ArrowLeftRight, Save, RefreshCw, Plus, List } from 'lucide-react';
 import { UserCurrencies, CashMovementWithDirection, PeriodStats } from '../../lib/types/funding';
 import { DetailedEntryForm, DetailedEntryFormRef } from './DetailedEntryForm';
 import { PeriodTimeline } from './PeriodTimeline';
@@ -35,7 +35,6 @@ export function FundingClientWrapper({
 
   const handleTransactionClick = (transaction: CashMovementWithDirection) => {
     setEditingTransactionId(transaction.cash_movement_id);
-    // Load transaction data into form will be handled by passing it as a prop
   };
 
   return (
@@ -56,62 +55,55 @@ export function FundingClientWrapper({
 
       {/* Entry View */}
       {viewMode === 'entry' && (
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col lg:flex-row gap-6">
-            {/* Entry Form */}
-            <div className="flex-1 backdrop-blur-xl bg-white/10 rounded-xl p-6 sm:p-8 border border-white/20">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-3">
-                    <Plus className="w-6 h-6" />
-                    Record Cash Movement
-                  </h2>
-                  <p className="text-xs text-blue-300 mt-1">* Required fields</p>
-                </div>
-                <div className="flex gap-2">
-                  <GlassButton
-                    icon={XCircle}
-                    onClick={() => formRef.current?.handleCancel()}
-                    tooltip="Clear Form"
-                    variant="secondary"
-                    size="md"
-                  />
-                  <GlassButton
-                    icon={Save}
-                    onClick={() => formRef.current?.handleSubmit()}
-                    disabled={!formRef.current || formRef.current.isSubmitting || !formRef.current.canSubmit}
-                    tooltip="Save Transaction"
-                    variant="primary"
-                    size="md"
-                  />
-                </div>
+        <div className="max-w-7xl mx-auto space-y-6">
+          {/* Entry Form */}
+          <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-6 sm:p-8 border border-white/20">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Plus className="w-5 h-5" />
+                  Record Cash Movement
+                </h2>
+                <p className="text-xs text-blue-300 mt-1">* Required fields</p>
               </div>
-
-              <DetailedEntryForm
-                ref={formRef}
-                homeCurrency={currencies.home_currency}
-                tradingCurrency={currencies.trading_currency}
-                onSuccess={handleSuccess}
-                onValidationChange={setCanSubmit}
-                onSubmittingChange={setIsSubmitting}
-                editingTransaction={initialMovements.find(m => m.cash_movement_id === editingTransactionId) || null}
-                onCancelEdit={() => setEditingTransactionId(null)}
-              />
+              <div className="flex gap-2">
+                <GlassButton
+                  icon={Save}
+                  onClick={() => formRef.current?.handleSubmit()}
+                  disabled={isSubmitting || !canSubmit}
+                  tooltip="Save Transaction"
+                  variant="primary"
+                  size="md"
+                />
+                <GlassButton
+                  icon={RefreshCw}
+                  onClick={() => formRef.current?.handleCancel()}
+                  tooltip="Reset Form"
+                  variant="secondary"
+                  size="md"
+                />
+              </div>
             </div>
 
-            {/* GRADIENT DIVIDER */}
-            <div className="hidden lg:block w-px bg-gradient-to-b from-transparent via-white/20 to-transparent mx-3" />
-
-            {/* Recent Transactions */}
-            <div className="flex-1">
-              <RecentTransactions
-                movements={initialMovements.slice(0, 5)}
-                homeCurrency={currencies.home_currency}
-                onTransactionClick={handleTransactionClick}
-                editingTransactionId={editingTransactionId}
-              />
-            </div>
+            <DetailedEntryForm
+              ref={formRef}
+              homeCurrency={currencies.home_currency}
+              tradingCurrency={currencies.trading_currency}
+              onSuccess={handleSuccess}
+              onValidationChange={setCanSubmit}
+              onSubmittingChange={setIsSubmitting}
+              editingTransaction={initialMovements.find(m => m.cash_movement_id === editingTransactionId) || null}
+              onCancelEdit={() => setEditingTransactionId(null)}
+            />
           </div>
+
+          {/* Recent Transactions */}
+          <RecentTransactions
+            movements={initialMovements.slice(0, 5)}
+            homeCurrency={currencies.home_currency}
+            onTransactionClick={handleTransactionClick}
+            editingTransactionId={editingTransactionId}
+          />
         </div>
       )}
 

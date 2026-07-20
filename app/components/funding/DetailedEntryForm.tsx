@@ -2,10 +2,9 @@
 
 import { CashMovementWithDirection } from '../../lib/types/funding';
 import { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
-import { Plus, Save, XCircle, TrendingUp, TrendingDown } from 'lucide-react';
+import { TrendingUp, TrendingDown, CheckCircle, Clock } from 'lucide-react';
 import SegmentedPills from '@/app/lib/ui/SegmentedPills';
-import { NotesPopoverInput } from '@/app/lib/ui/NotesPopoverInput';
-import { CheckCircle, Clock } from 'lucide-react';
+import { BulletTextarea } from '@/app/lib/ui/BulletTextarea';
 
 interface DetailedEntryFormProps {
   homeCurrency: string;
@@ -61,7 +60,6 @@ export const DetailedEntryForm = forwardRef<DetailedEntryFormRef, DetailedEntryF
       fetchCurrencies();
     }, []);
 
-    // Load editing transaction data
     useEffect(() => {
       if (editingTransaction) {
         setFormData({
@@ -82,11 +80,7 @@ export const DetailedEntryForm = forwardRef<DetailedEntryFormRef, DetailedEntryF
     const calculateTrading = () => {
       const amount = parseFloat(formData.transactionAmount) || 0;
       const rate = parseFloat(formData.exchangeRate) || 0;
-
-      if (rate === 0) {
-        return amount.toFixed(4);
-      }
-
+      if (rate === 0) return amount.toFixed(4);
       return (amount * rate).toFixed(4);
     };
 
@@ -104,7 +98,7 @@ export const DetailedEntryForm = forwardRef<DetailedEntryFormRef, DetailedEntryF
         notes: '',
       });
       setError(null);
-      onCancelEdit?.(); // Clear editing state
+      onCancelEdit?.();
     };
 
     const handleSubmit = async () => {
@@ -120,9 +114,7 @@ export const DetailedEntryForm = forwardRef<DetailedEntryFormRef, DetailedEntryF
 
         const response = await fetch(url, {
           method: isEditing ? 'PUT' : 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             home_currency_value: parseFloat(formData.transactionAmount),
             spot_rate: parseFloat(formData.exchangeRate),
@@ -142,7 +134,6 @@ export const DetailedEntryForm = forwardRef<DetailedEntryFormRef, DetailedEntryF
           throw new Error(errorData.error || 'Failed to create transaction');
         }
 
-        // Reset form
         setFormData({
           transactionAmount: '',
           homeCurrency: formData.homeCurrency,
@@ -179,7 +170,6 @@ export const DetailedEntryForm = forwardRef<DetailedEntryFormRef, DetailedEntryF
       onValidationChange?.(canSubmit);
     }, [canSubmit, onValidationChange]);
 
-    // Expose methods to parent
     useImperativeHandle(ref, () => ({
       handleSubmit,
       handleCancel,
@@ -187,20 +177,22 @@ export const DetailedEntryForm = forwardRef<DetailedEntryFormRef, DetailedEntryF
       isSubmitting,
     }));
 
+    const labelCls = 'text-blue-200 text-sm font-medium';
+    const inputCls = 'funding-input rounded-lg px-3 py-2 text-sm';
+    const smallLabelCls = 'text-blue-300 text-[11px] mb-1 block';
+
     return (
-      <div className="space-y-4">
+      <div>
         {error && (
-          <div className="p-3 bg-rose-500/20 border border-rose-400/30 rounded-lg text-rose-200 text-sm">
+          <div className="mb-4 p-3 bg-rose-500/20 border border-rose-400/30 rounded-md text-rose-200 text-sm">
             {error}
           </div>
         )}
 
-        {/* Transaction Type and Notes Row */}
-        <div className="flex items-start gap-4">
-          <div className="flex-1">
-            <label className="text-blue-200 text-sm mb-2 block">
-              Transaction Type <span className="text-rose-400">*</span>
-            </label>
+        <div className="grid grid-cols-[130px_1fr] gap-x-4 gap-y-4 items-center">
+          {/* Transaction Type */}
+          <label className={labelCls}>Type <span className="text-rose-400">*</span></label>
+          <div className="w-fit">
             <SegmentedPills
               options={[
                 { value: 1, label: 'Deposit', icon: <TrendingUp className="w-4 h-4" />, activeColor: 'bg-emerald-500' },
@@ -212,179 +204,130 @@ export const DetailedEntryForm = forwardRef<DetailedEntryFormRef, DetailedEntryF
             />
           </div>
 
-          {/* Notes Icon - No Label */}
-          <div className="pt-8">
-            <NotesPopoverInput
-              value={formData.notes}
-              onChange={(value) => setFormData({ ...formData, notes: value })}
-            />
-          </div>
-        </div>
-
-        {/* Transaction Currency and Amount Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Transaction Currency */}
-          <div>
-            <label className="text-blue-200 text-sm mb-2 block">
-              Transaction Currency <span className="text-rose-400">*</span>
-            </label>
-            <select
-              required
-              value={formData.homeCurrency}
-              onChange={(e) => setFormData({ ...formData, homeCurrency: e.target.value })}
-              className="w-full funding-input rounded-xl px-4 py-3"
-            >
-              <option value="">Select currency</option>
-              {currencies.map(curr => (
-                <option key={curr} value={curr}>{curr}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Amount */}
-          <div>
-            <label className="text-blue-200 text-sm mb-2 block">
-              Amount <span className="text-rose-400">*</span>
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              required
-              value={formData.transactionAmount}
-              onChange={(e) => setFormData({ ...formData, transactionAmount: e.target.value })}
-              placeholder="1000.00"
-              className="w-full funding-input rounded-xl px-4 py-3"
-            />
-          </div>
-        </div>
-
-        {/* Exchange Currency and Auto-Calculated Value Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Exchange Currency */}
-          <div>
-            <label className="text-blue-200 text-sm mb-2 block">
-              Exchange Currency <span className="text-rose-400">*</span>
-            </label>
-            <select
-              required
-              value={formData.exchangeCurrency}
-              onChange={(e) => setFormData({ ...formData, exchangeCurrency: e.target.value })}
-              className="w-full funding-input rounded-xl px-4 py-3"
-            >
-              <option value="">Select currency</option>
-              {currencies.map(curr => (
-                <option key={curr} value={curr}>{curr}</option>
-              ))}
-            </select>
+          {/* Currencies + Amount */}
+          <label className={`${labelCls} self-start pt-1`}>Currencies <span className="text-rose-400">*</span></label>
+          <div className="flex gap-3 flex-wrap">
+            <div>
+              <span className={smallLabelCls}>Transaction</span>
+              <select
+                value={formData.homeCurrency}
+                onChange={(e) => setFormData({ ...formData, homeCurrency: e.target.value })}
+                className={`${inputCls} w-28`}
+              >
+                <option value="">Select</option>
+                {currencies.map(curr => (
+                  <option key={curr} value={curr}>{curr}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <span className={smallLabelCls}>Exchange</span>
+              <select
+                value={formData.exchangeCurrency}
+                onChange={(e) => setFormData({ ...formData, exchangeCurrency: e.target.value })}
+                className={`${inputCls} w-28`}
+              >
+                <option value="">Select</option>
+                {currencies.map(curr => (
+                  <option key={curr} value={curr}>{curr}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <span className={smallLabelCls}>Amount <span className="text-rose-400">*</span></span>
+              <input
+                type="number"
+                step="0.01"
+                value={formData.transactionAmount}
+                onChange={(e) => setFormData({ ...formData, transactionAmount: e.target.value })}
+                placeholder="1000.00"
+                className={`${inputCls} w-32`}
+              />
+            </div>
           </div>
 
-          {/* Auto-Calculated Exchange Value */}
-          <div>
-            <label className="text-blue-200 text-sm mb-2 block">
-              Exchange Value (auto-calculated)
-            </label>
-            <input
-              type="text"
-              value={formData.transactionAmount && formData.exchangeRate ? calculateTrading() : ''}
-              readOnly
-              disabled
-              placeholder="0.0000"
-              className="w-full rounded-xl px-4 py-3 bg-white/5 border border-white/10 text-white cursor-not-allowed"
-            />
-          </div>
-        </div>
-
-        {/* Exchange Rate and Rate Type Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Exchange Rate */}
-          <div>
-            <label className="text-blue-200 text-sm mb-2 block">
-              Exchange Rate <span className="text-rose-400">*</span>
-            </label>
-            <input
-              type="number"
-              step="0.000001"
-              required
-              value={formData.exchangeRate}
-              onChange={(e) => setFormData({ ...formData, exchangeRate: e.target.value })}
-              placeholder="0.664000"
-              className="w-full funding-input rounded-xl px-4 py-3"
-              style={{
-                appearance: 'textfield',
-                MozAppearance: 'textfield',
-                WebkitAppearance: 'none',
-              }}
-              onWheel={(e) => e.currentTarget.blur()}
-            />
-            <style jsx>{`
-              input[type='number']::-webkit-outer-spin-button,
-              input[type='number']::-webkit-inner-spin-button {
-                -webkit-appearance: none;
-                margin: 0;
-              }
-            `}</style>
+          {/* Rate + Value + Rate Type */}
+          <label className={`${labelCls} self-start pt-1`}>Rate <span className="text-rose-400">*</span></label>
+          <div className="flex gap-3 flex-wrap items-end">
+            <div>
+              <span className={smallLabelCls}>Exchange rate <span className="text-rose-400">*</span></span>
+              <input
+                type="number"
+                step="0.000001"
+                value={formData.exchangeRate}
+                onChange={(e) => setFormData({ ...formData, exchangeRate: e.target.value })}
+                placeholder="0.664000"
+                className={`${inputCls} w-32`}
+                onWheel={(e) => e.currentTarget.blur()}
+              />
+            </div>
+            <div>
+              <span className={smallLabelCls}>Exchange value</span>
+              <input
+                type="text"
+                value={formData.transactionAmount && formData.exchangeRate ? calculateTrading() : ''}
+                readOnly
+                disabled
+                placeholder="0.0000"
+                className={`${inputCls} w-32 bg-white/5 cursor-not-allowed`}
+              />
+            </div>
+            <div>
+              <SegmentedPills
+                options={[
+                  { value: 1, label: 'Actual', icon: <CheckCircle className="w-4 h-4" />, activeColor: 'bg-pink-500' },
+                  { value: 0, label: 'Earmarked', icon: <Clock className="w-4 h-4" />, activeColor: 'bg-cyan-500' },
+                ]}
+                value={formData.rateType}
+                onChange={(value) => setFormData({ ...formData, rateType: value })}
+                showLabels={true}
+              />
+            </div>
           </div>
 
-          {/* Rate Type */}
-          <div>
-            <label className="text-blue-200 text-sm mb-2 block">
-              Rate Type <span className="text-rose-400">*</span>
-            </label>
-            <SegmentedPills
-              options={[
-                { value: 1, label: 'Actual', icon: <CheckCircle className="w-4 h-4" />, activeColor: "bg-pink-500" },
-                { value: 0, label: 'Earmarked', icon: <Clock className="w-4 h-4" />, activeColor: "bg-cyan-500" },
-              ]}
-              value={formData.rateType}
-              onChange={(value) => setFormData({ ...formData, rateType: value })}
-              showLabels={true}
-            />
-          </div>
-        </div>
-
-        {/* Date Fields - Three Column Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Transaction Date */}
-          <div>
-            <label className="text-blue-200 text-sm mb-2 block">
-              Transaction Date <span className="text-rose-400">*</span>
-            </label>
-            <input
-              type="date"
-              required
-              value={formData.txnDate}
-              onChange={(e) => setFormData({ ...formData, txnDate: e.target.value })}
-              className="w-full funding-input rounded-xl px-4 py-3"
-            />
-          </div>
-
-          {/* Period From */}
-          <div>
-            <label className="text-blue-200 text-sm mb-2 block">
-              Period From <span className="text-rose-400">*</span>
-            </label>
-            <input
-              type="date"
-              required
-              value={formData.periodFrom}
-              onChange={(e) => setFormData({ ...formData, periodFrom: e.target.value })}
-              className="w-full funding-input rounded-xl px-4 py-3"
-            />
+          {/* Dates */}
+          <label className={`${labelCls} self-start pt-1`}>Dates <span className="text-rose-400">*</span></label>
+          <div className="flex gap-3 flex-wrap">
+            <div>
+              <span className={smallLabelCls}>Transaction <span className="text-rose-400">*</span></span>
+              <input
+                type="date"
+                value={formData.txnDate}
+                onChange={(e) => setFormData({ ...formData, txnDate: e.target.value })}
+                className={`${inputCls} w-44`}
+              />
+            </div>
+            <div>
+              <span className={smallLabelCls}>Period from <span className="text-rose-400">*</span></span>
+              <input
+                type="date"
+                value={formData.periodFrom}
+                onChange={(e) => setFormData({ ...formData, periodFrom: e.target.value })}
+                className={`${inputCls} w-44`}
+              />
+            </div>
+            <div>
+              <span className={smallLabelCls}>Period to <span className="text-rose-400">*</span></span>
+              <input
+                type="date"
+                value={formData.periodTo}
+                onChange={(e) => setFormData({ ...formData, periodTo: e.target.value })}
+                className={`${inputCls} w-44`}
+              />
+            </div>
           </div>
 
-          {/* Period To */}
-          <div>
-            <label className="text-blue-200 text-sm mb-2 block">
-              Period To <span className="text-rose-400">*</span>
-            </label>
-            <input
-              type="date"
-              required
-              value={formData.periodTo}
-              onChange={(e) => setFormData({ ...formData, periodTo: e.target.value })}
-              className="w-full funding-input rounded-xl px-4 py-3"
-            />
-          </div>
+          {/* Notes */}
+          <label className={`${labelCls} self-start pt-1`}>Notes</label>
+          <BulletTextarea
+            value={formData.notes}
+            onChange={(value) => setFormData({ ...formData, notes: value })}
+            placeholder="Add any additional notes (each line becomes a bullet point)..."
+            rows={3}
+            label=""
+            rounded={false}
+            scrollable={true}
+          />
         </div>
       </div>
     );
