@@ -1,50 +1,30 @@
 'use client';
 
-import { useState } from 'react';
-import { Plus, List, BarChart2, Calendar, Download } from 'lucide-react';
-import { Transaction } from '../../lib/types/transaction';
+import { useState, useEffect } from 'react';
+import { Plus, List, BarChart2, Calendar, Download, ChevronDown, ChevronUp } from 'lucide-react';
+import { RecentTransactionsList } from './RecentTransactionsList';
+import { Transaction, Position } from '../../lib/types/transaction';
 import { TransactionEntryForm } from './TransactionEntryForm';
 import { ByClosedTradesView } from './ByClosedTradesView';
 import { ByOpenTradesView } from './ByOpenTradesView';
 import { ByDateView } from './ByDateView';
 import { ImportTradesTab } from './ImportTradesTab';
-import UnderlineTabs from '@/app/lib/ui/UnderlineTabs';
 import { getPositions } from '../../services/positionServiceClient';
-import { Position } from '../../lib/types/transaction';
-import { useEffect } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
-import { RecentTransactionsList } from './RecentTransactionsList';
+import UnderlineTabs from '@/app/lib/ui/UnderlineTabs';
 
 export function TradesClientWrapper() {
   const [activeTab, setActiveTab] = useState<'entry' | 'ticker' | 'status' | 'date' | 'import'>('entry');
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const handleSuccess = () => {
-    setEditingTransaction(null);
-    setRefreshKey(prev => prev + 1);
-  };
-
-  const handleEdit = (transaction: Transaction) => {
-    setEditingTransaction(transaction);
-    setActiveTab('entry');
-  };
-
-
-  const handleDelete = () => {
-    setRefreshKey(prev => prev + 1);
-  };
-
-  const handleCancelEdit = () => {
-    setEditingTransaction(null);
-  };
-
   const [positions, setPositions] = useState<Position[]>([]);
   const [selectedPosition, setSelectedPosition] = useState<Position | null>(null);
   const [expandedPositions, setExpandedPositions] = useState<Set<number>>(new Set());
 
   useEffect(() => {
-    getPositions(true).then(setPositions).catch(err => console.error('Failed to fetch positions:', err));
+    getPositions(true)
+      .then(setPositions)
+      .catch(err => console.error('Failed to fetch positions:', err));
   }, [refreshKey]);
 
   const togglePositionExpansion = (positionId: number) => {
@@ -53,6 +33,15 @@ export function TradesClientWrapper() {
       next.has(positionId) ? next.delete(positionId) : next.add(positionId);
       return next;
     });
+  };
+
+  const handleSuccess = () => {
+    setEditingTransaction(null);
+    setRefreshKey(prev => prev + 1);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTransaction(null);
   };
 
   return (
@@ -81,9 +70,9 @@ export function TradesClientWrapper() {
       <div className="max-w-7xl mx-auto">
         {activeTab === 'entry' && (
           <div className="flex flex-col lg:flex-row gap-6">
-            {/* Left Panel - Positions List (30%) */}
+            {/* LEFT PANEL - Positions List (30%) */}
             <div className="lg:w-[30%]">
-              <div className="backdrop-blur-xl bg-white/10 rounded-xl p-6 border border-white/20">
+              <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-6 border border-white/20">
                 <h2 className="text-xl font-bold text-white mb-4">Your Positions</h2>
                 {positions.length === 0 ? (
                   <p className="text-blue-200 text-sm text-center py-8">No active positions found</p>
@@ -97,14 +86,16 @@ export function TradesClientWrapper() {
                       })
                       .map((position) => {
                         const isExpanded = expandedPositions.has(position.position_id);
+                        const isSelected = selectedPosition?.position_id === position.position_id;
                         return (
                           <div
                             key={position.position_id}
                             onClick={() => setSelectedPosition(position)}
-                            className={`w-full text-left p-4 rounded-xl transition-all cursor-pointer ${selectedPosition?.position_id === position.position_id
+                            className={`w-full text-left p-4 rounded-xl transition-all cursor-pointer ${
+                              isSelected
                                 ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 border-2 border-blue-400'
                                 : 'bg-white/5 border border-white/10 hover:bg-white/10'
-                              }`}
+                            }`}
                           >
                             <div className="flex items-center justify-between gap-2 mb-2">
                               <div className="flex items-center gap-2 min-w-0">
@@ -122,6 +113,7 @@ export function TradesClientWrapper() {
                               </div>
                               <span className="text-blue-200 text-xs flex-shrink-0">{position.position_currency}</span>
                             </div>
+
                             <div className="grid grid-cols-2 gap-2 text-xs">
                               <div>
                                 <p className="text-blue-300">Shares</p>
@@ -132,6 +124,7 @@ export function TradesClientWrapper() {
                                 <p className="text-white font-semibold">${position.current_value?.toFixed(2) || 'N/A'}</p>
                               </div>
                             </div>
+
                             {isExpanded && (
                               <>
                                 {position.ticker_name && (
@@ -157,49 +150,30 @@ export function TradesClientWrapper() {
               </div>
             </div>
 
-            {/* Middle Panel - Entry Form (50%) */}
-            <div className="lg:w-[50%] backdrop-blur-xl bg-white/10 rounded-xl p-6 sm:p-8 border border-white/20">
-              <TransactionEntryForm
-                onSuccess={handleSuccess}
-                editingTransaction={editingTransaction}
-                onCancelEdit={handleCancelEdit}
-                selectedPosition={selectedPosition}
-                onClearSelection={() => setSelectedPosition(null)}
-              />
-            </div>
+            {/* GRADIENT DIVIDER */}
+            <div className="hidden lg:block w-px bg-gradient-to-b from-transparent via-white/20 to-transparent mx-3" />
 
-            {/* Right Panel - Recent Transactions (20%) */}
-            <div className="lg:w-[20%]">
-              <RecentTransactionsList
-                refreshKey={refreshKey}
-                onTransactionClick={() => { }}
-                editingTransactionId={null}
-              />
+            {/* RIGHT PANEL - Form stacked over Recent Transactions (70%) */}
+            <div className="lg:w-[70%] space-y-6">
+              <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-6 sm:p-8 border border-white/20">
+                <TransactionEntryForm
+                  onSuccess={handleSuccess}
+                  editingTransaction={editingTransaction}
+                  onCancelEdit={handleCancelEdit}
+                  selectedPosition={selectedPosition}
+                  onClearSelection={() => setSelectedPosition(null)}
+                />
+              </div>
+
+              <RecentTransactionsList refreshKey={refreshKey} />
             </div>
           </div>
         )}
 
-        {activeTab === 'ticker' && (
-          <ByClosedTradesView
-            key={refreshKey}
-          />
-        )}
-
-        {activeTab === 'status' && (
-          <ByOpenTradesView
-            key={refreshKey}
-          />
-        )}
-
-        {activeTab === 'date' && (
-          <ByDateView
-            key={refreshKey}
-          />
-        )}
-
-        {activeTab === 'import' && (
-          <ImportTradesTab />
-        )}
+        {activeTab === 'ticker' && <ByClosedTradesView key={refreshKey} />}
+        {activeTab === 'status' && <ByOpenTradesView key={refreshKey} />}
+        {activeTab === 'date' && <ByDateView key={refreshKey} />}
+        {activeTab === 'import' && <ImportTradesTab />}
       </div>
     </div>
   );

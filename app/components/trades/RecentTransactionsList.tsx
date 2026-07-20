@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Clock, TrendingUp, TrendingDown } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import { Transaction } from '../../lib/types/transaction';
 import { getTransactions } from '../../services/transactionServiceClient';
 
@@ -9,13 +9,7 @@ interface RecentTransactionsListProps {
   refreshKey?: number;
 }
 
-interface RecentTransactionsListProps {
-  refreshKey?: number;
-  onTransactionClick?: (transaction: Transaction) => void;
-  editingTransactionId?: number | null;
-}
-
-export function RecentTransactionsList({ refreshKey = 0, onTransactionClick, editingTransactionId }: RecentTransactionsListProps) {
+export function RecentTransactionsList({ refreshKey = 0 }: RecentTransactionsListProps) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -24,7 +18,6 @@ export function RecentTransactionsList({ refreshKey = 0, onTransactionClick, edi
       setLoading(true);
       try {
         const data = await getTransactions();
-        // Get only the 5 most recent
         setTransactions(data.slice(0, 5));
       } catch (err) {
         console.error('Failed to fetch recent transactions:', err);
@@ -38,9 +31,9 @@ export function RecentTransactionsList({ refreshKey = 0, onTransactionClick, edi
 
   if (loading) {
     return (
-      <div className="backdrop-blur-xl bg-white/10 rounded-lg p-6 sm:p-8 border border-white/20">
-        <h2 className="text-xl sm:text-2xl font-bold text-white mb-6 flex items-center gap-3">
-          <Clock className="w-6 h-6" />
+      <div className="backdrop-blur-xl bg-white/10 rounded-lg p-6 border border-white/20">
+        <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+          <Clock className="w-5 h-5" />
           Recent Transactions
         </h2>
         <p className="text-blue-200 text-center py-8">Loading...</p>
@@ -49,71 +42,61 @@ export function RecentTransactionsList({ refreshKey = 0, onTransactionClick, edi
   }
 
   return (
-    <div className="backdrop-blur-xl bg-white/10 rounded-lg p-6 sm:p-8 border border-white/20">
-      <div className="mb-4">
-        <h2 className="text-xl sm:text-2xl font-bold text-white mb-6 flex items-center gap-3">
-          <Clock className="w-6 h-6" />
-          Recent Transactions
-        </h2>
-        <p className="text-xs text-blue-300 mt-3">Showing {transactions.length} most recent transaction{transactions.length !== 1 ? 's' : ''}</p>
-      </div>
+    <div className="backdrop-blur-xl bg-white/10 rounded-lg p-6 border border-white/20">
+      <h2 className="text-lg font-bold text-white flex items-center gap-2">
+        <Clock className="w-5 h-5" />
+        Recent Transactions
+      </h2>
+      <p className="text-xs text-blue-300 mt-1 mb-3">
+        Showing {transactions.length} most recent transaction{transactions.length !== 1 ? 's' : ''}
+      </p>
 
       {transactions.length === 0 ? (
-        <div className="text-center py-12">
+        <div className="text-center py-8">
           <p className="text-blue-200 text-sm">No transactions yet</p>
-          <p className="text-blue-300 text-xs mt-2">Your recent transactions will appear here</p>
+          <p className="text-blue-300 text-xs mt-1">Your recent transactions will appear here</p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {transactions.map((transaction) => (
-            <div
-              key={transaction.transaction_id}
-              onClick={() => onTransactionClick?.(transaction)}
-              className={`
-                rounded-lg p-4 border transition-all cursor-pointer
-                ${editingTransactionId === transaction.transaction_id
-                  ? 'bg-blue-500/20 border-blue-400/50 ring-2 ring-blue-400/30'
-                  : 'bg-gradient-to-r from-white/5 to-white/10 border-white/10 hover:border-white/20'
-                }
-              `}
-            >
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-white font-bold text-lg">{transaction.ticker}</span>
-                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                    transaction.transaction_type_id === 1 
-                      ? 'bg-green-500/20 text-green-300' 
-                      : 'bg-rose-500/20 text-rose-300'
-                  }`}>
-                    {transaction.transaction_type_id === 1 ? 'BUY' : 'SELL'}
+        <div>
+          {transactions.map((transaction, idx) => {
+            const isBuy = transaction.transaction_type_id === 1;
+            const amount = (transaction.trade_value || transaction.quantity * transaction.price);
+            return (
+              <div
+                key={transaction.transaction_id}
+                className={`flex items-center justify-between py-2.5 border-t border-white/10 ${
+                  idx === transactions.length - 1 ? 'border-b' : ''
+                }`}
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-white font-semibold text-sm">{transaction.ticker}</span>
+                  <span
+                    className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+                      isBuy ? 'bg-green-500/20 text-green-300' : 'bg-rose-500/20 text-rose-300'
+                    }`}
+                  >
+                    {isBuy ? 'BUY' : 'SELL'}
                   </span>
                 </div>
-                <div className="text-right">
-                  <div className={`font-bold ${
-                    transaction.transaction_type_id === 1 ? 'text-green-400' : 'text-rose-400'
-                  }`}>
-                    {transaction.transaction_type_id === 1 ? '+' : '-'}${(transaction.trade_value || (transaction.quantity * transaction.price)).toFixed(2)}
-                  </div>
-                  <div className="text-blue-300 text-xs">
-                    {transaction.transaction_currency}
-                  </div>
-                </div>
-              </div>
 
-              <div className="flex items-center justify-between text-sm">
-                <div className="text-blue-200">
-                  {transaction.quantity} shares @ ${transaction.price.toFixed(2)}
-                </div>
-                <div className="text-blue-300 text-xs">
-                  {new Date(transaction.transaction_date).toLocaleDateString('en-US', { 
-                    year: 'numeric',
-                    month: 'short', 
-                    day: 'numeric' 
-                  })}
+                <div className="text-right min-w-0">
+                  <div className={`font-semibold text-sm ${isBuy ? 'text-green-400' : 'text-rose-400'}`}>
+                    {isBuy ? '+' : '\u2212'}${amount.toFixed(2)}
+                    <span className="text-blue-300 text-[10px] font-normal ml-1">
+                      {transaction.transaction_currency}
+                    </span>
+                  </div>
+                  <div className="text-blue-300 text-[11px]">
+                    {transaction.quantity} @ ${transaction.price.toFixed(2)} ·{' '}
+                    {new Date(transaction.transaction_date).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                    })}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
