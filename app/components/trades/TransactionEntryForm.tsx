@@ -318,9 +318,8 @@ export function TransactionEntryForm({
             value={formData.ticker}
             onChange={(e) => setFormData({ ...formData, ticker: e.target.value.toUpperCase() })}
             placeholder="AAPL"
-            className={`${inputCls} w-24 uppercase ${tickerError ? 'border-2 border-rose-400' : ''} ${
-              editingTransaction || mode === 'staging' || isPositionLocked ? 'bg-white/5 cursor-not-allowed' : ''
-            }`}
+            className={`${inputCls} w-24 uppercase ${tickerError ? 'border-2 border-rose-400' : ''} ${editingTransaction || mode === 'staging' || isPositionLocked ? 'bg-white/5 cursor-not-allowed' : ''
+              }`}
             disabled={!!editingTransaction || mode === 'staging' || isPositionLocked}
           />
           <input
@@ -420,6 +419,7 @@ export function TransactionEntryForm({
         {/* Date (col 2, row 2) */}
         <div style={{ gridColumn: 2, gridRow: 2 }}>
           <span className={groupTagCls}>Date <span className="text-rose-400">*</span></span>
+          <span className={smallLabelCls}>&nbsp;</span>
           <input
             type="date"
             value={formData.transaction_date}
@@ -476,9 +476,8 @@ export function TransactionEntryForm({
                 onChange={(e) => setFormData({ ...formData, transaction_currency: e.target.value.toUpperCase() })}
                 placeholder="USD"
                 maxLength={3}
-                className={`${inputCls} w-16 uppercase ${
-                  editingTransaction || mode === 'staging' || isPositionLocked ? 'bg-white/5 cursor-not-allowed' : ''
-                }`}
+                className={`${inputCls} w-16 uppercase ${editingTransaction || mode === 'staging' || isPositionLocked ? 'bg-white/5 cursor-not-allowed' : ''
+                  }`}
                 disabled={!!editingTransaction || mode === 'staging' || isPositionLocked}
               />
             </div>
