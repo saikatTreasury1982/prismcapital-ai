@@ -72,7 +72,7 @@ export function TradesClientWrapper() {
           <div className="flex flex-col lg:flex-row gap-6">
             {/* LEFT PANEL - Positions List (30%) */}
             <div className="lg:w-[30%]">
-              <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-6 border border-white/20">
+              <div className="backdrop-blur-xl bg-white/10 rounded-xl p-6 border border-white/20">
                 <h2 className="text-xl font-bold text-white mb-4">Your Positions</h2>
                 {positions.length === 0 ? (
                   <p className="text-blue-200 text-sm text-center py-8">No active positions found</p>
@@ -155,7 +155,7 @@ export function TradesClientWrapper() {
 
             {/* RIGHT PANEL - Form stacked over Recent Transactions (70%) */}
             <div className="lg:w-[70%] space-y-6">
-              <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-6 sm:p-8 border border-white/20">
+              <div className="backdrop-blur-xl bg-white/10 rounded-xl p-6 sm:p-8 border border-white/20">
                 <TransactionEntryForm
                   onSuccess={handleSuccess}
                   editingTransaction={editingTransaction}

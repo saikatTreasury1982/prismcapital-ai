@@ -624,7 +624,7 @@ export function ByClosedTradesView() {
                 disabled={isSaving}
                 tooltip={isSaving ? 'Saving...' : 'Save Changes'}
                 variant="primary"
-                size="md"
+                size="sm"
               />
               <GlassButton
                 icon={X}
@@ -632,7 +632,7 @@ export function ByClosedTradesView() {
                 disabled={isSaving}
                 tooltip="Close"
                 variant="secondary"
-                size="md"
+                size="sm"
               />
             </div>
           </div>

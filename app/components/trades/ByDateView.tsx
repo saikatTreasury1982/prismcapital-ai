@@ -427,8 +427,8 @@ export function ByDateView() {
                 <label className="text-blue-200 text-sm mb-2 block font-medium">Filter By</label>
                 <SegmentedControl
                   options={[
-                    { value: 1, label: 'Entry Date', icon: <TrendingUp className="w-4 h-4" /> },
-                    { value: 2, label: 'Exit Date', icon: <TrendingDown className="w-4 h-4" /> },
+                    { value: 1, label: 'Entry Date', icon: <TrendingUp className="w-4 h-2" /> },
+                    { value: 2, label: 'Exit Date', icon: <TrendingDown className="w-4 h-2" /> },
                   ]}
                   value={filters.dateType === 'entry' ? 1 : 2}
                   onChange={(value) => setFilters({ ...filters, dateType: value === 1 ? 'entry' : 'exit', dateFrom: '', dateTo: '' })}

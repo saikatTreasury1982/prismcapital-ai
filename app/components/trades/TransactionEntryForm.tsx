@@ -284,14 +284,14 @@ export function TransactionEntryForm({
             disabled={isSubmitting || !formData.ticker || !formData.quantity || !formData.price}
             tooltip={editingTransaction ? 'Update Transaction' : 'Save Transaction'}
             variant="primary"
-            size="md"
+            size="sm"
           />
           <GlassButton
             icon={RefreshCw}
             onClick={handleRefresh}
             tooltip="Reset Form"
             variant="secondary"
-            size="md"
+            size="sm"
           />
         </div>
       </div>

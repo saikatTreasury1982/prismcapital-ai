@@ -157,7 +157,7 @@ export function MoomooSyncControls({ onSyncComplete }: MoomooSyncControlsProps) 
                 disabled={syncing}
                 tooltip={syncing ? 'Syncing trades from Moomoo...' : 'Sync Trades from Moomoo'}
                 variant="primary"
-                size="md"
+                size="sm"
               />
               {syncing && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">

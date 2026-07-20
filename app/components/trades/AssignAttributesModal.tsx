@@ -172,7 +172,7 @@ export function AssignAttributesModal({ position, onClose, onSuccess }: AssignAt
                 onClick={handleEdit}
                 tooltip="Edit"
                 variant="secondary"
-                size="md"
+                size="sm"
               />
             )}
             {isEditMode && (
@@ -182,7 +182,7 @@ export function AssignAttributesModal({ position, onClose, onSuccess }: AssignAt
                 disabled={isSaving || formData.class_id === '' || formData.exchange_id === ''}
                 tooltip={isSaving ? 'Saving...' : 'Save Attributes'}
                 variant="primary"
-                size="md"
+                size="sm"
               />
             )}
             <GlassButton
@@ -190,7 +190,7 @@ export function AssignAttributesModal({ position, onClose, onSuccess }: AssignAt
               onClick={isEditMode ? handleCancelEdit : onClose}
               tooltip={isEditMode ? "Cancel" : "Close"}
               variant="secondary"
-              size="md"
+              size="sm"
             />
           </div>
         </div>
