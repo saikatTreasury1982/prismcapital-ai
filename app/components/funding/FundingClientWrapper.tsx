@@ -73,14 +73,14 @@ export function FundingClientWrapper({
                   disabled={isSubmitting || !canSubmit}
                   tooltip="Save Transaction"
                   variant="primary"
-                  size="md"
+                  size="sm"
                 />
                 <GlassButton
                   icon={RefreshCw}
                   onClick={() => formRef.current?.handleCancel()}
                   tooltip="Reset Form"
                   variant="secondary"
-                  size="md"
+                  size="sm"
                 />
               </div>
             </div>

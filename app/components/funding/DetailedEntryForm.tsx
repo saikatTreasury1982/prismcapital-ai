@@ -48,7 +48,6 @@ export const DetailedEntryForm = forwardRef<DetailedEntryFormRef, DetailedEntryF
           const response = await fetch('/api/currencies');
           const result = await response.json();
           setCurrencies(result.data || []);
-
           if (result.data && result.data.length > 0 && !formData.homeCurrency) {
             setFormData(prev => ({ ...prev, homeCurrency: result.data[0] }));
           }
@@ -56,7 +55,6 @@ export const DetailedEntryForm = forwardRef<DetailedEntryFormRef, DetailedEntryF
           console.error('Failed to fetch currencies:', error);
         }
       };
-
       fetchCurrencies();
     }, []);
 
@@ -177,9 +175,9 @@ export const DetailedEntryForm = forwardRef<DetailedEntryFormRef, DetailedEntryF
       isSubmitting,
     }));
 
-    const labelCls = 'text-blue-200 text-sm font-medium';
+    const groupLabel = 'text-blue-200 text-sm font-semibold mb-2 block';
+    const smallLabel = 'text-blue-300 text-[11px] mb-1 block';
     const inputCls = 'funding-input rounded-lg px-3 py-2 text-sm';
-    const smallLabelCls = 'text-blue-300 text-[11px] mb-1 block';
 
     return (
       <div>
@@ -189,136 +187,150 @@ export const DetailedEntryForm = forwardRef<DetailedEntryFormRef, DetailedEntryF
           </div>
         )}
 
-        <div className="grid grid-cols-[130px_1fr] gap-x-4 gap-y-4 items-center">
-          {/* Transaction Type */}
-          <label className={labelCls}>Type <span className="text-rose-400">*</span></label>
-          <div className="w-fit">
-            <SegmentedPills
-              options={[
-                { value: 1, label: 'Deposit', icon: <TrendingUp className="w-4 h-4" />, activeColor: 'bg-emerald-500' },
-                { value: 2, label: 'Withdrawal', icon: <TrendingDown className="w-4 h-4" />, activeColor: 'bg-rose-500' },
-              ]}
-              value={formData.direction}
-              onChange={(value) => setFormData({ ...formData, direction: value })}
-              showLabels={true}
-            />
-          </div>
-
-          {/* Currencies + Amount */}
-          <label className={`${labelCls} self-start pt-1`}>Currencies <span className="text-rose-400">*</span></label>
-          <div className="flex gap-3 flex-wrap">
-            <div>
-              <span className={smallLabelCls}>Transaction</span>
-              <select
-                value={formData.homeCurrency}
-                onChange={(e) => setFormData({ ...formData, homeCurrency: e.target.value })}
-                className={`${inputCls} w-28`}
-              >
-                <option value="">Select</option>
-                {currencies.map(curr => (
-                  <option key={curr} value={curr}>{curr}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <span className={smallLabelCls}>Exchange</span>
-              <select
-                value={formData.exchangeCurrency}
-                onChange={(e) => setFormData({ ...formData, exchangeCurrency: e.target.value })}
-                className={`${inputCls} w-28`}
-              >
-                <option value="">Select</option>
-                {currencies.map(curr => (
-                  <option key={curr} value={curr}>{curr}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <span className={smallLabelCls}>Amount <span className="text-rose-400">*</span></span>
-              <input
-                type="number"
-                step="0.01"
-                value={formData.transactionAmount}
-                onChange={(e) => setFormData({ ...formData, transactionAmount: e.target.value })}
-                placeholder="1000.00"
-                className={`${inputCls} w-32`}
-              />
-            </div>
-          </div>
-
-          {/* Rate + Value + Rate Type */}
-          <label className={`${labelCls} self-start pt-1`}>Rate <span className="text-rose-400">*</span></label>
-          <div className="flex gap-3 flex-wrap items-end">
-            <div>
-              <span className={smallLabelCls}>Exchange rate <span className="text-rose-400">*</span></span>
-              <input
-                type="number"
-                step="0.000001"
-                value={formData.exchangeRate}
-                onChange={(e) => setFormData({ ...formData, exchangeRate: e.target.value })}
-                placeholder="0.664000"
-                className={`${inputCls} w-32`}
-                onWheel={(e) => e.currentTarget.blur()}
-              />
-            </div>
-            <div>
-              <span className={smallLabelCls}>Exchange value</span>
-              <input
-                type="text"
-                value={formData.transactionAmount && formData.exchangeRate ? calculateTrading() : ''}
-                readOnly
-                disabled
-                placeholder="0.0000"
-                className={`${inputCls} w-32 bg-white/5 cursor-not-allowed`}
-              />
-            </div>
-            <div>
+        {/* ROW 1: Type | Dates */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1px_1fr] gap-6 mb-6">
+          <div>
+            <span className={groupLabel}>Transaction Type <span className="text-rose-400">*</span></span>
+            <div className="w-fit">
               <SegmentedPills
                 options={[
-                  { value: 1, label: 'Actual', icon: <CheckCircle className="w-4 h-4" />, activeColor: 'bg-pink-500' },
-                  { value: 0, label: 'Earmarked', icon: <Clock className="w-4 h-4" />, activeColor: 'bg-cyan-500' },
+                  { value: 1, label: 'Deposit', icon: <TrendingUp className="w-4 h-4" />, activeColor: 'bg-emerald-500' },
+                  { value: 2, label: 'Withdrawal', icon: <TrendingDown className="w-4 h-4" />, activeColor: 'bg-rose-500' },
                 ]}
-                value={formData.rateType}
-                onChange={(value) => setFormData({ ...formData, rateType: value })}
+                value={formData.direction}
+                onChange={(value) => setFormData({ ...formData, direction: value })}
                 showLabels={true}
               />
             </div>
           </div>
 
-          {/* Dates */}
-          <label className={`${labelCls} self-start pt-1`}>Dates <span className="text-rose-400">*</span></label>
-          <div className="flex gap-3 flex-wrap">
-            <div>
-              <span className={smallLabelCls}>Transaction <span className="text-rose-400">*</span></span>
-              <input
-                type="date"
-                value={formData.txnDate}
-                onChange={(e) => setFormData({ ...formData, txnDate: e.target.value })}
-                className={`${inputCls} w-44`}
-              />
+          <div className="hidden lg:block bg-gradient-to-b from-transparent via-white/20 to-transparent" />
+
+          <div>
+            <span className={groupLabel}>Dates <span className="text-rose-400">*</span></span>
+            <div className="flex gap-3 flex-wrap">
+              <div>
+                <span className={smallLabel}>Transaction</span>
+                <input
+                  type="date"
+                  value={formData.txnDate}
+                  onChange={(e) => setFormData({ ...formData, txnDate: e.target.value })}
+                  className={`${inputCls} w-40`}
+                />
+              </div>
+              <div>
+                <span className={smallLabel}>Period from</span>
+                <input
+                  type="date"
+                  value={formData.periodFrom}
+                  onChange={(e) => setFormData({ ...formData, periodFrom: e.target.value })}
+                  className={`${inputCls} w-40`}
+                />
+              </div>
+              <div>
+                <span className={smallLabel}>Period to</span>
+                <input
+                  type="date"
+                  value={formData.periodTo}
+                  onChange={(e) => setFormData({ ...formData, periodTo: e.target.value })}
+                  className={`${inputCls} w-40`}
+                />
+              </div>
             </div>
-            <div>
-              <span className={smallLabelCls}>Period from <span className="text-rose-400">*</span></span>
-              <input
-                type="date"
-                value={formData.periodFrom}
-                onChange={(e) => setFormData({ ...formData, periodFrom: e.target.value })}
-                className={`${inputCls} w-44`}
-              />
-            </div>
-            <div>
-              <span className={smallLabelCls}>Period to <span className="text-rose-400">*</span></span>
-              <input
-                type="date"
-                value={formData.periodTo}
-                onChange={(e) => setFormData({ ...formData, periodTo: e.target.value })}
-                className={`${inputCls} w-44`}
-              />
+          </div>
+        </div>
+
+        {/* ROW 2: Currencies & Amount | Rate */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1px_1fr] gap-6 mb-6">
+          <div>
+            <span className={groupLabel}>Currencies &amp; Amount <span className="text-rose-400">*</span></span>
+            <div className="flex gap-3 flex-wrap">
+              <div>
+                <span className={smallLabel}>Transaction</span>
+                <select
+                  value={formData.homeCurrency}
+                  onChange={(e) => setFormData({ ...formData, homeCurrency: e.target.value })}
+                  className={`${inputCls} w-24`}
+                >
+                  <option value="">Select</option>
+                  {currencies.map(curr => (
+                    <option key={curr} value={curr}>{curr}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <span className={smallLabel}>Exchange</span>
+                <select
+                  value={formData.exchangeCurrency}
+                  onChange={(e) => setFormData({ ...formData, exchangeCurrency: e.target.value })}
+                  className={`${inputCls} w-24`}
+                >
+                  <option value="">Select</option>
+                  {currencies.map(curr => (
+                    <option key={curr} value={curr}>{curr}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <span className={smallLabel}>Amount <span className="text-rose-400">*</span></span>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.transactionAmount}
+                  onChange={(e) => setFormData({ ...formData, transactionAmount: e.target.value })}
+                  placeholder="1000.00"
+                  className={`${inputCls} w-32`}
+                />
+              </div>
             </div>
           </div>
 
-          {/* Notes */}
-          <label className={`${labelCls} self-start pt-1`}>Notes</label>
+          <div className="hidden lg:block bg-gradient-to-b from-transparent via-white/20 to-transparent" />
+
+          <div>
+            <span className={groupLabel}>Rate <span className="text-rose-400">*</span></span>
+            <div className="flex gap-3 flex-wrap items-end">
+              <div>
+                <span className={smallLabel}>Exchange rate <span className="text-rose-400">*</span></span>
+                <input
+                  type="number"
+                  step="0.000001"
+                  value={formData.exchangeRate}
+                  onChange={(e) => setFormData({ ...formData, exchangeRate: e.target.value })}
+                  placeholder="0.664000"
+                  className={`${inputCls} w-28`}
+                  onWheel={(e) => e.currentTarget.blur()}
+                />
+              </div>
+              <div>
+                <span className={smallLabel}>Exchange value</span>
+                <input
+                  type="text"
+                  value={formData.transactionAmount && formData.exchangeRate ? calculateTrading() : ''}
+                  readOnly
+                  disabled
+                  placeholder="0.0000"
+                  className={`${inputCls} w-28 bg-white/5 cursor-not-allowed`}
+                />
+              </div>
+              <div>
+                <SegmentedPills
+                  options={[
+                    { value: 1, label: 'Actual', icon: <CheckCircle className="w-4 h-4" />, activeColor: 'bg-pink-500' },
+                    { value: 0, label: 'Earmarked', icon: <Clock className="w-4 h-4" />, activeColor: 'bg-cyan-500' },
+                  ]}
+                  value={formData.rateType}
+                  onChange={(value) => setFormData({ ...formData, rateType: value })}
+                  showLabels={true}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ROW 3: Notes full width */}
+        <div>
+          <span className={groupLabel}>Notes</span>
           <BulletTextarea
             value={formData.notes}
             onChange={(value) => setFormData({ ...formData, notes: value })}
