@@ -160,7 +160,7 @@ export function NewsDetailModal({ news, onClose, onEdit, onDelete, newsTypes = [
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto backdrop-blur-xl bg-white/10 rounded-3xl border border-white/20 scrollbar-hide">
+      <div className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto backdrop-blur-xl bg-white/10 rounded-xl border border-white/20 scrollbar-hide">
         {/* Header */}
         <div className="sticky top-0 backdrop-blur-xl bg-white/10 border-b border-white/20 p-6 flex items-start justify-between rounded-t-3xl">
           <div className="flex-1">

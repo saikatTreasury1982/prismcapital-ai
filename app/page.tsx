@@ -289,7 +289,7 @@ export default function LoginPage() {
 
           {/* RIGHT SIDE - Login Card */}
           <div className="flex justify-center lg:justify-end">  
-            <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-6 sm:p-8 md:p-12 border border-white/20 max-w-md w-full shadow-2xl">
+            <div className="backdrop-blur-xl bg-white/10 rounded-xl p-6 sm:p-8 md:p-12 border border-white/20 max-w-md w-full shadow-2xl">
               <h1 className="text-3xl font-bold text-white mb-2 text-center">Welcome</h1>
               <p className="text-blue-200 text-center mb-8">Sign in to your account</p>
 
@@ -424,7 +424,7 @@ export default function LoginPage() {
       {/* Loading Overlay */}
       {loading && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
-          <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20 max-w-md w-full mx-4">
+          <div className="backdrop-blur-xl bg-white/10 rounded-xl p-8 border border-white/20 max-w-md w-full mx-4">
             <div className="flex flex-col items-center space-y-4">
               <div className="w-16 h-16 border-4 border-blue-400/30 border-t-blue-400 rounded-full animate-spin"></div>
               <div className="text-center">

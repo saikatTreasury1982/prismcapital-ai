@@ -40,7 +40,7 @@ export function UpcomingView() {
 
   if (loading) {
     return (
-      <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20">
+      <div className="backdrop-blur-xl bg-white/10 rounded-xl p-8 border border-white/20">
         <p className="text-blue-200 text-center">Loading upcoming dividends...</p>
       </div>
     );
@@ -48,7 +48,7 @@ export function UpcomingView() {
 
   if (upcomingDividends.length === 0) {
     return (
-      <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20">
+      <div className="backdrop-blur-xl bg-white/10 rounded-xl p-8 border border-white/20">
         <p className="text-blue-200 text-center">No upcoming dividends found.</p>
       </div>
     );
@@ -60,7 +60,7 @@ export function UpcomingView() {
   return (
     <div className="space-y-6">
       {/* Summary Card */}
-      <div className="backdrop-blur-xl bg-gradient-to-br from-emerald-500/10 to-green-500/10 rounded-3xl p-6 border border-emerald-400/20">
+      <div className="backdrop-blur-xl bg-gradient-to-br from-emerald-500/10 to-green-500/10 rounded-xl p-6 border border-emerald-400/20">
         <p className="text-emerald-300 text-sm mb-1">Total Expected</p>
         <p className="text-white text-4xl font-bold">${totalExpected.toFixed(2)}</p>
         <p className="text-emerald-200 text-sm mt-2">{upcomingDividends.length} upcoming payments</p>

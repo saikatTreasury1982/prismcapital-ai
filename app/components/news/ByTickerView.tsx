@@ -112,7 +112,7 @@ export function ByTickerView({ newsTypes, onEdit, onDelete }: ByTickerViewProps)
 
   if (loading) {
     return (
-      <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20">
+      <div className="backdrop-blur-xl bg-white/10 rounded-xl p-8 border border-white/20">
         <p className="text-blue-200 text-center">Loading...</p>
       </div>
     );
@@ -120,7 +120,7 @@ export function ByTickerView({ newsTypes, onEdit, onDelete }: ByTickerViewProps)
 
   if (summaries.length === 0) {
     return (
-      <div className="backdrop-blur-xl bg-white/10 rounded-3xl p-8 border border-white/20">
+      <div className="backdrop-blur-xl bg-white/10 rounded-xl p-8 border border-white/20">
         <p className="text-blue-200 text-center">No news found. Start by adding some news entries!</p>
       </div>
     );
