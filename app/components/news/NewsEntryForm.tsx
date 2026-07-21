@@ -232,7 +232,7 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
   const groupTagCls = 'text-blue-300 text-[11px] mb-1 block font-medium';
 
   return (
-    <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-6 sm:p-8 border border-white/20">
+    <div className="backdrop-blur-xl bg-white/10 rounded-xl p-6 sm:p-8 border border-white/20">
       <div className="flex items-start justify-between mb-5">
         <div>
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
