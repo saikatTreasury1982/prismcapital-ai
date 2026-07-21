@@ -7,6 +7,7 @@ import { useSession } from 'next-auth/react';
 import GlassButton from '@/app/lib/ui/GlassButton';
 import { Save, RefreshCw, Plus } from 'lucide-react';
 import { BulletTextarea } from '@/app/lib/ui/BulletTextarea';
+import { useDebounce } from '../../lib/hooks/useDebounce';
 
 interface DividendEntryFormProps {
   positions: PositionForDividend[];
@@ -45,6 +46,9 @@ export function DividendEntryForm({
   const [error, setError] = useState<string | null>(null);
   const [isAutoFilling, setIsAutoFilling] = useState(false);
   const [loadingTicker, setLoadingTicker] = useState<string | null>(null);
+  const [isLoadingTicker, setIsLoadingTicker] = useState(false);
+  const [tickerError, setTickerError] = useState<string | null>(null);
+  const debouncedTicker = useDebounce(formData.ticker, 500);
 
   // Report auto-fill state up to the wrapper (so it can dim tiles)
   useEffect(() => {
@@ -162,6 +166,54 @@ export function DividendEntryForm({
     runAutoFill();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPosition]);
+
+  // Look up ticker name + open-position status whenever the ticker changes
+  useEffect(() => {
+    const fetchTickerData = async () => {
+      if (!debouncedTicker) {
+        setTickerError(null);
+        return;
+      }
+
+      setIsLoadingTicker(true);
+      setTickerError(null);
+
+      try {
+        const posRes = await fetch(`/api/hasOpenPosition?ticker=${encodeURIComponent(debouncedTicker)}&userId=${session?.user?.id}`);
+        const posData = await posRes.json();
+
+        // If it's an open position, fill name (and position_id) from that
+        const matchingPosition = positions.find(p => p.ticker === debouncedTicker);
+
+        if (posData.hasPosition && posData.tickerName) {
+          setFormData(prev => ({
+            ...prev,
+            ticker_name: posData.tickerName,
+            position_id: matchingPosition ? matchingPosition.position_id.toString() : prev.position_id,
+          }));
+          setTickerError(null);
+        } else {
+          const tickerRes = await fetch(`/api/ticker-lookup?ticker=${encodeURIComponent(debouncedTicker)}`);
+          const tickerData = await tickerRes.json();
+
+          if (tickerData.error) {
+            setTickerError(tickerData.error);
+          } else if (tickerData.name) {
+            setFormData(prev => ({ ...prev, ticker_name: tickerData.name }));
+            setTickerError(null);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching ticker data:', err);
+        setTickerError('Failed to lookup ticker');
+      } finally {
+        setIsLoadingTicker(false);
+      }
+    };
+
+    fetchTickerData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedTicker]);
 
   const resetForm = () => {
     setFormData({
