@@ -2,14 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useDebounce } from '../../lib/hooks/useDebounce';
-import { Plus } from 'lucide-react';
+import { Plus, Save, RefreshCw } from 'lucide-react';
 import { NewsType } from '../../lib/types/news';
 import { NewsListItem } from '../../lib/types/newsViews';
 import { createNews, updateNews } from '../../services/newsServiceClient';
 import { useSession } from 'next-auth/react';
 import GlassButton from '@/app/lib/ui/GlassButton';
 import { BulletTextarea } from '@/app/lib/ui/BulletTextarea';
-import { Save, XCircle } from 'lucide-react';
 
 interface NewsEntryFormProps {
   newsTypes: NewsType[];
@@ -23,7 +22,7 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
   const [hasPosition, setHasPosition] = useState<boolean | null>(null);
   const [tickerError, setTickerError] = useState<string | null>(null);
   const [isLoadingTicker, setIsLoadingTicker] = useState(false);
-    
+
   const [formData, setFormData] = useState({
     ticker: '',
     exchange_id: 1,
@@ -42,7 +41,6 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
   const [showAlert, setShowAlert] = useState(false);
   const debouncedTicker = useDebounce(formData.ticker, 500);
 
-  // Get icon for news type
   const getNewsTypeIcon = (typeCode: string) => {
     const icons: Record<string, string> = {
       'EARNINGS': '💰',
@@ -76,7 +74,6 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
   };
 
   const handleSubmit = async () => {
-    // Validation
     if (!formData.ticker || !formData.news_description) {
       setError('Ticker and Description are required');
       return;
@@ -87,9 +84,8 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
 
     try {
       const tagsArray = formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(t => t) : [];
-      
+
       if (editingNews) {
-        // Update existing news
         await updateNews(editingNews.news_id, {
           ticker: formData.ticker.toUpperCase(),
           exchange_id: formData.exchange_id,
@@ -103,9 +99,7 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
           news_url: formData.news_url || undefined,
           tags: tagsArray.length > 0 ? tagsArray : undefined
         });
-
       } else {
-        // Create new news
         if (!session?.user?.id) {
           throw new Error('Not authenticated');
         }
@@ -124,7 +118,6 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
         });
       }
 
-      // Reset form
       setFormData({
         ticker: '',
         exchange_id: 1,
@@ -154,15 +147,13 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
     }));
   }, []);
 
-  // Pre-fill form when editing
-  // Pre-fill form when editing - fetch full news record
   useEffect(() => {
     if (editingNews) {
       const fetchFullNewsRecord = async () => {
         try {
           const response = await fetch(`/api/news?newsId=${editingNews.news_id}`);
           const result = await response.json();
-          
+
           if (result.data) {
             const fullNews = result.data;
             setFormData({
@@ -175,7 +166,7 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
               alert_notes: fullNews.alert_notes || '',
               news_source: fullNews.news_source || '',
               news_url: fullNews.news_url || '',
-              tags: fullNews.tags 
+              tags: fullNews.tags
                 ? (Array.isArray(fullNews.tags) ? fullNews.tags.join(', ') : fullNews.tags)
                 : '',
             });
@@ -185,12 +176,11 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
           console.error('Failed to fetch full news record:', err);
         }
       };
-      
+
       fetchFullNewsRecord();
     }
   }, [editingNews]);
 
-  // Fetch ticker name and position when user stops typing
   useEffect(() => {
     const fetchTickerData = async () => {
       if (!debouncedTicker) {
@@ -204,18 +194,15 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
       setTickerError(null);
 
       try {
-        // Step 1: Check positions table first
         const posRes = await fetch(`/api/hasOpenPosition?ticker=${encodeURIComponent(debouncedTicker)}&userId=${session?.user?.id}`);
         const posData = await posRes.json();
-        
+
         setHasPosition(posData.hasPosition);
 
-        // Step 2: Use ticker_name from positions if available
         if (posData.hasPosition && posData.tickerName) {
           setFormData(prev => ({ ...prev, company_name: posData.tickerName }));
           setTickerError(null);
         } else {
-          // Step 3: Fallback to AlphaVantage only if ticker not in positions
           const tickerRes = await fetch(`/api/ticker-lookup?ticker=${encodeURIComponent(debouncedTicker)}`);
           const tickerData = await tickerRes.json();
 
@@ -240,98 +227,98 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
     fetchTickerData();
   }, [debouncedTicker]);
 
+  const labelCls = 'text-blue-200 text-sm font-medium';
+  const inputCls = 'funding-input rounded-lg px-3 py-2 text-sm';
+  const groupTagCls = 'text-blue-300 text-[11px] mb-1 block font-medium';
+
   return (
-    <div className="backdrop-blur-xl bg-white/10 rounded-xl p-6 sm:p-8 border border-white/20">
-      <div className="flex items-center justify-between mb-6">
+    <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-6 sm:p-8 border border-white/20">
+      <div className="flex items-start justify-between mb-5">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-3">
-            <Plus className="w-6 h-6" />
+          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+            <Plus className="w-5 h-5" />
             {editingNews ? 'Edit News Entry' : 'Quick News Entry'}
           </h2>
           <p className="text-xs text-blue-300 mt-1">* Required fields</p>
         </div>
         <div className="flex gap-2">
           <GlassButton
-            icon={XCircle}
-            onClick={handleCancel}
-            tooltip="Clear Form"
-            variant="secondary"
-            size="md"
-          />
-          <GlassButton
             icon={Save}
             onClick={handleSubmit}
             disabled={isSubmitting || !formData.ticker || !formData.news_description}
             tooltip={editingNews ? 'Update News Entry' : 'Save News Entry'}
             variant="primary"
-            size="md"
+            size="sm"
+          />
+          <GlassButton
+            icon={RefreshCw}
+            onClick={handleCancel}
+            tooltip="Reset Form"
+            variant="secondary"
+            size="sm"
           />
         </div>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 bg-rose-500/20 border border-rose-400/30 rounded-lg text-rose-200 text-sm">
+        <div className="mb-4 p-3 bg-rose-500/20 border border-rose-400/30 rounded-md text-rose-200 text-sm">
           {error}
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        {/* Ticker */}
-        <div>
-          <label className="text-blue-200 text-sm mb-2 block font-medium">Ticker <span className="text-rose-400">*</span></label>
-          <div className="flex items-center gap-3">
-            <input
-              type="text"
-              value={formData.ticker}
-              onChange={(e) =>
-                setFormData({ ...formData, ticker: e.target.value.toUpperCase() })
-              }
-              placeholder="AAPL"
-              className={`flex-1 funding-input rounded-xl px-4 py-3 uppercase max-w-[70%] ${
-                tickerError ? 'border-2 border-rose-400' : ''
-              }`}
-              required
-            />
-            {isLoadingTicker ? (
-              <span className="px-3 py-2 rounded-full text-sm font-semibold whitespace-nowrap bg-blue-600 text-white">
-                Loading...
-              </span>
-            ) : hasPosition !== null ? (
-              <span
-                className={`px-3 py-2 rounded-full text-sm font-semibold whitespace-nowrap ${
-                  hasPosition ? 'bg-green-600 text-white' : 'bg-yellow-600 text-white'
-                }`}
-              >
-                {hasPosition ? 'Open Position' : 'No Position'}
-              </span>
-            ) : null}
-          </div>
-          {tickerError && (
-            <p className="text-rose-400 text-sm mt-2">{tickerError}</p>
-          )}
-        </div>
-
-
-        {/* Ticker Name */}
-        <div>
-          <label className="text-blue-200 text-sm mb-2 block font-medium">Ticker Name</label>
+      {/* ROW 1: Ticker + Ticker Name */}
+      <div className="grid grid-cols-[130px_1fr] gap-4 items-center mb-5">
+        <label className={labelCls}>Ticker <span className="text-rose-400">*</span></label>
+        <div className="flex items-center gap-3">
+          <input
+            type="text"
+            value={formData.ticker}
+            onChange={(e) => setFormData({ ...formData, ticker: e.target.value.toUpperCase() })}
+            placeholder="AAPL"
+            className={`${inputCls} w-28 uppercase ${tickerError ? 'border-2 border-rose-400' : ''}`}
+          />
           <input
             type="text"
             value={formData.company_name}
-            onChange={(e) => setFormData({...formData, company_name: e.target.value})}
-            placeholder="Apple Inc."
-            className="w-full funding-input rounded-xl px-4 py-3"
+            onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
+            placeholder="Ticker name will appear here"
+            className={`${inputCls} flex-1 bg-white/5 cursor-not-allowed`}
             disabled
           />
+          {isLoadingTicker ? (
+            <span className="px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap bg-blue-600 text-white flex-shrink-0">
+              Loading...
+            </span>
+          ) : hasPosition !== null ? (
+            <span
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap flex-shrink-0 ${hasPosition ? 'bg-green-600 text-white' : 'bg-yellow-600 text-white'
+                }`}
+            >
+              {hasPosition ? 'Open Position' : 'No Position'}
+            </span>
+          ) : null}
         </div>
+      </div>
 
-        {/* News Type */}
-        <div>
-          <label className="text-blue-200 text-sm mb-2 block font-medium">Type of News <span className="text-rose-400">*</span></label>
+      {tickerError && (
+        <div className="grid grid-cols-[130px_1fr] gap-4 mb-3">
+          <div />
+          <p className="text-rose-400 text-sm">{tickerError}</p>
+        </div>
+      )}
+
+      {/* ROWS 2 & 3: 2x2 grid (Type/Source left, Published/URL right) with single spanning divider */}
+      <div
+        className="grid gap-x-4 gap-y-5 items-start mb-5"
+        style={{ gridTemplateColumns: '130px 1fr 1px 1fr' }}
+      >
+        {/* Type of News (col 2, row 1) */}
+        <div style={{ gridColumn: 2, gridRow: 1 }}>
+          <span className={groupTagCls}>Type of News <span className="text-rose-400">*</span></span>
           <select
             value={formData.news_type_id}
-            onChange={(e) => setFormData({...formData, news_type_id: parseInt(e.target.value)})}
-            className="w-full funding-input rounded-xl px-4 py-3"
+            onChange={(e) => setFormData({ ...formData, news_type_id: parseInt(e.target.value) })}
+            className={`${inputCls} w-full`}
           >
             {newsTypes.map(type => (
               <option key={type.news_type_id} value={type.news_type_id} className="bg-slate-800 text-white">
@@ -341,68 +328,85 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
           </select>
         </div>
 
-        {/* News Date */}
-        <div>
-          <label className="text-blue-200 text-sm mb-2 block font-medium">News published on <span className="text-rose-400">*</span></label>
+        {/* Published on (col 4, row 1) */}
+        <div style={{ gridColumn: 4, gridRow: 1 }}>
+          <span className={groupTagCls}>Published on <span className="text-rose-400">*</span></span>
           <input
             type="date"
             value={formData.news_date}
-            onChange={(e) => setFormData({...formData, news_date: e.target.value})}
-            className="w-full funding-input rounded-xl px-4 py-3"
-            required
+            onChange={(e) => setFormData({ ...formData, news_date: e.target.value })}
+            className={`${inputCls} w-52`}
           />
         </div>
 
-        {/* News Source */}
-        <div>
-          <label className="text-blue-200 text-sm mb-2 block font-medium">Source</label>
+        {/* Single divider spanning both rows (col 3, rows 1-2) */}
+        <div
+          className="bg-gradient-to-b from-transparent via-white/20 to-transparent"
+          style={{ gridColumn: 3, gridRow: '1 / span 2', width: '1px' }}
+        />
+
+        {/* Source (col 2, row 2) */}
+        <div style={{ gridColumn: 2, gridRow: 2 }}>
+          <span className={groupTagCls}>Source</span>
           <input
             type="text"
             value={formData.news_source}
-            onChange={(e) => setFormData({...formData, news_source: e.target.value})}
+            onChange={(e) => setFormData({ ...formData, news_source: e.target.value })}
             placeholder="Bloomberg, Reuters, etc."
-            className="w-full funding-input rounded-xl px-4 py-3"
+            className={`${inputCls} w-full`}
           />
         </div>
 
-        {/* News URL */}
-        <div>
-          <label className="text-blue-200 text-sm mb-2 block font-medium">URL</label>
+        {/* URL (col 4, row 2) */}
+        <div style={{ gridColumn: 4, gridRow: 2 }}>
+          <span className={groupTagCls}>URL</span>
           <input
             type="url"
             value={formData.news_url}
-            onChange={(e) => setFormData({...formData, news_url: e.target.value})}
+            onChange={(e) => setFormData({ ...formData, news_url: e.target.value })}
             placeholder="https://..."
-            className="w-full funding-input rounded-xl px-4 py-3"
+            className={`${inputCls} w-full`}
           />
         </div>
+      </div>
 
-        {/* Description */}
-        <div className="md:col-span-2">
-          <BulletTextarea
-            value={formData.news_description}
-            onChange={(value) => setFormData({...formData, news_description: value})}
-            placeholder="Enter news details (each line becomes a bullet point)..."
-            rows={4}
-            label="Description of the News"
-            required
-          />
-        </div>
+      {/* ROW 4: Description full width */}
+      <div className="grid grid-cols-[130px_1fr] gap-4 items-start mb-5">
+        <label className={`${labelCls} pt-1`}>Description <span className="text-rose-400">*</span></label>
+        <BulletTextarea
+          value={formData.news_description}
+          onChange={(value) => setFormData({ ...formData, news_description: value })}
+          placeholder="Enter news details (each line becomes a bullet point)..."
+          rows={4}
+          label=""
+          required
+        />
+      </div>
 
-        {/* Tags */}
-        <div className="md:col-span-2">
-          <label className="text-blue-200 text-sm mb-2 block font-medium">Tags (comma-separated)</label>
+      {/* ROW 5: Tags | Alert toggle */}
+      <div
+        className="grid gap-x-4 gap-y-5 items-end"
+        style={{ gridTemplateColumns: '130px 1fr 1px 1fr' }}
+      >
+        <label className={`${labelCls} self-center`}>Tags</label>
+
+        <div style={{ gridColumn: 2 }}>
+          <span className={groupTagCls}>Comma-separated</span>
           <input
             type="text"
             value={formData.tags}
-            onChange={(e) => setFormData({...formData, tags: e.target.value})}
+            onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
             placeholder="quarterly, revenue, guidance"
-            className="w-full funding-input rounded-xl px-4 py-3"
+            className={`${inputCls} w-full`}
           />
         </div>
 
-        {/* Alert Toggle */}
-        <div className="md:col-span-2">
+        <div
+          className="bg-gradient-to-b from-transparent via-white/20 to-transparent"
+          style={{ gridColumn: 3, gridRow: 1, width: '1px' }}
+        />
+
+        <div style={{ gridColumn: 4 }} className="pb-1.5">
           <label className="flex items-center gap-3 cursor-pointer">
             <div className="relative">
               <input
@@ -413,24 +417,25 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
               />
               <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
             </div>
-            <span className="text-blue-200 font-medium">Set Alert for this news</span>
+            <span className="text-blue-200 font-medium text-sm">Set Alert for this news</span>
           </label>
         </div>
-
-        {/* Alert Fields (conditional) */}
-        {showAlert && (
-            <div className="md:col-span-2">
-              <BulletTextarea
-                value={formData.alert_notes}
-                onChange={(value) => setFormData({...formData, alert_notes: value})}
-                placeholder="Reminder notes (each line becomes a bullet point)..."
-                rows={3}
-                label="Alert Notes"
-                className="border-emerald-400/30"
-              />
-            </div>
-        )}
       </div>
+
+      {/* Alert Notes (conditional, full width) */}
+      {showAlert && (
+        <div className="grid grid-cols-[130px_1fr] gap-4 items-start mt-5">
+          <label className={`${labelCls} pt-1`}>Alert Notes</label>
+          <BulletTextarea
+            value={formData.alert_notes}
+            onChange={(value) => setFormData({ ...formData, alert_notes: value })}
+            placeholder="Reminder notes (each line becomes a bullet point)..."
+            rows={3}
+            label=""
+            className="border-emerald-400/30"
+          />
+        </div>
+      )}
     </div>
   );
 }
