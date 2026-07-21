@@ -318,10 +318,11 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
         </div>
       )}
 
-      {/* ROW 2: Type | Published | Source | URL (four inline) */}
+      {/* ROW 2: Type (narrow) + Alert toggle, then Published, Source, URL */}
       <div className="grid grid-cols-[110px_minmax(0,1fr)] gap-4 items-start mb-5">
         <div />
-        <div className="grid gap-3 min-w-0" style={{ gridTemplateColumns: '1.2fr 0.9fr 1.1fr 1.1fr' }}>
+        <div className="grid gap-3 min-w-0" style={{ gridTemplateColumns: '1fr auto 0.9fr 1.1fr 1.1fr' }}>
+          {/* Type of News */}
           <div className="min-w-0">
             <span className={groupTagCls}>Type of News <span className="text-rose-400">*</span></span>
             <select
@@ -336,6 +337,24 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
               ))}
             </select>
           </div>
+
+          {/* Alert toggle */}
+          <div className="flex flex-col">
+            <span className={groupTagCls}>Alert</span>
+            <label className="flex items-center cursor-pointer h-[38px]">
+              <div className="relative">
+                <input
+                  type="checkbox"
+                  checked={showAlert}
+                  onChange={(e) => setShowAlert(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+              </div>
+            </label>
+          </div>
+
+          {/* Published on */}
           <div className="min-w-0">
             <span className={groupTagCls}>Published on <span className="text-rose-400">*</span></span>
             <input
@@ -345,6 +364,8 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
               className={inputCls}
             />
           </div>
+
+          {/* Source */}
           <div className="min-w-0">
             <span className={groupTagCls}>Source</span>
             <input
@@ -355,6 +376,8 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
               className={inputCls}
             />
           </div>
+
+          {/* URL */}
           <div className="min-w-0">
             <span className={groupTagCls}>URL</span>
             <input
@@ -368,62 +391,16 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
         </div>
       </div>
 
-      {/* ROW 3: Description | divider | Alert toggle + (conditional) alert notes */}
-      <div
-        className="grid gap-4 items-start"
-        style={{ gridTemplateColumns: '110px minmax(0,1fr) 1px minmax(0,0.75fr)' }}
-      >
+      {/* ROW 3: Description full-width */}
+      <div className="grid grid-cols-[110px_minmax(0,1fr)] gap-4 items-start">
         <label className={`${labelCls} pt-0.5`}>Description <span className="text-rose-400">*</span></label>
-
-        <div className="min-w-0">
-          <BulletTextarea
-            value={formData.news_description}
-            onChange={(value) => setFormData({ ...formData, news_description: value })}
-            placeholder="Enter news details (each line becomes a bullet point)..."
-            rows={6}
-            label=""
-            required
-          />
-        </div>
-
-        <div className="bg-gradient-to-b from-transparent via-white/20 to-transparent w-px self-stretch" />
-
-        <div className="min-w-0">
-          <label className="flex items-center gap-3 cursor-pointer mb-2.5" style={{ height: '34px' }}>
-            <div className="relative">
-              <input
-                type="checkbox"
-                checked={showAlert}
-                onChange={(e) => setShowAlert(e.target.checked)}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
-            </div>
-            <span className="text-blue-200 font-medium text-sm">Set Alert for this news</span>
-          </label>
-
-          {showAlert && (
-            <BulletTextarea
-              value={formData.alert_notes}
-              onChange={(value) => setFormData({ ...formData, alert_notes: value })}
-              placeholder="Reminder notes (each line becomes a bullet point)..."
-              rows={4}
-              label=""
-              className="border-emerald-400/30"
-            />
-          )}
-        </div>
-      </div>
-
-      {/* Tags — moved below, full width under the left label gutter */}
-      <div className="grid grid-cols-[110px_minmax(0,1fr)] gap-4 items-center mt-5">
-        <label className={labelCls}>Tags</label>
-        <input
-          type="text"
-          value={formData.tags}
-          onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-          placeholder="quarterly, revenue, guidance"
-          className={inputCls}
+        <BulletTextarea
+          value={formData.news_description}
+          onChange={(value) => setFormData({ ...formData, news_description: value })}
+          placeholder="Enter news details (each line becomes a bullet point)..."
+          rows={3}
+          label=""
+          required
         />
       </div>
     </div>
