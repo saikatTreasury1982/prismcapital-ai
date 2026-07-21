@@ -82,7 +82,7 @@ export function DividendsClientWrapper({ positions }: DividendsClientWrapperProp
             <div className="flex flex-col lg:flex-row gap-6">
               {/* LEFT PANEL - Positions List (30%) */}
               <div className="lg:w-[30%]">
-                <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-6 border border-white/20">
+                <div className="backdrop-blur-xl bg-white/10 rounded-xl p-6 border border-white/20">
                   <h2 className="text-xl font-bold text-white mb-4">Open Positions</h2>
                   {positions.length === 0 ? (
                     <p className="text-blue-200 text-sm text-center py-8">No open positions found</p>

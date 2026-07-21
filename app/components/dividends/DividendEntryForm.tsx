@@ -264,10 +264,10 @@ export function DividendEntryForm({
   const smallLabelCls = 'text-blue-300 text-[11px] mb-1 block';
 
   return (
-    <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-6 sm:p-8 border border-white/20 relative">
+    <div className="backdrop-blur-xl bg-white/10 rounded-xl p-6 sm:p-8 border border-white/20 relative">
       {/* Loading overlay over the whole form */}
       {isAutoFilling && (
-        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm rounded-2xl flex items-center justify-center z-50">
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm rounded-xl flex items-center justify-center z-50">
           <div className="flex flex-col items-center gap-3">
             <svg className="animate-spin h-12 w-12 text-emerald-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

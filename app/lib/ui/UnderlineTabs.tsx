@@ -22,7 +22,7 @@ export default function UnderlineTabs({
   className = '',
 }: UnderlineTabsProps) {
   return (
-    <div className={`backdrop-blur-xl bg-white/5 rounded-2xl p-2 border border-white/10 relative ${className}`}>
+    <div className={`backdrop-blur-xl bg-white/5 rounded-xl p-2 border border-white/10 relative ${className}`}>
       <div className="flex gap-1 overflow-x-auto md:overflow-visible scroll-smooth snap-x snap-mandatory scrollbar-hide">
         {tabs.map((tab) => (
           <button
