@@ -22,7 +22,7 @@ export default function UnderlineTabs({
   className = '',
 }: UnderlineTabsProps) {
   return (
-    <div className={`backdrop-blur-xl bg-white/5 rounded-xl p-2 border border-white/10 relative ${className}`}>
+    <div className={`backdrop-blur-xl bg-white/5 rounded-full p-2 border border-white/10 relative ${className}`}>
       <div className="flex gap-1 overflow-x-auto md:overflow-visible scroll-smooth snap-x snap-mandatory scrollbar-hide">
         {tabs.map((tab) => (
           <button
@@ -30,9 +30,9 @@ export default function UnderlineTabs({
             type="button"
             onClick={() => onChange(tab.id)}
             suppressHydrationWarning
-            className={`flex-1 px-3 py-3 md:px-6 rounded-xl flex items-center justify-center gap-2 transition-all relative flex-shrink-0 ${
+            className={`flex-1 px-3 py-3 md:px-6 rounded-full flex items-center justify-center gap-2 transition-all relative flex-shrink-0 ${
               activeTab === tab.id
-                ? 'text-white'
+                ? 'text-white bg-gradient-to-br from-blue-400/25 to-emerald-400/20'
                 : 'text-blue-200 hover:bg-white/5'
             }`}
           >
@@ -45,7 +45,7 @@ export default function UnderlineTabs({
               <span className="hidden md:inline">{tab.label}</span>
             )}
             {activeTab === tab.id && (
-              <div className="absolute bottom-0 left-2 right-2 md:left-4 md:right-4 h-0.5 bg-gradient-to-r from-blue-400 to-emerald-400 rounded-full" />
+              <div className="absolute bottom-1.5 left-4 right-4 md:left-6 md:right-6 h-0.5 bg-gradient-to-r from-blue-400 to-emerald-400 rounded-full" />
             )}
           </button>
         ))}
