@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { TrendingUp, Newspaper, RefreshCw, ExternalLink } from 'lucide-react';
 import { getIndices, getPositionNews, IndexQuote, PositionNewsItem } from '../../services/marketServiceClient';
+import GlassButton from '@/app/lib/ui/GlassButton';
 
 export function MarketStrip() {
   const [indices, setIndices] = useState<IndexQuote[]>([]);
@@ -14,18 +15,21 @@ export function MarketStrip() {
   const [newsFetched, setNewsFetched] = useState(false);
   const [newsError, setNewsError] = useState<string | null>(null);
 
+  // Indices auto-load on mount
+  const loadIndices = async () => {
+    setIndicesLoading(true);
+    try {
+      const data = await getIndices();
+      setIndices(data);
+    } catch (err) {
+      console.error('Failed to load indices:', err);
+    } finally {
+      setIndicesLoading(false);
+    }
+  };
+
+  // Indices auto-load on mount
   useEffect(() => {
-    const loadIndices = async () => {
-      setIndicesLoading(true);
-      try {
-        const data = await getIndices();
-        setIndices(data);
-      } catch (err) {
-        console.error('Failed to load indices:', err);
-      } finally {
-        setIndicesLoading(false);
-      }
-    };
     loadIndices();
   }, []);
 
@@ -61,10 +65,20 @@ export function MarketStrip() {
 
   return (
     <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-6 sm:p-8 border border-white/20">
-      <h2 className="text-lg font-bold text-white flex items-center gap-2 mb-4">
-        <TrendingUp className="w-5 h-5" />
-        Market Snapshot
-      </h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-bold text-white flex items-center gap-2">
+          <TrendingUp className="w-5 h-5" />
+          Market Snapshot
+        </h2>
+        <GlassButton
+          icon={RefreshCw}
+          onClick={loadIndices}
+          disabled={indicesLoading}
+          tooltip="Refresh Indices"
+          variant="secondary"
+          size="sm"
+        />
+      </div>
 
       {indicesLoading ? (
         <p className="text-blue-200 text-sm py-4">Loading indices...</p>
@@ -96,14 +110,14 @@ export function MarketStrip() {
           <Newspaper className="w-5 h-5" />
           News for Your Positions
         </h2>
-        <button
+        <GlassButton
+          icon={RefreshCw}
           onClick={handleRefreshNews}
           disabled={newsLoading}
-          className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center text-blue-200 transition-all disabled:opacity-50"
-          title="Refresh news"
-        >
-          <RefreshCw className={`w-4 h-4 ${newsLoading ? 'animate-spin' : ''}`} />
-        </button>
+          tooltip="Refresh News"
+          variant="secondary"
+          size="sm"
+        />
       </div>
 
       {newsError && (
@@ -147,9 +161,8 @@ export function MarketStrip() {
               {items.map((item, idx) => (
                 <div
                   key={`${item.id}-${idx}`}
-                  className={`flex items-start gap-3 py-3 border-t border-white/10 px-2 ${
-                    idx === items.length - 1 ? 'border-b' : ''
-                  }`}
+                  className={`flex items-start gap-3 py-3 border-t border-white/10 px-2 ${idx === items.length - 1 ? 'border-b' : ''
+                    }`}
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-white text-sm leading-snug">{item.headline}</p>
