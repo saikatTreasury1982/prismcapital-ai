@@ -1,38 +1,55 @@
 import { NextResponse } from 'next/server';
 import { db, schema } from '@/app/lib/db';
-import { eq } from 'drizzle-orm';
 import { CreateDividendInput } from '../../lib/types/dividend';
+import { eq, and, desc } from 'drizzle-orm';
+import { auth } from '@/app/lib/auth';
 
 const { dividends } = schema;
 
 export async function GET(request: Request) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
-    const dividendIdStr = searchParams.get('dividendId');
+    const dividendId = searchParams.get('dividendId');
+    const recent = searchParams.get('recent');
 
-    if (!dividendIdStr) {
-      return NextResponse.json({ error: 'dividendId required' }, { status: 400 });
+    // Single record fetch (used by edit prefill)
+    if (dividendId) {
+      const result = await db
+        .select()
+        .from(dividends)
+        .where(
+          and(
+            eq(dividends.dividend_id, parseInt(dividendId)),
+            eq(dividends.user_id, session.user.id)
+          )
+        )
+        .limit(1);
+
+      if (result.length === 0) {
+        return NextResponse.json({ error: 'Dividend not found' }, { status: 404 });
+      }
+
+      return NextResponse.json({ data: result[0] });
     }
 
-    const dividendId = parseInt(dividendIdStr);
-    if (isNaN(dividendId)) {
-      return NextResponse.json({ error: 'Invalid dividendId' }, { status: 400 });
-    }
-
-    const data = await db
+    // Recent / flat list for the current user (newest first)
+    const limit = recent ? 5 : 100;
+    const result = await db
       .select()
       .from(dividends)
-      .where(eq(dividends.dividend_id, dividendId))
-      .limit(1);
+      .where(eq(dividends.user_id, session.user.id))
+      .orderBy(desc(dividends.ex_dividend_date))
+      .limit(limit);
 
-    if (!data || data.length === 0) {
-      return NextResponse.json({ error: 'Dividend not found' }, { status: 404 });
-    }
-
-    return NextResponse.json({ data: data[0] });
-  } catch (e: any) {
-    console.error('Unexpected error:', e);
-    return NextResponse.json({ error: e.message || 'Failed to fetch dividend' }, { status: 500 });
+    return NextResponse.json({ data: result });
+  } catch (error: any) {
+    console.error('Error fetching dividend(s):', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 

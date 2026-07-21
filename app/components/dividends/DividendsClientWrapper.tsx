@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Plus, List, Calendar, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
 import { PositionForDividend, Dividend } from '../../lib/types/dividend';
 import { DividendEntryForm } from './DividendEntryForm';
+import { RecentDividendsList } from './RecentDividendsList';
 import { ByTickerView } from './ByTickerView';
 import { ByQuarterView } from './ByQuarterView';
 import { ByYearView } from './ByYearView';
@@ -36,7 +37,6 @@ export function DividendsClientWrapper({ positions }: DividendsClientWrapperProp
     setEditingDividend(null);
     setSelectedPosition(null);
     setRefreshKey(prev => prev + 1);
-    setActiveTab('ticker');
   };
 
   const handleEdit = (dividend: Dividend) => {
@@ -82,7 +82,7 @@ export function DividendsClientWrapper({ positions }: DividendsClientWrapperProp
             <div className="flex flex-col lg:flex-row gap-6">
               {/* LEFT PANEL - Positions List (30%) */}
               <div className="lg:w-[30%]">
-                <div className="backdrop-blur-xl bg-white/10 rounded-xl p-6 border border-white/20">
+                <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-6 border border-white/20">
                   <h2 className="text-xl font-bold text-white mb-4">Open Positions</h2>
                   {positions.length === 0 ? (
                     <p className="text-blue-200 text-sm text-center py-8">No open positions found</p>
@@ -168,8 +168,8 @@ export function DividendsClientWrapper({ positions }: DividendsClientWrapperProp
               {/* GRADIENT DIVIDER */}
               <div className="hidden lg:block w-px bg-gradient-to-b from-transparent via-white/20 to-transparent mx-3" />
 
-              {/* RIGHT PANEL - Form (70%) */}
-              <div className="lg:w-[70%]">
+              {/* RIGHT PANEL - Form over Recent Dividends (70%) */}
+              <div className="lg:w-[70%] space-y-6">
                 <DividendEntryForm
                   positions={positions}
                   onSuccess={handleSuccess}
@@ -178,6 +178,12 @@ export function DividendsClientWrapper({ positions }: DividendsClientWrapperProp
                   selectedPosition={selectedPosition}
                   onAutoFillingChange={setIsAutoFilling}
                   onLoadingTickerChange={setLoadingTicker}
+                />
+
+                <RecentDividendsList
+                  refreshKey={refreshKey}
+                  onDividendClick={handleEdit}
+                  editingDividendId={editingDividend?.dividend_id ?? null}
                 />
               </div>
             </div>

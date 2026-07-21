@@ -52,3 +52,15 @@ export async function deleteDividend(dividendId: number): Promise<void> {
     throw new Error(error.error || 'Failed to delete dividend');
   }
 }
+
+export async function getRecentDividends(): Promise<Dividend[]> {
+  const response = await fetch('/api/dividends?recent=true');
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to fetch recent dividends');
+  }
+
+  const result = await response.json();
+  return result.data;
+}
