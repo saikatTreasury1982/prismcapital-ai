@@ -228,7 +228,7 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
   }, [debouncedTicker]);
 
   const labelCls = 'text-blue-200 text-sm font-medium';
-  const inputCls = 'funding-input rounded-lg px-3 py-2 text-sm';
+  const inputCls = 'funding-input rounded-lg px-3 py-2 text-sm w-full';
   const groupTagCls = 'text-blue-300 text-[11px] mb-1 block font-medium';
 
   return (
@@ -266,148 +266,130 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
         </div>
       )}
 
-      {/* ROW 1: Ticker + Ticker Name */}
-      <div className="grid grid-cols-[130px_1fr] gap-4 items-center mb-5">
+      {/* ROW 1: Ticker + Ticker Name + indicator */}
+      <div className="grid grid-cols-[110px_minmax(0,1fr)] gap-4 items-center mb-5">
         <label className={labelCls}>Ticker <span className="text-rose-400">*</span></label>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <input
             type="text"
             value={formData.ticker}
             onChange={(e) => setFormData({ ...formData, ticker: e.target.value.toUpperCase() })}
             placeholder="AAPL"
-            className={`${inputCls} w-28 uppercase ${tickerError ? 'border-2 border-rose-400' : ''}`}
+            className={`funding-input rounded-lg px-3 py-2 text-sm w-28 flex-none uppercase ${tickerError ? 'border-2 border-rose-400' : ''}`}
           />
           <input
             type="text"
             value={formData.company_name}
-            onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
             placeholder="Ticker name will appear here"
-            className={`${inputCls} flex-1 bg-white/5 cursor-not-allowed`}
+            className="funding-input rounded-lg px-3 py-2 text-sm flex-1 min-w-0 bg-white/5 cursor-not-allowed"
             disabled
           />
           {isLoadingTicker ? (
-            <span className="px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap bg-blue-600 text-white flex-shrink-0">
-              Loading...
-            </span>
+            <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center animate-pulse flex-none">
+              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+            </div>
           ) : hasPosition !== null ? (
-            <span
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap flex-shrink-0 ${hasPosition ? 'bg-green-600 text-white' : 'bg-yellow-600 text-white'
-                }`}
-            >
-              {hasPosition ? 'Open Position' : 'No Position'}
-            </span>
+            <div className="relative group flex-none">
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center ${hasPosition ? 'bg-green-600' : 'bg-yellow-600'}`}>
+                {hasPosition ? (
+                  <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                )}
+              </div>
+              <div className="absolute bottom-full right-0 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                {hasPosition ? 'Open Position' : 'No Open Position'}
+              </div>
+            </div>
           ) : null}
         </div>
       </div>
 
       {tickerError && (
-        <div className="grid grid-cols-[130px_1fr] gap-4 mb-3">
+        <div className="grid grid-cols-[110px_minmax(0,1fr)] gap-4 mb-3">
           <div />
           <p className="text-rose-400 text-sm">{tickerError}</p>
         </div>
       )}
 
-      {/* ROWS 2 & 3: 2x2 grid (Type/Source left, Published/URL right) with single spanning divider */}
-      <div
-        className="grid gap-x-4 gap-y-5 items-start mb-5"
-        style={{ gridTemplateColumns: '130px 1fr 1px 1fr' }}
-      >
-        {/* Type of News (col 2, row 1) */}
-        <div style={{ gridColumn: 2, gridRow: 1 }}>
-          <span className={groupTagCls}>Type of News <span className="text-rose-400">*</span></span>
-          <select
-            value={formData.news_type_id}
-            onChange={(e) => setFormData({ ...formData, news_type_id: parseInt(e.target.value) })}
-            className={`${inputCls} w-full`}
-          >
-            {newsTypes.map(type => (
-              <option key={type.news_type_id} value={type.news_type_id} className="bg-slate-800 text-white">
-                {getNewsTypeIcon(type.type_code)} {type.type_name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Published on (col 4, row 1) */}
-        <div style={{ gridColumn: 4, gridRow: 1 }}>
-          <span className={groupTagCls}>Published on <span className="text-rose-400">*</span></span>
-          <input
-            type="date"
-            value={formData.news_date}
-            onChange={(e) => setFormData({ ...formData, news_date: e.target.value })}
-            className={`${inputCls} w-52`}
-          />
-        </div>
-
-        {/* Single divider spanning both rows (col 3, rows 1-2) */}
-        <div
-          className="bg-gradient-to-b from-transparent via-white/20 to-transparent"
-          style={{ gridColumn: 3, gridRow: '1 / span 2', width: '1px' }}
-        />
-
-        {/* Source (col 2, row 2) */}
-        <div style={{ gridColumn: 2, gridRow: 2 }}>
-          <span className={groupTagCls}>Source</span>
-          <input
-            type="text"
-            value={formData.news_source}
-            onChange={(e) => setFormData({ ...formData, news_source: e.target.value })}
-            placeholder="Bloomberg, Reuters, etc."
-            className={`${inputCls} w-full`}
-          />
-        </div>
-
-        {/* URL (col 4, row 2) */}
-        <div style={{ gridColumn: 4, gridRow: 2 }}>
-          <span className={groupTagCls}>URL</span>
-          <input
-            type="url"
-            value={formData.news_url}
-            onChange={(e) => setFormData({ ...formData, news_url: e.target.value })}
-            placeholder="https://..."
-            className={`${inputCls} w-full`}
-          />
+      {/* ROW 2: Type | Published | Source | URL (four inline) */}
+      <div className="grid grid-cols-[110px_minmax(0,1fr)] gap-4 items-start mb-5">
+        <div />
+        <div className="grid gap-3 min-w-0" style={{ gridTemplateColumns: '1.2fr 0.9fr 1.1fr 1.1fr' }}>
+          <div className="min-w-0">
+            <span className={groupTagCls}>Type of News <span className="text-rose-400">*</span></span>
+            <select
+              value={formData.news_type_id}
+              onChange={(e) => setFormData({ ...formData, news_type_id: parseInt(e.target.value) })}
+              className={inputCls}
+            >
+              {newsTypes.map(type => (
+                <option key={type.news_type_id} value={type.news_type_id} className="bg-slate-800 text-white">
+                  {getNewsTypeIcon(type.type_code)} {type.type_name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="min-w-0">
+            <span className={groupTagCls}>Published on <span className="text-rose-400">*</span></span>
+            <input
+              type="date"
+              value={formData.news_date}
+              onChange={(e) => setFormData({ ...formData, news_date: e.target.value })}
+              className={inputCls}
+            />
+          </div>
+          <div className="min-w-0">
+            <span className={groupTagCls}>Source</span>
+            <input
+              type="text"
+              value={formData.news_source}
+              onChange={(e) => setFormData({ ...formData, news_source: e.target.value })}
+              placeholder="Bloomberg, Reuters"
+              className={inputCls}
+            />
+          </div>
+          <div className="min-w-0">
+            <span className={groupTagCls}>URL</span>
+            <input
+              type="url"
+              value={formData.news_url}
+              onChange={(e) => setFormData({ ...formData, news_url: e.target.value })}
+              placeholder="https://..."
+              className={inputCls}
+            />
+          </div>
         </div>
       </div>
 
-      {/* ROW 4: Description full width */}
-      <div className="grid grid-cols-[130px_1fr] gap-4 items-start mb-5">
-        <label className={`${labelCls} pt-1`}>Description <span className="text-rose-400">*</span></label>
-        <BulletTextarea
-          value={formData.news_description}
-          onChange={(value) => setFormData({ ...formData, news_description: value })}
-          placeholder="Enter news details (each line becomes a bullet point)..."
-          rows={4}
-          label=""
-          required
-        />
-      </div>
-
-      {/* ROW 5: Tags | Alert toggle */}
+      {/* ROW 3: Description | divider | Alert toggle + (conditional) alert notes */}
       <div
-        className="grid gap-x-4 gap-y-5 items-end"
-        style={{ gridTemplateColumns: '130px 1fr 1px 1fr' }}
+        className="grid gap-4 items-start"
+        style={{ gridTemplateColumns: '110px minmax(0,1fr) 1px minmax(0,0.75fr)' }}
       >
-        <label className={`${labelCls} self-center`}>Tags</label>
+        <label className={`${labelCls} pt-0.5`}>Description <span className="text-rose-400">*</span></label>
 
-        <div style={{ gridColumn: 2 }}>
-          <span className={groupTagCls}>Comma-separated</span>
-          <input
-            type="text"
-            value={formData.tags}
-            onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-            placeholder="quarterly, revenue, guidance"
-            className={`${inputCls} w-full`}
+        <div className="min-w-0">
+          <BulletTextarea
+            value={formData.news_description}
+            onChange={(value) => setFormData({ ...formData, news_description: value })}
+            placeholder="Enter news details (each line becomes a bullet point)..."
+            rows={6}
+            label=""
+            required
           />
         </div>
 
-        <div
-          className="bg-gradient-to-b from-transparent via-white/20 to-transparent"
-          style={{ gridColumn: 3, gridRow: 1, width: '1px' }}
-        />
+        <div className="bg-gradient-to-b from-transparent via-white/20 to-transparent w-px self-stretch" />
 
-        <div style={{ gridColumn: 4 }} className="pb-1.5">
-          <label className="flex items-center gap-3 cursor-pointer">
+        <div className="min-w-0">
+          <label className="flex items-center gap-3 cursor-pointer mb-2.5" style={{ height: '34px' }}>
             <div className="relative">
               <input
                 type="checkbox"
@@ -419,23 +401,31 @@ export function NewsEntryForm({ newsTypes, onSuccess, editingNews, onCancelEdit 
             </div>
             <span className="text-blue-200 font-medium text-sm">Set Alert for this news</span>
           </label>
+
+          {showAlert && (
+            <BulletTextarea
+              value={formData.alert_notes}
+              onChange={(value) => setFormData({ ...formData, alert_notes: value })}
+              placeholder="Reminder notes (each line becomes a bullet point)..."
+              rows={4}
+              label=""
+              className="border-emerald-400/30"
+            />
+          )}
         </div>
       </div>
 
-      {/* Alert Notes (conditional, full width) */}
-      {showAlert && (
-        <div className="grid grid-cols-[130px_1fr] gap-4 items-start mt-5">
-          <label className={`${labelCls} pt-1`}>Alert Notes</label>
-          <BulletTextarea
-            value={formData.alert_notes}
-            onChange={(value) => setFormData({ ...formData, alert_notes: value })}
-            placeholder="Reminder notes (each line becomes a bullet point)..."
-            rows={3}
-            label=""
-            className="border-emerald-400/30"
-          />
-        </div>
-      )}
+      {/* Tags — moved below, full width under the left label gutter */}
+      <div className="grid grid-cols-[110px_minmax(0,1fr)] gap-4 items-center mt-5">
+        <label className={labelCls}>Tags</label>
+        <input
+          type="text"
+          value={formData.tags}
+          onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+          placeholder="quarterly, revenue, guidance"
+          className={inputCls}
+        />
+      </div>
     </div>
   );
 }
