@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { TrendingUp, Newspaper, RefreshCw, X, ExternalLink } from 'lucide-react';
+import { TrendingUp, Newspaper, RefreshCw, ExternalLink } from 'lucide-react';
 import { getIndices, getPositionNews, IndexQuote, PositionNewsItem } from '../../services/marketServiceClient';
 
 export function MarketStrip() {
@@ -14,9 +14,6 @@ export function MarketStrip() {
   const [newsFetched, setNewsFetched] = useState(false);
   const [newsError, setNewsError] = useState<string | null>(null);
 
-  const [selectedItem, setSelectedItem] = useState<PositionNewsItem | null>(null);
-
-  // Indices auto-load on mount
   useEffect(() => {
     const loadIndices = async () => {
       setIndicesLoading(true);
@@ -32,7 +29,6 @@ export function MarketStrip() {
     loadIndices();
   }, []);
 
-  // News only loads on refresh click
   const handleRefreshNews = async () => {
     setNewsLoading(true);
     setNewsError(null);
@@ -65,7 +61,6 @@ export function MarketStrip() {
 
   return (
     <div className="backdrop-blur-xl bg-white/10 rounded-2xl p-6 sm:p-8 border border-white/20">
-      {/* Indices */}
       <h2 className="text-lg font-bold text-white flex items-center gap-2 mb-4">
         <TrendingUp className="w-5 h-5" />
         Market Snapshot
@@ -94,10 +89,8 @@ export function MarketStrip() {
         </div>
       )}
 
-      {/* Divider */}
       <div className="h-px bg-gradient-to-r from-transparent via-white/15 to-transparent my-6" />
 
-      {/* News */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-bold text-white flex items-center gap-2">
           <Newspaper className="w-5 h-5" />
@@ -138,83 +131,39 @@ export function MarketStrip() {
           </p>
         </div>
       ) : (
-        <div>
-          {news.map((item, idx) => (
-            <div
-              key={`${item.id}-${idx}`}
-              onClick={() => setSelectedItem(item)}
-              className={`flex items-start gap-3 py-3 border-t border-white/10 cursor-pointer hover:bg-white/5 transition-all px-2 ${
-                idx === news.length - 1 ? 'border-b' : ''
-              }`}
-            >
-              <span className="flex-none bg-blue-500/20 text-blue-300 text-[11px] font-bold px-2 py-0.5 rounded mt-0.5">
-                {item.ticker}
-              </span>
-              <div className="min-w-0">
-                <p className="text-white text-sm leading-snug">{item.headline}</p>
-                <p className="text-blue-300 text-[11px] mt-1">
-                  {item.source} {'\u00B7'} {timeAgo(item.datetime)}
-                </p>
+        <div className="custom-scrollbar max-h-[400px] overflow-y-auto pr-1">
+          {Object.entries(
+            news.reduce<Record<string, typeof news>>((groups, item) => {
+              (groups[item.ticker] ||= []).push(item);
+              return groups;
+            }, {})
+          ).map(([ticker, items]) => (
+            <div key={ticker} className="mb-4 last:mb-0">
+              <div className="sticky top-0 bg-slate-900/60 backdrop-blur-sm px-2 py-1.5 rounded-md mb-1">
+                <span className="text-blue-300 text-xs font-bold tracking-wide">
+                  {ticker} · {items.length} {items.length === 1 ? 'headline' : 'headlines'}
+                </span>
               </div>
+              {items.map((item, idx) => (
+                <div
+                  key={`${item.id}-${idx}`}
+                  className={`flex items-start gap-3 py-3 border-t border-white/10 px-2 ${
+                    idx === items.length - 1 ? 'border-b' : ''
+                  }`}
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-white text-sm leading-snug">{item.headline}</p>
+                    <p className="text-blue-300 text-[11px] mt-1">
+                      {item.source} {'\u00B7'} {timeAgo(item.datetime)}
+                    </p>
+                  </div>
+                  <a href={item.url} target="_blank" rel="noopener noreferrer" className="flex-none w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center text-blue-200 transition-all" title="Open article">
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+              ))}
             </div>
           ))}
-        </div>
-      )}
-
-      {/* Headline detail popover/modal */}
-      {selectedItem && (
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          onClick={() => setSelectedItem(null)}
-        >
-          <div
-            className="backdrop-blur-xl bg-white/10 rounded-2xl p-6 border border-white/20 max-w-lg w-full max-h-[85vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-3 mb-3">
-              <span className="bg-blue-500/20 text-blue-300 text-xs font-bold px-2 py-1 rounded">
-                {selectedItem.ticker}
-              </span>
-              <button
-                onClick={() => setSelectedItem(null)}
-                className="p-1.5 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all flex-none"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <h3 className="text-white text-lg font-bold leading-snug mb-2">{selectedItem.headline}</h3>
-            <p className="text-blue-300 text-xs mb-4">
-              {selectedItem.source} {'\u00B7'} {timeAgo(selectedItem.datetime)}
-            </p>
-
-            {selectedItem.image && (
-              <img
-                src={selectedItem.image}
-                alt=""
-                className="w-full rounded-lg mb-4 max-h-48 object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
-              />
-            )}
-
-            {selectedItem.summary && (
-              <p className="text-blue-100 text-sm leading-relaxed mb-4">{selectedItem.summary}</p>
-            )}
-
-            {selectedItem.url && (
-              <a
-                href={selectedItem.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/20 border border-blue-400/30 text-blue-200 hover:bg-blue-500/30 transition-all text-sm font-medium"
-              >
-                <ExternalLink className="w-4 h-4" />
-                Read full article
-              </a>
-            )}
-          </div>
         </div>
       )}
     </div>

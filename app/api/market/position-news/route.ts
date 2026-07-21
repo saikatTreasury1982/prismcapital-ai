@@ -74,7 +74,7 @@ export async function GET() {
 
     deduped.sort((a, b) => b.datetime - a.datetime);
 
-    const top = deduped.slice(0, 15).map(item => ({
+    const top = deduped.slice(0, 25).map(item => ({
       id: item.id,
       ticker: item.related,
       headline: item.headline,
