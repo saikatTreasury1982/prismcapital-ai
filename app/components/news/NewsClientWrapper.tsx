@@ -9,6 +9,7 @@ import { ByTickerView } from './ByTickerView';
 import { ByCategoryView } from './ByCategoryView';
 import UnderlineTabs from '@/app/lib/ui/UnderlineTabs';
 import { AllNews } from './AllNews';
+import { MarketStrip } from './MarketStrip';
 
 interface NewsClientWrapperProps {
   newsTypes: NewsType[];
@@ -61,19 +62,20 @@ export function NewsClientWrapper({ newsTypes }: NewsClientWrapperProps) {
 
       {/* Content */}
       {activeTab === 'entry' && (
-        <div className="max-w-7xl mx-auto">
-          <NewsEntryForm 
+        <div className="max-w-7xl mx-auto space-y-6">
+          <NewsEntryForm
             newsTypes={newsTypes}
             onSuccess={handleSuccess}
             editingNews={editingNews}
             onCancelEdit={handleCancelEdit}
           />
+          <MarketStrip />
         </div>
       )}
 
       {activeTab === 'ticker' && (
         <div className="max-w-7xl mx-auto">
-          <ByTickerView 
+          <ByTickerView
             key={refreshKey}
             newsTypes={newsTypes}
             onEdit={handleEdit}
@@ -84,7 +86,7 @@ export function NewsClientWrapper({ newsTypes }: NewsClientWrapperProps) {
 
       {activeTab === 'category' && (
         <div className="max-w-7xl mx-auto">
-          <ByCategoryView 
+          <ByCategoryView
             key={refreshKey}
             newsTypes={newsTypes}
             onEdit={handleEdit}
@@ -95,7 +97,7 @@ export function NewsClientWrapper({ newsTypes }: NewsClientWrapperProps) {
 
       {activeTab === 'all' && (
         <div className="max-w-7xl mx-auto">
-          <AllNews 
+          <AllNews
             newsTypes={newsTypes}
             onEdit={handleEdit}
           />
