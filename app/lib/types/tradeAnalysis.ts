@@ -40,12 +40,12 @@ export interface UpdateTradeAnalysisInput {
   exchange_code?: string | null;
   entry_price?: number;
   entry_type?: 'STRICT' | 'RANGE';
-  entry_low?: number;
-  entry_high?: number;
+  entry_low?: number | null;
+  entry_high?: number | null;
   position_size?: number;
-  stop_loss?: number;
-  take_profit?: number;
+  stop_loss?: number | null;
+  take_profit?: number | null;
   is_flagged?: number;
   status?: 'ANALYZING' | 'FLAGGED' | 'EXECUTED' | 'ARCHIVED';
-  notes?: string;
+  notes?: string | null;
 }

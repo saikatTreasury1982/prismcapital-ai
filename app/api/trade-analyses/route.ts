@@ -69,11 +69,11 @@ export async function GET(request: Request) {
 
     // Build conditions
     const conditions = [eq(tradeAnalyses.user_id, userId)];
-    
+
     if (status) {
       conditions.push(eq(tradeAnalyses.status, status));
     }
-    
+
     if (isFlagged === 'true') {
       conditions.push(eq(tradeAnalyses.is_flagged, 1));
     }
@@ -112,7 +112,7 @@ export async function POST(request: Request) {
     const entryLow = entryType === 'RANGE' ? analysisData.entry_low : null;
     const entryHigh = entryType === 'RANGE' ? analysisData.entry_high : null;
     const effectiveEntry = entryType === 'RANGE' ? (entryLow + entryHigh) / 2 : analysisData.entry_price;
-    
+
     const metrics = calculateMetrics(entryType, effectiveEntry, entryLow, entryHigh, analysisData.stop_loss, analysisData.take_profit, analysisData.position_size);
 
     const data = await db
@@ -188,23 +188,30 @@ export async function PATCH(request: Request) {
     if (analysisData.entry_low !== undefined) updateData.entry_low = analysisData.entry_low;
     if (analysisData.entry_high !== undefined) updateData.entry_high = analysisData.entry_high;
 
-    // Recalculate metrics if any price changed
-    const entryType = updateData.entry_type ?? current.entry_type ?? 'STRICT';
-    const entryLow = entryType === 'RANGE' ? (updateData.entry_low ?? current.entry_low) : null;
-    const entryHigh = entryType === 'RANGE' ? (updateData.entry_high ?? current.entry_high) : null;
-    const stopLoss = updateData.stop_loss ?? current.stop_loss;
-    const takeProfit = updateData.take_profit ?? current.take_profit;
-    const positionSize = updateData.position_size ?? current.position_size;
-    
+    // Recalculate metrics — use `in` checks so an explicit null clears rather than falls back
+    const entryType = 'entry_type' in updateData ? updateData.entry_type : (current.entry_type ?? 'STRICT');
+
+    const rawEntryLow = 'entry_low' in updateData ? updateData.entry_low : current.entry_low;
+    const rawEntryHigh = 'entry_high' in updateData ? updateData.entry_high : current.entry_high;
+    const entryLow = entryType === 'RANGE' ? rawEntryLow : null;
+    const entryHigh = entryType === 'RANGE' ? rawEntryHigh : null;
+
+    const stopLoss = 'stop_loss' in updateData ? updateData.stop_loss : current.stop_loss;
+    const takeProfit = 'take_profit' in updateData ? updateData.take_profit : current.take_profit;
+    const positionSize = 'position_size' in updateData ? updateData.position_size : current.position_size;
+
     const entry = entryType === 'RANGE' && entryLow != null && entryHigh != null
       ? (entryLow + entryHigh) / 2
-      : (updateData.entry_price ?? current.entry_price);
-    
+      : ('entry_price' in updateData ? updateData.entry_price : current.entry_price);
+
     updateData.entry_price = entry;
-    if (entryType === 'STRICT') { updateData.entry_low = null; updateData.entry_high = null; }
-    
+    if (entryType === 'STRICT') {
+      updateData.entry_low = null;
+      updateData.entry_high = null;
+    }
+
     const metrics = calculateMetrics(entryType, entry, entryLow, entryHigh, stopLoss, takeProfit, positionSize);
-    Object.assign(updateData, metrics);  
+    Object.assign(updateData, metrics);
 
     const data = await db
       .update(tradeAnalyses)

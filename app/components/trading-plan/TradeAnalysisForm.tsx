@@ -213,12 +213,12 @@ export function TradeAnalysisForm({ editingAnalysis, onSuccess, onCancel }: Trad
           exchange_code: formData.exchange_code === '' ? null : formData.exchange_code,
           entry_type: formData.entry_type as 'STRICT' | 'RANGE',
           entry_price: entry,
-          entry_low: isRange ? low : undefined,
-          entry_high: isRange ? high : undefined,
+          entry_low: isRange ? low : null,
+          entry_high: isRange ? high : null,
           position_size: parseFloat(formData.position_size),
-          stop_loss: formData.stop_loss ? parseFloat(formData.stop_loss) : undefined,
-          take_profit: formData.take_profit ? parseFloat(formData.take_profit) : undefined,
-          notes: formData.notes || undefined,
+          stop_loss: formData.stop_loss !== '' ? parseFloat(formData.stop_loss) : null,
+          take_profit: formData.take_profit !== '' ? parseFloat(formData.take_profit) : null,
+          notes: formData.notes || null,
         });
       } else {
         // Create new
