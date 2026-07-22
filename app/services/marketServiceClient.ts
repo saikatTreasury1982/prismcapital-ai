@@ -19,6 +19,7 @@ export interface PositionNewsItem {
 
 export interface TickerMarketData {
   ticker: string;
+  name: string | null;
   price: number | null;
   change: number | null;
   changePercent: number | null;

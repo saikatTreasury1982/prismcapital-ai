@@ -145,3 +145,24 @@ export async function getMetrics(
     return { week52High: null, week52Low: null, peForward: null };
   }
 }
+
+/**
+ * Company profile for a single ticker (name, exchange, industry, logo).
+ */
+export async function getProfile(ticker: string, apiKey: string): Promise<{ name: string | null }> {
+  try {
+    const url = `https://finnhub.io/api/v1/stock/profile2?symbol=${encodeURIComponent(ticker)}&token=${apiKey}`;
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      console.error(`Finnhub profile failed for ${ticker}: ${response.status}`);
+      return { name: null };
+    }
+
+    const data = await response.json();
+    return { name: typeof data?.name === 'string' ? data.name : null };
+  } catch (error) {
+    console.error(`Error fetching Finnhub profile for ${ticker}:`, error);
+    return { name: null };
+  }
+}

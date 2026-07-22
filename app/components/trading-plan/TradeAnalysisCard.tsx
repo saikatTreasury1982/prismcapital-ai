@@ -149,9 +149,8 @@ export function TradeAnalysisCard({
 
   return (
     <div
-      className={`backdrop-blur-xl bg-white/10 rounded-2xl p-5 border border-white/20 transition-all ${
-        analysis.is_flagged === 1 ? 'ring-2 ring-blue-400 shadow-lg shadow-blue-500/20' : ''
-      }`}
+      className={`backdrop-blur-xl bg-white/10 rounded-2xl p-5 border border-white/20 transition-all ${analysis.is_flagged === 1 ? 'ring-2 ring-blue-400 shadow-lg shadow-blue-500/20' : ''
+        }`}
     >
       {/* ---------- HEADER LINE 1 ---------- */}
       <div className="flex items-start justify-between gap-3">
@@ -164,7 +163,12 @@ export function TradeAnalysisCard({
             {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
           <div className="min-w-0">
-            <h3 className="text-xl font-bold text-white leading-tight">{analysis.ticker}</h3>
+            <div className="flex items-baseline gap-2 min-w-0">
+              <h3 className="text-xl font-bold text-white leading-tight flex-none">{analysis.ticker}</h3>
+              {marketData?.name && (
+                <span className="text-[10px] text-blue-300 truncate min-w-0">{marketData.name}</span>
+              )}
+            </div>
             {analysis.exchange_code && (
               <span className="text-[10px] text-blue-300 uppercase tracking-wider">{analysis.exchange_code}</span>
             )}
@@ -180,9 +184,8 @@ export function TradeAnalysisCard({
           <button
             onClick={toggleFlag}
             disabled={isUpdating}
-            className={`p-2 rounded-full transition-all ${
-              analysis.is_flagged === 1 ? 'bg-blue-500 text-white shadow-lg' : 'bg-white/10 text-blue-300 hover:bg-white/20'
-            }`}
+            className={`p-2 rounded-full transition-all ${analysis.is_flagged === 1 ? 'bg-blue-500 text-white shadow-lg' : 'bg-white/10 text-blue-300 hover:bg-white/20'
+              }`}
             title={analysis.is_flagged === 1 ? 'Unflag' : 'Flag for trading'}
           >
             <Flag className="w-3.5 h-3.5" />
@@ -326,7 +329,7 @@ export function TradeAnalysisCard({
               </div>
               <div className="relative h-1.5 rounded-full bg-gradient-to-r from-emerald-400/25 via-amber-400/25 to-rose-400/25">
                 <div
-                  className="absolute inset-y-0 rounded-full bg-blue-400/60"
+                  className="absolute inset-y-0 rounded-full bg-blue-400 shadow-[0_0_10px_rgba(96,165,250,0.9)]"
                   style={{
                     left: `${pct(entryLow, lo52, hi52)}%`,
                     width: `${Math.max(2, pct(entryHigh, lo52, hi52) - pct(entryLow, lo52, hi52))}%`,
@@ -351,7 +354,7 @@ export function TradeAnalysisCard({
               </div>
               <div className="flex gap-3 mt-2 text-[9.5px] text-slate-400">
                 <span className="flex items-center gap-1">
-                  <span className="inline-block w-2.5 h-1 rounded bg-blue-400/60" />
+                  <span className="inline-block w-2.5 h-1 rounded bg-blue-400" />
                   Your entry zone
                 </span>
                 <span className="flex items-center gap-1">

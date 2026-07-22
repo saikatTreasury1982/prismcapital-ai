@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/app/lib/auth';
-import { getFinnhubApiKey, getQuote, getMetrics } from '@/app/services/finnhubService';
+import { getFinnhubApiKey, getQuote, getMetrics, getProfile } from '@/app/services/finnhubService';
 
 export interface TickerMarketData {
   ticker: string;
+  name: string | null;
   price: number | null;
   change: number | null;
   changePercent: number | null;
@@ -73,16 +74,18 @@ export async function POST(request: Request) {
     }
 
     const results = await inBatches(uniqueTickers, 5, async (ticker): Promise<TickerMarketData> => {
-      const [quote, metrics, sparkline] = await Promise.all([
+      const [quote, metrics, profile, sparkline] = await Promise.all([
         apiKey ? getQuote(ticker, apiKey) : Promise.resolve(null),
         apiKey
           ? getMetrics(ticker, apiKey)
           : Promise.resolve({ week52High: null, week52Low: null, peForward: null }),
+        apiKey ? getProfile(ticker, apiKey) : Promise.resolve({ name: null }),
         getSparkline(ticker),
       ]);
 
       return {
         ticker,
+        name: profile.name,
         price: quote?.c ?? null,
         change: quote?.d ?? null,
         changePercent: quote?.dp ?? null,
