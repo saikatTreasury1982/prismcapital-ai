@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Filter, BarChart3, List, Flag, Archive, DiamondPlusIcon } from 'lucide-react';
+import { Filter, List, Flag, Archive, DiamondPlusIcon } from 'lucide-react';
 import { TradeAnalysis } from '@/app/lib/types/tradeAnalysis';
 import { getTradeAnalyses, deleteTradeAnalysis } from '@/app/services/tradeAnalysisServiceClient';
+import { getTradeMetrics, TickerMarketData } from '@/app/services/marketServiceClient';
 import { TradeAnalysisCard } from './TradeAnalysisCard';
 import { TradeAnalysisForm } from './TradeAnalysisForm';
 import GlassButton from '@/app/lib/ui/GlassButton';
@@ -16,6 +17,9 @@ export function TradeAnalyzer() {
   const [editingAnalysis, setEditingAnalysis] = useState<TradeAnalysis | null>(null);
   const [filterStatus, setFilterStatus] = useState<'all' | 'flagged' | 'archived'>('all');
 
+  const [marketData, setMarketData] = useState<Record<string, TickerMarketData>>({});
+  const [marketLoading, setMarketLoading] = useState(false);
+
   useEffect(() => {
     fetchAnalyses();
   }, []);
@@ -23,6 +27,30 @@ export function TradeAnalyzer() {
   useEffect(() => {
     applyFilters();
   }, [analyses, filterStatus]);
+
+  // Batch-fetch market data whenever the set of tickers changes
+  useEffect(() => {
+    const tickers = Array.from(new Set(analyses.map(a => a.ticker).filter(Boolean)));
+    if (tickers.length === 0) {
+      setMarketData({});
+      return;
+    }
+
+    const loadMarketData = async () => {
+      setMarketLoading(true);
+      try {
+        const data = await getTradeMetrics(tickers);
+        setMarketData(data);
+      } catch (err) {
+        console.error('Failed to fetch market data:', err);
+      } finally {
+        setMarketLoading(false);
+      }
+    };
+
+    loadMarketData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [analyses.map(a => a.ticker).sort().join(',')]);
 
   const fetchAnalyses = async () => {
     try {
@@ -44,7 +72,6 @@ export function TradeAnalyzer() {
     } else if (filterStatus === 'archived') {
       filtered = filtered.filter(a => a.status === 'ARCHIVED');
     } else {
-      // 'all' - exclude archived
       filtered = filtered.filter(a => a.status !== 'ARCHIVED');
     }
 
@@ -104,10 +131,10 @@ export function TradeAnalyzer() {
         {/* Filters */}
         <div className="flex items-center gap-2">
           <Filter className="w-5 h-5 text-blue-300 hidden md:block" />
-          <div className="flex gap-1 bg-white/5 rounded-2xl p-1 border border-white/10">
+          <div className="flex gap-1 bg-white/5 rounded-full p-1 border border-white/10">
             <button
               onClick={() => setFilterStatus('all')}
-              className={`px-3 md:px-6 py-2 rounded-xl flex items-center justify-center gap-2 transition-all ${
+              className={`px-3 md:px-6 py-2 rounded-full flex items-center justify-center gap-2 transition-all ${
                 filterStatus === 'all'
                   ? 'bg-blue-500 text-white shadow-lg'
                   : 'text-blue-200 hover:bg-white/5'
@@ -119,7 +146,7 @@ export function TradeAnalyzer() {
             </button>
             <button
               onClick={() => setFilterStatus('flagged')}
-              className={`px-3 md:px-6 py-2 rounded-xl flex items-center justify-center gap-2 transition-all ${
+              className={`px-3 md:px-6 py-2 rounded-full flex items-center justify-center gap-2 transition-all ${
                 filterStatus === 'flagged'
                   ? 'bg-blue-500 text-white shadow-lg'
                   : 'text-blue-200 hover:bg-white/5'
@@ -131,7 +158,7 @@ export function TradeAnalyzer() {
             </button>
             <button
               onClick={() => setFilterStatus('archived')}
-              className={`px-3 md:px-6 py-2 rounded-xl flex items-center justify-center gap-2 transition-all ${
+              className={`px-3 md:px-6 py-2 rounded-full flex items-center justify-center gap-2 transition-all ${
                 filterStatus === 'archived'
                   ? 'bg-blue-500 text-white shadow-lg'
                   : 'text-blue-200 hover:bg-white/5'
@@ -168,11 +195,13 @@ export function TradeAnalyzer() {
           <p className="text-blue-300 text-sm">Click "Add Analysis" to start analyzing trade opportunities</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           {filteredAnalyses.map((analysis) => (
             <TradeAnalysisCard
               key={analysis.analysis_id}
               analysis={analysis}
+              marketData={marketData[analysis.ticker] ?? null}
+              marketLoading={marketLoading}
               onEdit={handleEdit}
               onDelete={handleDelete}
               onUpdate={fetchAnalyses}
