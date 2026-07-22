@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { TrendingUp, Newspaper, RefreshCw, ExternalLink } from 'lucide-react';
+import { TrendingUp, Newspaper, RefreshCw, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
 import { getIndices, getPositionNews, IndexQuote, PositionNewsItem } from '../../services/marketServiceClient';
 import GlassButton from '@/app/lib/ui/GlassButton';
 
@@ -14,6 +14,15 @@ export function MarketStrip() {
   const [newsLoading, setNewsLoading] = useState(false);
   const [newsFetched, setNewsFetched] = useState(false);
   const [newsError, setNewsError] = useState<string | null>(null);
+  const [collapsedTickers, setCollapsedTickers] = useState<Set<string>>(new Set());
+
+  const toggleTicker = (ticker: string) => {
+    setCollapsedTickers(prev => {
+      const next = new Set(prev);
+      next.has(ticker) ? next.delete(ticker) : next.add(ticker);
+      return next;
+    });
+  };
 
   // Indices auto-load on mount
   const loadIndices = async () => {
@@ -151,14 +160,17 @@ export function MarketStrip() {
               (groups[item.ticker] ||= []).push(item);
               return groups;
             }, {})
-          ).map(([ticker, items]) => (
+          ).map(([ticker, items]) => {
+            const isCollapsed = collapsedTickers.has(ticker);
+            return (
             <div key={ticker} className="mb-4 last:mb-0">
-              <div className="sticky top-0 bg-slate-900/60 backdrop-blur-sm px-2 py-1.5 rounded-md mb-1">
+              <button onClick={() => toggleTicker(ticker)} className="sticky top-0 z-10 w-full bg-slate-900/60 backdrop-blur-sm px-2 py-1.5 rounded-md mb-1 flex items-center justify-between hover:bg-slate-900/80 transition-all">
                 <span className="text-blue-300 text-xs font-bold tracking-wide">
                   {ticker} · {items.length} {items.length === 1 ? 'headline' : 'headlines'}
                 </span>
-              </div>
-              {items.map((item, idx) => (
+                {isCollapsed ? <ChevronDown className="w-3.5 h-3.5 text-blue-300" /> : <ChevronUp className="w-3.5 h-3.5 text-blue-300" />}
+              </button>
+              {!isCollapsed && items.map((item, idx) => (
                 <div
                   key={`${item.id}-${idx}`}
                   className={`flex items-start gap-3 py-3 border-t border-white/10 px-2 ${idx === items.length - 1 ? 'border-b' : ''
@@ -176,7 +188,8 @@ export function MarketStrip() {
                 </div>
               ))}
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
