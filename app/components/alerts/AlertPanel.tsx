@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Archive } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import GlassButton from '@/app/lib/ui/GlassButton';
 import { AlertGroup } from './AlertGroup';
@@ -95,11 +95,18 @@ export function AlertPanel({ isOpen, onClose }: AlertPanelProps) {
             </p>
           </div>
           <GlassButton
+            icon={Archive}
+            onClick={onClose}
+            tooltip="Archive"
+            variant="secondary"
+            size="sm"
+          />
+          <GlassButton
             icon={X}
             onClick={onClose}
             tooltip="Close"
             variant="secondary"
-            size="md"
+            size="sm"
           />
         </div>
 
