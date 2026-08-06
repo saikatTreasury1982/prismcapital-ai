@@ -70,7 +70,7 @@ export function AlertGroup({ title, alerts, variant, defaultExpanded = false }: 
   };
 
   return (
-    <div className={`backdrop-blur-sm bg-white/5 rounded-2xl border border-white/20 overflow-hidden ${getVariantStyles()}`}>
+    <div className={`backdrop-blur-sm bg-white/5 rounded-xl border border-white/20 overflow-hidden ${getVariantStyles()}`}>
       {/* Group Header */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
