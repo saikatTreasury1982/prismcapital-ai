@@ -279,7 +279,39 @@ input[type='number'] {
   appearance: textfield;
 }
 
-/* Style for Amount input fields - prevent scroll on wheel */
-input[type='number'].funding-input {
-  -moz-appearance: textfield;
+/* Custom Scrollbar - Glassmorphism Style */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
 }
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+textarea { scrollbar-width: thin; }

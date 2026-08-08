@@ -72,16 +72,14 @@ export function AlertPanel({ isOpen, onClose }: AlertPanelProps) {
     <>
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-300 ${
-          isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
+        className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-300 ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}
         onClick={onClose}
       />
 
       {/* Panel */}
-      <div className={`fixed top-0 right-0 h-full w-full sm:w-[480px] backdrop-blur-xl bg-white/5 border-l border-white/20 z-50 overflow-y-auto transition-transform duration-300 ease-in-out ${
-        isOpen ? 'translate-x-0' : 'translate-x-full'
-      }`}>
+      <div className={`fixed top-0 right-0 h-full w-full sm:w-[480px] backdrop-blur-xl bg-white/5 border-l border-white/20 z-50 overflow-y-auto transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}>
         {/* Header */}
         <div className="sticky top-0 backdrop-blur-xl bg-white/5 border-b border-white/20 p-6 flex items-center justify-between z-10">
           <div>
@@ -94,20 +92,22 @@ export function AlertPanel({ isOpen, onClose }: AlertPanelProps) {
                 : 'No upcoming alerts'}
             </p>
           </div>
-          <GlassButton
-            icon={Archive}
-            onClick={onClose}
-            tooltip="Archive"
-            variant="secondary"
-            size="sm"
-          />
-          <GlassButton
-            icon={X}
-            onClick={onClose}
-            tooltip="Close"
-            variant="secondary"
-            size="sm"
-          />
+          <div className="flex gap-2">
+            <GlassButton
+              icon={Archive}
+              onClick={onClose}
+              tooltip="Archive"
+              variant="secondary"
+              size="sm"
+            />
+            <GlassButton
+              icon={X}
+              onClick={onClose}
+              tooltip="Close"
+              variant="secondary"
+              size="sm"
+            />
+          </div>
         </div>
 
         {/* Content */}
